@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 2 — Frontend shell
-**Current step:** Phase 2 built (incl. owner's premium design + Lottie request). Waiting for CI and owner approval ("approved").
+**Current step:** Phase 2 merged to `main` (PR #5, CI green). Waiting for the owner's demo on the PC and "approved" before Phase 3.
 **Last updated:** 2026-11-08
 
 ---
@@ -159,7 +159,7 @@ P1 Foundation ─┬─ P2 Frontend shell
 **Open questions for the owner:** (1) ~~Licence~~ MIT, decided 2026-11-08 (ADR-0022). (2) Remote Control folder sharing for D: (lets Claude work directly on the PC).
 
 
-### Phase 2 — Frontend shell · report 2026-11-08 · branch `claude/vigilant-tesla-lkhgme` · ⏳ awaiting owner approval
+### Phase 2 — Frontend shell · report 2026-11-08 · branch `claude/vigilant-tesla-lkhgme` · merged to `main` (PR #5, 2026-11-08) · ⏳ awaiting owner demo + "approved"
 
 **Plan (IMPLEMENTATION_ROADMAP Phase 2, FRONTEND_SPECIFICATION §0–§32):**
 1. Shell: grouped sidebar (desktop), icon rail (tablet), bottom tab bar + drawer (mobile); top bar; light/dark/system theme via CSS tokens; `i18n/en.json`.
@@ -210,7 +210,7 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
    - The step-up mock accepts any password except "wrong".
    - Visual snapshots: the first baselines (rendered in this session) differed from GitHub's runner by ~2 % of pixels (font anti-aliasing), so baselines are now rendered by CI itself: a commit message containing `[update-snapshots]` makes the web job run the full suite, rewrite the screenshots and commit only that folder.
    - **Fixed after the first CI run (Windows job):** `status`/`stop` walked process trees by parent ID only; with Windows PID reuse, unrelated processes were counted (3.4 GB) and `stop` killed the CI shell. Now a child must start after its parent and be one of TubeForge's own executables, and a stale pid file pointing at another program is ignored. CI now fails if the memory total is implausible or a TubeForge process survives `stop`.
-10. **Remaining tasks for Phase 2 acceptance:** CI green on the PR; owner demo below; owner replies "approved".
+10. **Remaining tasks for Phase 2 acceptance:** ~~CI green on the PR~~ ✔ (PR #5 green on all four jobs, merged 2026-11-08); owner demo below; owner replies "approved".
 
 **Demo script (owner):** `git pull` in `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app` → install Node.js 22 LTS from nodejs.org and then `npm install -g pnpm@10.28.0` (one time, free) → `tubeforge.ps1 setup` (now builds the dashboard) → `tubeforge.ps1 start` → open http://127.0.0.1:8765 → click through every sidebar item → use "Scenario (dev)" bottom-right to show empty / loading / error → press Emergency Stop (add a reason) → clear it (any password) → `Ctrl+K` and search "thumb" → switch Theme to Dark → make the window phone-sized.
 
