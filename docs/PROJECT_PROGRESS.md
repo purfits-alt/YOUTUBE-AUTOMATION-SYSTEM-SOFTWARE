@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 3 — Backend, database & auth
-**Current step:** Phase 3 built on `claude/vigilant-tesla-lkhgme` (Phase 2 approved by the owner 2026-11-08). Waiting for CI, the owner demo and "approved".
+**Current step:** Phase 3 (+ Channel Trending screens) approved by the owner 2026-11-08; PR into `main` opened. Next: Phase 4 — channel onboarding, OAuth & quota ledger.
 **Last updated:** 2026-11-08
 
 ---
@@ -214,7 +214,7 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 
 **Demo script (owner):** `git pull` in `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app` → install Node.js 22 LTS from nodejs.org and then `npm install -g pnpm@10.28.0` (one time, free) → `tubeforge.ps1 setup` (now builds the dashboard) → `tubeforge.ps1 start` → open http://127.0.0.1:8765 → click through every sidebar item → use "Scenario (dev)" bottom-right to show empty / loading / error → press Emergency Stop (add a reason) → clear it (any password) → `Ctrl+K` and search "thumb" → switch Theme to Dark → make the window phone-sized.
 
-### Phase 3 — Backend, database & auth · report 2026-11-08 · branch `claude/vigilant-tesla-lkhgme` · ⏳ awaiting owner approval
+### Phase 3 — Backend, database & auth · report 2026-11-08 · branch `claude/vigilant-tesla-lkhgme` · ✅ approved by the owner 2026-11-08
 
 **Plan (IMPLEMENTATION_ROADMAP Phase 3):** full schema + migrations; repository with channel scoping, optimistic locking, soft delete; owner auth with 2FA, sessions, CSRF, Host/Origin checks, lockout, step-up; RBAC on every route; audit log hash chain + security events; secrets (AES-GCM, Credential Manager); controls & settings API; problem+json, idempotency, cursor pagination, SSE; wire the dashboard to the real API with a generated client and a committed OpenAPI snapshot; contract tests.
 
