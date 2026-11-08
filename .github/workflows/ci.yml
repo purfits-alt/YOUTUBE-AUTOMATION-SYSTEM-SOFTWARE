@@ -97,13 +97,20 @@ jobs:
           uv sync --frozen --no-dev
           uv run --no-dev tubeforge-db upgrade
           mkdir -p "$RUNNER_TEMP/tf home"
-          TUBEFORGE_HOME="$RUNNER_TEMP/tf home" nohup uv run --no-dev tubeforge-api > api.log 2>&1 &
+          # Run the venv's script directly, not via `uv run`: a long-lived `uv run`
+          # holds uv's cache lock, and setup-uv's post-job `uv cache prune` then
+          # times out after 300 s and fails the job even when every test passed.
+          TUBEFORGE_HOME="$RUNNER_TEMP/tf home" nohup .venv/bin/tubeforge-api > api.log 2>&1 &
+          echo $! > api.pid
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8765/healthz && break; sleep 1; done
           curl -sf http://127.0.0.1:8765/readyz
       - run: pnpm -C apps/web exec playwright install --with-deps chromium
       - run: pnpm -C apps/web e2e
       - if: failure()
         run: cat api.log
+      - name: Stop API
+        if: always()
+        run: if [ -f api.pid ]; then kill "$(cat api.pid)" || true; fi
 
   secrets:
     name: Secret scanning (gitleaks)
