@@ -1,0 +1,527 @@
+{
+  "app": {
+    "name": "TubeForge",
+    "skipToContent": "Skip to content",
+    "mainNav": "Main navigation",
+    "mobileNav": "Quick navigation",
+    "more": "More",
+    "close": "Close",
+    "menu": "Menu",
+    "tagline": "AI YouTube studio · local"
+  },
+  "groups": {
+    "home": "Home",
+    "discover": "Discover",
+    "channels": "Channels",
+    "create": "Create",
+    "publish": "Publish",
+    "grow": "Grow",
+    "library": "Library",
+    "control": "Control"
+  },
+  "mobileTabs": {
+    "home": "Home",
+    "approvals": "Approvals",
+    "projects": "Projects",
+    "notifications": "Alerts",
+    "more": "More"
+  },
+  "topbar": {
+    "search": "Search",
+    "searchHint": "Ctrl+K",
+    "channel": "Channel",
+    "quota": "Quota & usage",
+    "quotaDetail": "YouTube quota {youtube}% · free-tier peak {peak}%",
+    "notifications": "Notifications",
+    "unread": "{count} unread",
+    "user": "Owner",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
+  },
+  "modes": {
+    "MANUAL": "Manual",
+    "SEMI": "Semi-auto",
+    "AUTO": "Auto"
+  },
+  "badges": {
+    "privateOnly": "Private-only",
+    "mock": "Mock data"
+  },
+  "estop": {
+    "button": "Emergency Stop",
+    "active": "STOPPED",
+    "confirmTitle": "Stop all automation now?",
+    "confirmBody": "Every running agent, render and upload is paused at its next safe point. Nothing is deleted.",
+    "reason": "Reason (optional)",
+    "confirm": "Stop everything",
+    "clear": "Clear Emergency Stop",
+    "clearTitle": "Resume automation?",
+    "clearBody": "Clearing the stop lets queued work continue. You will be asked for your password.",
+    "clearConfirm": "Resume",
+    "stoppedToast": "Emergency Stop is active.",
+    "clearedToast": "Emergency Stop cleared."
+  },
+  "banners": {
+    "estop": "Emergency Stop is active — all automation is paused. Reason: {reason}",
+    "killSwitch": "Publishing kill switch is ON — no uploads or schedule changes will run.",
+    "privateOnly": "Private-only mode is ON for {channel}: uploads stay private; you publish in YouTube Studio.",
+    "tokenExpiring": "The Google sign-in for {channel} expires within 24 hours. Re-authorise to keep uploads working.",
+    "offline": "The TubeForge backend is not responding. Data may be out of date.",
+    "dismiss": "Dismiss"
+  },
+  "search": {
+    "title": "Search",
+    "placeholder": "Search pages, channels, projects…",
+    "noResults": "No results",
+    "pages": "Pages",
+    "results": "Results"
+  },
+  "states": {
+    "loading": "Loading…",
+    "emptyHelp": "How this page works",
+    "retry": "Retry",
+    "details": "Technical details",
+    "code": "Code",
+    "requestId": "Request ID",
+    "errorTitle": "Something went wrong",
+    "forbidden": "You don't have access to this page.",
+    "summary": "Summary"
+  },
+  "scenario": {
+    "label": "Scenario (dev)",
+    "success": "Success",
+    "empty": "Empty",
+    "loading": "Loading",
+    "error": "Error"
+  },
+  "reauth": {
+    "title": "Confirm it's you",
+    "body": "This action needs your password again.",
+    "password": "Password",
+    "submit": "Confirm",
+    "wrong": "That password was not accepted."
+  },
+  "confirm": {
+    "cancel": "Cancel"
+  },
+  "toast": {
+    "close": "Dismiss notification",
+    "actionQueued": "{action}: queued (mock — no real action in Phase 2)."
+  },
+  "safety": "Estimates with sources — not a promise of views or earnings.",
+  "project": {
+    "header": "Project",
+    "channel": "Channel",
+    "format": "Format",
+    "state": "State",
+    "stepper": "Workflow progress",
+    "guards": "Blocking guards",
+    "noGuards": "No blocking guards."
+  },
+  "overview": {
+    "kpiChannels": "Channels active",
+    "kpiProjects": "Projects in progress",
+    "kpiApprovals": "Pending approvals",
+    "kpiQuota": "YouTube quota today",
+    "kpiUsage": "Free-tier usage peak",
+    "pipeline": "Pipeline",
+    "approvals": "Pending approvals",
+    "alerts": "Alerts",
+    "schedule": "Upcoming (7 days)",
+    "activity": "Recent activity",
+    "openAudit": "Open Audit & Security Center",
+    "hello": "Good to see you",
+    "studioLive": "Studio is live",
+    "studioDetail": "2 channels · 5 projects moving · everything private until you publish",
+    "views": "Views — last 14 days",
+    "viewsLabel": "Daily views across your channels, last 14 days",
+    "quotaRing": "YouTube quota",
+    "quotaSub": "10,000 units/day · resets 12:00 PKT",
+    "usageRing": "Free-tier peak",
+    "usageSub": "Gemini · resets 05:00 PKT",
+    "funnel": "Production pipeline",
+    "kpis": "Key figures"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "There is no page at this address.",
+    "home": "Go to Overview"
+  },
+  "columns": {
+    "time": "Time",
+    "actor": "Actor",
+    "action": "Action",
+    "entity": "Entity",
+    "name": "Name",
+    "language": "Language",
+    "opportunity": "Opportunity score",
+    "inauthenticRisk": "Inauthentic risk",
+    "difficulty": "Difficulty",
+    "confidence": "Confidence",
+    "status": "Status",
+    "state": "State",
+    "mode": "Mode",
+    "privateOnly": "Private-only",
+    "tokenStatus": "Token",
+    "inProgress": "In progress",
+    "lastUpload": "Last upload",
+    "step": "Step",
+    "title": "Title",
+    "criterion": "Criterion",
+    "source": "Source",
+    "snippet": "Evidence",
+    "fetchedAt": "Fetched",
+    "topic": "Topic",
+    "strength": "Strength",
+    "detected": "Detected",
+    "expires": "Expires",
+    "kind": "Kind",
+    "query": "Query",
+    "fetched": "Fetched",
+    "format": "Format",
+    "pillar": "Pillar",
+    "similarity": "Similarity",
+    "calendarDate": "Calendar date",
+    "date": "Date",
+    "channel": "Channel",
+    "claim": "Claim",
+    "verdict": "Verdict",
+    "sources": "Sources",
+    "explanation": "Explanation",
+    "scene": "Scene",
+    "narration": "Narration",
+    "visual": "Visual",
+    "duration": "Duration",
+    "track": "Track",
+    "clip": "Clip",
+    "start": "Start",
+    "asset": "Asset",
+    "origin": "Origin",
+    "rightsStatus": "Rights",
+    "text": "Text",
+    "voiceSource": "Voice source",
+    "take": "Take",
+    "variant": "Variant",
+    "checks": "Checks",
+    "chapterTitle": "Chapter",
+    "method": "Method",
+    "reviewed": "Reviewed",
+    "syncStatus": "Sync",
+    "project": "Project",
+    "progress": "Progress",
+    "eta": "ETA",
+    "started": "Started",
+    "qc": "QC",
+    "privacy": "Privacy",
+    "publishAt": "Publish at (PKT)",
+    "videoId": "Video ID",
+    "type": "Type",
+    "subject": "Subject",
+    "requested": "Requested",
+    "age": "Age",
+    "published": "Published",
+    "views": "Views",
+    "engagedViews": "Engaged views",
+    "watchTime": "Watch time (h)",
+    "avd": "Avg. view duration",
+    "ctr": "CTR",
+    "suggestion": "Suggestion",
+    "evidence": "Evidence",
+    "preview": "Preview",
+    "licence": "Licence",
+    "size": "Size",
+    "created": "Created",
+    "provider": "Provider",
+    "capability": "Capability",
+    "tier": "Tier",
+    "used": "Used",
+    "limit": "Limit",
+    "resets": "Resets (PKT)",
+    "notification": "Notification",
+    "severity": "Severity",
+    "received": "Received",
+    "read": "Read",
+    "agent": "Agent",
+    "tokens": "Tokens",
+    "quality": "Quality",
+    "auditType": "Audit",
+    "result": "Result",
+    "score": "Score",
+    "critical": "Critical",
+    "details": "Details",
+    "setting": "Setting",
+    "value": "Value",
+    "updated": "Updated"
+  },
+  "actions": {
+    "openApproval": "Open approvals",
+    "refresh": "Refresh",
+    "runDiscovery": "Run discovery",
+    "shortlist": "Shortlist",
+    "dismiss": "Dismiss",
+    "generateBlueprint": "Generate blueprint",
+    "addChannel": "Add channel",
+    "pauseResume": "Pause / Resume",
+    "changeMode": "Change mode",
+    "killSwitch": "Kill switch",
+    "markDone": "Mark step done",
+    "connectGoogle": "Connect with Google",
+    "runTestUpload": "Run test private upload",
+    "finish": "Finish",
+    "addKeyword": "Add keyword",
+    "scanNow": "Scan now",
+    "turnIntoIdea": "Turn into idea",
+    "lookUp": "Look up",
+    "attachToProject": "Attach to project",
+    "openOnYoutube": "Open on YouTube",
+    "saveVersion": "Save version",
+    "propose": "Propose",
+    "approve": "Approve",
+    "reject": "Reject",
+    "regenerateSection": "Regenerate section",
+    "generate": "Generate",
+    "newIdea": "New idea",
+    "discard": "Discard",
+    "openItem": "Open item",
+    "filterChannels": "Filter channels",
+    "runFactCheck": "Run fact-check",
+    "approveScript": "Approve script",
+    "requestChanges": "Request changes",
+    "addScene": "Add scene",
+    "regenerateScene": "Regenerate scene",
+    "autoAssemble": "Auto-assemble",
+    "renderProxy": "Render proxy",
+    "approveCut": "Approve cut",
+    "editWith": "Edit with…",
+    "generateVisuals": "Generate visuals",
+    "uploadOwnMedia": "Upload own media",
+    "assignToScene": "Assign to scene",
+    "recordTake": "Record take",
+    "generateNarration": "Generate narration",
+    "previewVoice": "Preview TTS voice",
+    "uploadOwn": "Upload own",
+    "selectFinal": "Select final",
+    "decideMadeForKids": "Decide made-for-kids",
+    "confirmDisclosure": "Confirm AI disclosure",
+    "save": "Save",
+    "markReviewed": "Mark reviewed",
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "openProject": "Open project",
+    "retryStep": "Retry step",
+    "openStudio": "Open in YouTube Studio",
+    "reschedule": "Reschedule",
+    "accept": "Accept",
+    "exportCsv": "Export CSV",
+    "upload": "Upload",
+    "setRights": "Set rights",
+    "importStock": "Import stock",
+    "delete": "Delete",
+    "toggleProvider": "Enable / disable provider",
+    "setLimits": "Set limits",
+    "setBudget": "Set budget",
+    "markRead": "Mark read",
+    "markAllRead": "Mark all read",
+    "sendTest": "Send test message",
+    "saveConfig": "Save config",
+    "pauseAgent": "Pause agent",
+    "resume": "Resume",
+    "rerunAudit": "Re-run audit",
+    "override": "Override",
+    "verifyChain": "Verify chain",
+    "revokeSession": "Revoke session",
+    "enrolTotp": "Enrol TOTP",
+    "runBackup": "Run backup",
+    "exportKeyFile": "Export key file"
+  },
+  "pages": {
+    "overview": {
+      "title": "Overview Dashboard",
+      "purpose": "At-a-glance status of all channels, pipeline, approvals, quota, usage and alerts.",
+      "empty": "No channels yet. Start with Channel Discovery or add an existing channel.",
+      "emptyAction": "Open Channel Discovery"
+    },
+    "discovery": {
+      "title": "Channel Discovery",
+      "purpose": "Run niche discovery and compare opportunity candidates with transparent scores and evidence.",
+      "empty": "No discovery reports yet. Scores use permitted public sources only — never aggregated YouTube data (ADR-0015).",
+      "emptyAction": "Run first discovery"
+    },
+    "channels": {
+      "title": "Channel Manager",
+      "purpose": "List and manage all channels: state, mode, private-only, token health, caps.",
+      "empty": "No channels yet. Create one from a blueprint or add an existing channel.",
+      "emptyAction": "Add existing channel"
+    },
+    "onboarding": {
+      "title": "Channel Onboarding",
+      "purpose": "Guided manual channel creation, Google Cloud/OAuth setup, connection, identity confirmation and test upload.",
+      "empty": "Onboarding always has steps — this list should never be empty.",
+      "emptyAction": "Reload steps"
+    },
+    "niche": {
+      "title": "Niche Research",
+      "purpose": "Deep dive into one niche: evidence, sources, audience notes, risks, keyword evidence.",
+      "empty": "No evidence for this niche. Re-run the analysis.",
+      "emptyAction": "Re-run analysis"
+    },
+    "trends": {
+      "title": "Trend Intelligence",
+      "purpose": "Rising topics per channel from permitted sources, with expiry and confidence.",
+      "empty": "No trends yet. Run a scan; only sources enabled in Settings › Research sources are used.",
+      "emptyAction": "Run a scan"
+    },
+    "lookup": {
+      "title": "Competitor Research",
+      "purpose": "Owner-initiated lookup of ONE public channel/video at a time (Developer-Policy compliant, ADR-0015).",
+      "empty": "No lookups yet. Look up one public channel or video at a time — for example a channel handle or a video link.",
+      "emptyAction": "Look up a channel"
+    },
+    "branding": {
+      "title": "Channel Branding Studio",
+      "purpose": "View/edit the channel blueprint (names, description, brand identity, logo/banner briefs, positioning, audience, pillars, formats, 30-day calendar, 50 ideas, risks).",
+      "empty": "The blueprint is being generated. Sections appear here as they finish.",
+      "emptyAction": "Regenerate blueprint"
+    },
+    "ideas": {
+      "title": "Idea Generator",
+      "purpose": "Backlog of ideas with similarity warnings; generate, edit, shortlist, approve.",
+      "empty": "No ideas yet. Generate ideas from your blueprint or add your own.",
+      "emptyAction": "Generate ideas"
+    },
+    "calendar": {
+      "title": "Content Calendar",
+      "purpose": "Month/week view of planned ideas, projects in production and scheduled releases across channels.",
+      "empty": "This month is empty. Drag shortlisted ideas here.",
+      "emptyAction": "Open Idea Generator"
+    },
+    "script": {
+      "title": "Script Studio",
+      "purpose": "Edit AI-drafted script with versions, fact-check results and owner value-add fields.",
+      "empty": "No script yet. Start scripting from the approved research.",
+      "emptyAction": "Start scripting"
+    },
+    "storyboard": {
+      "title": "Storyboard Studio",
+      "purpose": "Scene list with narration, visual instruction, on-screen text, durations.",
+      "empty": "No storyboard yet.",
+      "emptyAction": "Generate storyboard"
+    },
+    "studio": {
+      "title": "AI Video Studio",
+      "purpose": "Timeline editor with proxy preview; assemble, adjust, approve rough cut.",
+      "empty": "No timeline yet.",
+      "emptyAction": "Auto-assemble from storyboard"
+    },
+    "visuals": {
+      "title": "Image & Visual Asset Studio",
+      "purpose": "Create/assign visuals per scene: procedural graphics, charts, kinetic text, owner media, CC0, stock import.",
+      "empty": "No visuals yet. Start from a template.",
+      "emptyAction": "Generate visuals"
+    },
+    "voice": {
+      "title": "Voiceover Studio",
+      "purpose": "Produce narration per scene: record own voice, use own voice clone, or licensed TTS; manage voice profiles.",
+      "empty": "No narration yet. Record your own voice (recommended) or generate it.",
+      "emptyAction": "Record your voice"
+    },
+    "thumbnails": {
+      "title": "Thumbnail Creator",
+      "purpose": "Generate/upload ≥3 thumbnails, check them, compare side by side, select.",
+      "empty": "No thumbnails yet.",
+      "emptyAction": "Generate 3 variants"
+    },
+    "seo": {
+      "title": "YouTube SEO Studio",
+      "purpose": "Titles, description, tags, hashtags, chapters, playlists, language, made-for-kids (owner), AI disclosure.",
+      "empty": "No SEO package yet.",
+      "emptyAction": "Generate SEO package"
+    },
+    "captions": {
+      "title": "Caption & Subtitle Manager",
+      "purpose": "Generate, edit and review caption tracks per language.",
+      "empty": "No caption tracks yet.",
+      "emptyAction": "Generate from script"
+    },
+    "renders": {
+      "title": "Render Manager",
+      "purpose": "All proxy/final render jobs with progress, QC reports and resource waits.",
+      "empty": "No renders yet.",
+      "emptyAction": "Open a project"
+    },
+    "uploads": {
+      "title": "Upload Manager",
+      "purpose": "Upload jobs with step-by-step progress (transfer, thumbnail, captions, playlist, processing), quota and retries.",
+      "empty": "No uploads yet.",
+      "emptyAction": "Open Approval Center"
+    },
+    "schedule": {
+      "title": "Publishing Scheduler",
+      "purpose": "See and adjust scheduled releases (private + publishAt), respecting caps and quiet hours.",
+      "empty": "Nothing is scheduled.",
+      "emptyAction": "Open Content Calendar"
+    },
+    "approvals": {
+      "title": "Owner Approval Center",
+      "purpose": "All pending decisions in one place with full context and hash-bound approval.",
+      "empty": "All caught up — no pending approvals.",
+      "emptyAction": "Open Overview"
+    },
+    "analytics": {
+      "title": "Analytics Dashboard",
+      "purpose": "Own-channel performance over time (views, engaged views, watch time, AVD, CTR, subs) per channel and video.",
+      "empty": "No analytics yet. Data appears about 48 hours after your first publish.",
+      "emptyAction": "Check analytics scope"
+    },
+    "growth": {
+      "title": "Growth & Optimization Center",
+      "purpose": "Data-backed suggestions (topics, hooks, length, upload time) and comment moderation assistant — owner decides.",
+      "empty": "No suggestions yet. They need at least 3 published videos with 7 days of data.",
+      "emptyAction": "Open Analytics"
+    },
+    "assets": {
+      "title": "Asset Library",
+      "purpose": "All media with rights status; upload, set rights, manual stock import, free stock search, paid purchase (optional).",
+      "empty": "The library is empty. Upload your own media or import free stock.",
+      "emptyAction": "Upload media"
+    },
+    "usage": {
+      "title": "Cost & Usage Manager",
+      "purpose": "Every provider's usage vs limit, YouTube quota buckets, stock/paid budgets, disk usage; provider enable/verify; paid activation.",
+      "empty": "No providers configured yet.",
+      "emptyAction": "Add a provider"
+    },
+    "notifications": {
+      "title": "Notification Center",
+      "purpose": "Inbox of notifications; preferences per event × channel; targets setup (Telegram, email); delivery tracking.",
+      "empty": "Inbox zero — no notifications.",
+      "emptyAction": "Notification preferences"
+    },
+    "agents": {
+      "title": "AI Agent Control Center",
+      "purpose": "All 32 agents: status, config, limits, runs, errors; pause via kill switch.",
+      "empty": "No agent runs yet.",
+      "emptyAction": "Open Settings"
+    },
+    "policy": {
+      "title": "Copyright & Policy Center",
+      "purpose": "All audit reports across projects; blocked items; overrides; policy reference.",
+      "empty": "No audits yet.",
+      "emptyAction": "Open Render Manager"
+    },
+    "security": {
+      "title": "Audit & Security Center",
+      "purpose": "Audit log (hash-chain verified), security events, security posture checklist, sessions.",
+      "empty": "No audit log entries yet.",
+      "emptyAction": "Verify chain"
+    },
+    "settings": {
+      "title": "Settings & Integrations",
+      "purpose": "System settings, Google Cloud/OAuth clients, research sources, AI providers shortcuts, notifications targets, backups, account & 2FA, about/versions.",
+      "empty": "No settings loaded.",
+      "emptyAction": "Reload settings"
+    }
+  }
+}
