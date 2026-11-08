@@ -66,3 +66,33 @@ def test_no_billing_or_payment_clients() -> None:
     for forbidden in ("google-cloud-billing", "stripe", "paypal", "braintree"):
         assert forbidden not in pyproject
         assert forbidden not in web
+
+
+def test_every_python_source_file_is_tracked_by_git() -> None:
+    """An over-broad .gitignore pattern once hid a whole code package (db/models/) from the repo."""
+    import shutil
+    import subprocess
+
+    git = shutil.which("git")
+    if git is None or not (ROOT / ".git").exists():
+        return
+    ignored = subprocess.run(  # noqa: S603 - fixed argv, git resolved via shutil.which
+        [
+            git,
+            "ls-files",
+            "--others",
+            "--ignored",
+            "--exclude-standard",
+            "--",
+            "apps",
+            "workers",
+            "tools",
+            "tests",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
+    hidden = [f for f in ignored if f.endswith((".py", ".sql", ".ts", ".tsx")) and "node_modules" not in f]
+    assert hidden == [], f"source files ignored by .gitignore: {hidden}"

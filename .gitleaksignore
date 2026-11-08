@@ -1,0 +1,3 @@
+# False positives only. Each line: <commit>:<file>:<rule>:<line> + reason.
+# "Forgot the password: `tubeforge.ps1 reset-password`" in a doc (reworded in the next commit).
+85c0dd928fe690063434272eca42916e64b08c9f:docs/DEPLOYMENT_GUIDE.md:generic-api-key:31
