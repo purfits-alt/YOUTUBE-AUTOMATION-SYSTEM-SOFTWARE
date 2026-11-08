@@ -1,17 +1,25 @@
-"""Cursor pagination (BACKEND_SPECIFICATION §1): ``?limit=50&cursor=<opaque>`` → ``{items, next_cursor}``."""
+"""Cursor pagination (BACKEND_SPECIFICATION §1): ``?limit=50&cursor=<opaque>`` → ``{items, next_cursor}``.
+
+Clients must treat the cursor as opaque. Its documented pattern (``c`` + digits) means every value
+that matches the schema is accepted; anything else is rejected by validation (400).
+"""
 
 from __future__ import annotations
 
-import base64
-import json
-from typing import Any
+from typing import Annotated
 
+from fastapi import Query
 from pydantic import BaseModel
-
-from tubeforge.api.errors import ProblemError
 
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 200
+CURSOR_PATTERN = r"^c[0-9]{1,18}$"
+
+Cursor = Annotated[
+    str | None,
+    Query(pattern=CURSOR_PATTERN, description="Opaque cursor: pass back the previous page's next_cursor."),
+]
+Limit = Annotated[int | None, Query(ge=1, le=MAX_LIMIT)]
 
 
 class Page[T](BaseModel):
@@ -19,21 +27,12 @@ class Page[T](BaseModel):
     next_cursor: str | None
 
 
-def encode_cursor(value: dict[str, Any]) -> str:
-    return base64.urlsafe_b64encode(json.dumps(value, separators=(",", ":")).encode()).decode().rstrip("=")
+def encode_cursor(last_id: int) -> str:
+    return f"c{last_id}"
 
 
-def decode_cursor(cursor: str | None) -> dict[str, Any] | None:
-    if not cursor:
-        return None
-    try:
-        padded = cursor + "=" * (-len(cursor) % 4)
-        value = json.loads(base64.urlsafe_b64decode(padded))
-    except (ValueError, json.JSONDecodeError) as exc:
-        raise ProblemError(400, "VALIDATION_ERROR", "Invalid request", "The cursor is not valid.") from exc
-    if not isinstance(value, dict):
-        raise ProblemError(400, "VALIDATION_ERROR", "Invalid request", "The cursor is not valid.")
-    return value
+def decode_cursor(cursor: str | None) -> int | None:
+    return int(cursor[1:]) if cursor else None
 
 
 def clamp_limit(limit: int | None) -> int:

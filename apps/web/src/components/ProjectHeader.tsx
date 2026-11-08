@@ -1,9 +1,9 @@
 import { t } from "../i18n";
-import type { Schemas } from "../lib/api/client";
+import type { StubSchemas } from "../lib/api/client";
 import { Badge } from "./ui";
 
 /** Shared header for project pages 11–18: title, channel, format, state stepper, blocking guards. */
-export function ProjectHeader({ project }: { project: Schemas["ProjectSummary"] }) {
+export function ProjectHeader({ project }: { project: StubSchemas["ProjectSummary"] }) {
   const currentIndex = project.states.indexOf(project.state);
   return (
     <section

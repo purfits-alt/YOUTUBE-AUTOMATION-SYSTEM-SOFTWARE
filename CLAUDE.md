@@ -22,16 +22,18 @@ Owner install root: `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE` (the path has spaces
 |---|---|
 | Install deps | `uv sync` · `pnpm -C apps/web install` |
 | Database migrations | `uv run tubeforge-db upgrade` · `uv run tubeforge-db downgrade -1` · `uv run tubeforge-db current` |
+| Schema DDL (from the doc) | `uv run python tools/gen_schema_sql.py` (after editing DATABASE_SCHEMA.md; a test fails if stale) — ADR-0024 |
+| Admin (one-time) | `uv run tubeforge-admin init-keys` · `create-owner --email E --name N` · `has-owner` · `reset-password --email E` (dev/CI: `TUBEFORGE_MASTER_KEY`, `TUBEFORGE_OWNER_PASSWORD`) |
 | Run API (dev) | `uv run tubeforge-api --reload` → http://127.0.0.1:8765 (`/healthz`, `/readyz`, `/api/docs`) |
 | Run workers (dev) | `uv run tubeforge-worker --queues light` · `uv run tubeforge-worker --queues heavy` (`--once` = drain and exit) |
 | Run web (dev) | `pnpm -C apps/web dev` → http://127.0.0.1:5173 (proxies the API) |
 | Build web | `pnpm -C apps/web build` (the API serves `apps/web/dist`) |
 | Lint & types | `uv run ruff check . && uv run ruff format --check . && uv run mypy` · `pnpm -C apps/web lint && pnpm -C apps/web typecheck` |
 | Python tests | `TUBEFORGE_TEST_DATABASE_URL=postgresql+psycopg://…/tubeforge_test uv run pytest` (integration tests wipe that DB) · unit only: `uv run pytest -m "not integration"` |
-| Web tests | `pnpm -C apps/web test` · e2e (API running with built web): `pnpm -C apps/web e2e` (routes×states, axe, mobile, visual) · visual baselines come from CI: push a commit whose message contains `[update-snapshots]` (non-main branch) and CI commits refreshed screenshots |
-| API client (stub until Phase 3) | `pnpm -C apps/web api:gen` (from `packages/shared/openapi.stub.json`) · CI: `pnpm -C apps/web api:check` |
+| Web tests | `pnpm -C apps/web test` · e2e (API running with built web, migrated DB, master key and an owner: e2e signs in as `TUBEFORGE_E2E_EMAIL`/`TUBEFORGE_E2E_PASSWORD`, defaults in `tests/e2e/global-setup.ts`): `pnpm -C apps/web e2e` (routes×states, axe, mobile, visual) · visual baselines come from CI: push a commit whose message contains `[update-snapshots]` (non-main branch) and CI commits refreshed screenshots |
+| API contract & client | `uv run python tools/export_openapi.py` → `packages/shared/openapi.json` (a test fails if stale) · `pnpm -C apps/web api:gen` (real contract + `openapi.stub.json` for still-mocked pages) · CI: `api:check` |
 | Lottie animations | `uv run python tools/gen_lottie.py` (own artwork → `apps/web/src/assets/lottie/`) |
-| Mock data / states | Phase 2 data comes from MSW (`apps/web/src/mocks`); `?scenario=empty\|loading\|error\|success` or the dev switcher |
+| Mock data / states | Pages not yet backed by the API use MSW (`apps/web/src/mocks`); `?scenario=empty\|loading\|error\|success` or the dev switcher. Auth, controls, settings, audit are real since Phase 3 |
 | Docs checks | `uv run python tools/check_traceability.py` |
 | Security | `uv run pre-commit run --all-files` (gitleaks, ruff, traceability) · `uv run pip-audit --skip-editable` · `pnpm -C apps/web audit --audit-level high` · licences: `tools/check_licenses.py` |
 | Local Postgres for dev (Linux) | `docker compose -f infra/compose/docker-compose.dev.yml up -d` |

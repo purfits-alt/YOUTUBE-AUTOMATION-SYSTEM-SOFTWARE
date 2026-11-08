@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { t } from "../i18n";
-import { api, call } from "../lib/api/client";
+import { call, stubApi } from "../lib/api/client";
 import { Dialog } from "./Dialog";
 import { Icon } from "./icons";
 
@@ -26,7 +26,7 @@ export function GlobalSearch() {
   const query = q.trim();
   const results = useQuery({
     queryKey: ["search", query],
-    queryFn: () => call(() => api.GET("/search", { params: { query: { q: query } } })),
+    queryFn: () => call(() => stubApi.GET("/search", { params: { query: { q: query } } })),
     enabled: open && query.length > 0,
   });
 

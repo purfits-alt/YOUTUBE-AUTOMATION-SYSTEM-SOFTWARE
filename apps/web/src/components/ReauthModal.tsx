@@ -4,10 +4,14 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { t } from "../i18n";
 import { api, call, ProblemError, setReauthHandler } from "../lib/api/client";
+import { useMe } from "../lib/useBackend";
 import { Dialog } from "./Dialog";
 import { Button } from "./ui";
 
-const schema = z.object({ password: z.string().min(1, t("reauth.wrong")) });
+const schema = z.object({
+  password: z.string().min(1, t("reauth.wrong")),
+  code: z.string().max(20).optional(),
+});
 type Form = z.infer<typeof schema>;
 
 interface Pending {
@@ -24,6 +28,8 @@ export function ReauthProvider({ children }: { children: ReactNode }) {
   const pending = useRef<Pending | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const { register, handleSubmit, reset, formState } = useForm<Form>({ resolver: zodResolver(schema) });
+  const me = useMe();
+  const mfaEnabled = me.data?.mfa_enabled ?? false;
 
   useEffect(() => {
     setReauthHandler(
@@ -31,7 +37,7 @@ export function ReauthProvider({ children }: { children: ReactNode }) {
         new Promise<void>((resolve, reject) => {
           pending.current = { resolve, reject };
           setServerError(null);
-          reset({ password: "" });
+          reset({ password: "", code: "" });
           setOpen(true);
         }),
     );
@@ -44,9 +50,11 @@ export function ReauthProvider({ children }: { children: ReactNode }) {
     pending.current = null;
   };
 
-  const onSubmit = handleSubmit(async ({ password }) => {
+  const onSubmit = handleSubmit(async ({ password, code }) => {
     try {
-      await call(() => api.POST("/auth/step-up", { body: { password } }));
+      await call(() =>
+        api.POST("/api/v1/auth/reauth", { body: { password, code: code?.trim() ? code.trim() : null } }),
+      );
       setOpen(false);
       pending.current?.resolve();
       pending.current = null;
@@ -74,6 +82,20 @@ export function ReauthProvider({ children }: { children: ReactNode }) {
             className="mt-1 w-full rounded-md border border-line bg-bg px-3 py-2"
             {...register("password")}
           />
+          {mfaEnabled && (
+            <>
+              <label className="mt-3 block text-sm font-medium" htmlFor="reauth-code">
+                {t("reauth.code")}
+              </label>
+              <input
+                id="reauth-code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                className="mt-1 w-full rounded-md border border-line bg-bg px-3 py-2"
+                {...register("code")}
+              />
+            </>
+          )}
           {errorText && (
             <p id="reauth-error" role="alert" className="mt-1 text-sm text-danger-text">
               {errorText}

@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { t } from "../i18n";
 import { applyTheme, readTheme, type ThemeChoice } from "../lib/theme";
-import { useShell } from "../lib/useShell";
+import { useShell } from "../lib/useBackend";
 import { EmergencyStop } from "./EmergencyStop";
 import { GlobalSearch } from "./GlobalSearch";
 import { Icon } from "./icons";
 import { Badge } from "./ui";
+import { UserMenu } from "./UserMenu";
 
 function ThemeSelect() {
   const [theme, setTheme] = useState<ThemeChoice>(readTheme);
@@ -138,7 +139,7 @@ export function TopBar({ channelId, onChannel }: { channelId: string; onChannel:
           <div className="hidden sm:block">
             <ThemeSelect />
           </div>
-          <span className="hidden text-sm text-muted 2xl:inline">{t("topbar.user")}</span>
+          <UserMenu />
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2 border-t border-line px-3 py-1.5 sm:hidden">

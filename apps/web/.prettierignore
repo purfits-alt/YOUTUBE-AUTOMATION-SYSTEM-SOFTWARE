@@ -5,3 +5,4 @@ playwright-report
 pnpm-lock.yaml
 src/lib/api/schema.d.ts
 public/mockServiceWorker.js
+src/lib/api/stub-schema.d.ts

@@ -3,6 +3,7 @@
   tubeforge-admin init-keys                       create the master key in Credential Manager
   tubeforge-admin create-owner --email E --name N prompts for the password (twice, hidden)
   tubeforge-admin has-owner                       exit code 0 if an owner exists, 1 otherwise
+  tubeforge-admin reset-password --email E         new password (prompted); unlocks; signs out everywhere
 
 Non-interactive (CI): the password can come from TUBEFORGE_OWNER_PASSWORD.
 """
@@ -105,6 +106,36 @@ def create_owner(email: str, name: str) -> int:
     return 0
 
 
+def reset_password(email: str) -> int:
+    from datetime import UTC, datetime
+
+    from sqlalchemy import update
+
+    from tubeforge.audit import security_event
+    from tubeforge.db.models import Session as SessionRow
+
+    with Session(get_engine(get_settings().database_url)) as db:
+        user = db.scalar(select(User).where(User.email == email, User.deleted_at.is_(None)))
+        if user is None:
+            print("No account with that e-mail address.", file=sys.stderr)
+            return 2
+        password = _read_password(email, user.display_name)
+        now = datetime.now(UTC)
+        user.password_hash = passwords.hash_password(password)
+        user.failed_login_count = 0
+        user.locked_until = None
+        db.execute(
+            update(SessionRow)
+            .where(SessionRow.user_id == user.id, SessionRow.revoked_at.is_(None))
+            .values(revoked_at=now)
+        )
+        security_event(db, "PASSWORD_RESET_LOCAL", "WARNING", user_id=user.id)
+        record(db, actor=SYSTEM, action="user.password_reset", entity_type="user", entity_id=str(user.id))
+        db.commit()
+    print("Password changed. All sessions were signed out; sign in again with the new password.")
+    return 0
+
+
 def has_owner() -> int:
     with Session(get_engine(get_settings().database_url)) as db:
         return 0 if _owner_exists(db) else 1
@@ -118,9 +149,13 @@ def main(argv: list[str] | None = None) -> None:
     owner.add_argument("--email", required=True)
     owner.add_argument("--name", default="Owner")
     sub.add_parser("has-owner")
+    reset = sub.add_parser("reset-password")
+    reset.add_argument("--email", required=True)
     args = parser.parse_args(argv)
     if args.cmd == "init-keys":
         sys.exit(init_keys())
     if args.cmd == "create-owner":
         sys.exit(create_owner(args.email, args.name))
+    if args.cmd == "reset-password":
+        sys.exit(reset_password(args.email))
     sys.exit(has_owner())

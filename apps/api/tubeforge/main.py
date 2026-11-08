@@ -22,7 +22,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.types import Scope
 
-from tubeforge.api.errors import install_error_handlers, problem_response
+from tubeforge.api.errors import STANDARD_RESPONSES, install_error_handlers, problem_response
 from tubeforge.api.v1 import auth as auth_v1
 from tubeforge.api.v1 import events as events_v1
 from tubeforge.api.v1 import security as security_v1
@@ -131,6 +131,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         docs_url="/api/docs" if settings.env != "prod" else None,
         redoc_url=None,
         openapi_url="/api/openapi.json",
+        responses=STANDARD_RESPONSES,
     )
     origins = frozenset(f"http://{host}" for host in settings.allowed_hosts) | (
         frozenset({"http://127.0.0.1:5173", "http://localhost:5173"})

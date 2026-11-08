@@ -6,12 +6,12 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import select
 
 from tubeforge.api.deps import Db, Principal, require
-from tubeforge.api.pagination import Page, clamp_limit, decode_cursor, encode_cursor
+from tubeforge.api.pagination import Cursor, Limit, Page, clamp_limit, decode_cursor, encode_cursor
 from tubeforge.audit import verify_chain
 from tubeforge.db.models import AuditLog, SecurityEvent
 
@@ -53,16 +53,16 @@ class SecurityEventOut(BaseModel):
 def audit_log(
     db: Db,
     _: SecurityView,
-    limit: Annotated[int | None, Query(ge=1, le=200)] = None,
-    cursor: str | None = None,
+    limit: Limit = None,
+    cursor: Cursor = None,
     action: str | None = None,
     entity_type: str | None = None,
 ) -> Page[AuditLogOut]:
     n = clamp_limit(limit)
     stmt = select(AuditLog).order_by(AuditLog.id.desc()).limit(n + 1)
     after = decode_cursor(cursor)
-    if after:
-        stmt = stmt.where(AuditLog.id < int(after["id"]))
+    if after is not None:
+        stmt = stmt.where(AuditLog.id < after)
     if action:
         stmt = stmt.where(AuditLog.action == action)
     if entity_type:
@@ -72,7 +72,7 @@ def audit_log(
     rows = rows[:n]
     return Page[AuditLogOut](
         items=[AuditLogOut.model_validate(r, from_attributes=True) for r in rows],
-        next_cursor=encode_cursor({"id": rows[-1].id}) if more and rows else None,
+        next_cursor=encode_cursor(rows[-1].id) if more and rows else None,
     )
 
 
@@ -86,16 +86,16 @@ def audit_verify(db: Db, _: SecurityView) -> ChainOut:
 def security_events(
     db: Db,
     _: SecurityView,
-    limit: Annotated[int | None, Query(ge=1, le=200)] = None,
-    cursor: str | None = None,
+    limit: Limit = None,
+    cursor: Cursor = None,
     kind: str | None = None,
     severity: str | None = None,
 ) -> Page[SecurityEventOut]:
     n = clamp_limit(limit)
     stmt = select(SecurityEvent).order_by(SecurityEvent.id.desc()).limit(n + 1)
     after = decode_cursor(cursor)
-    if after:
-        stmt = stmt.where(SecurityEvent.id < int(after["id"]))
+    if after is not None:
+        stmt = stmt.where(SecurityEvent.id < after)
     if kind:
         stmt = stmt.where(SecurityEvent.kind == kind)
     if severity:
@@ -105,5 +105,5 @@ def security_events(
     rows = rows[:n]
     return Page[SecurityEventOut](
         items=[SecurityEventOut.model_validate(r, from_attributes=True) for r in rows],
-        next_cursor=encode_cursor({"id": rows[-1].id}) if more and rows else None,
+        next_cursor=encode_cursor(rows[-1].id) if more and rows else None,
     )

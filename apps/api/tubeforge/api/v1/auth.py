@@ -21,7 +21,7 @@ from tubeforge.api.deps import (
     request_id,
     require_recent_reauth,
 )
-from tubeforge.api.errors import ProblemError, not_found
+from tubeforge.api.errors import ProblemError, not_found, problem_doc
 from tubeforge.audit import Actor, record, security_event
 from tubeforge.auth import passwords, totp
 from tubeforge.auth.cookies import CSRF_COOKIE, SESSION_COOKIE, new_csrf_token, sha256_hex, sign_session
@@ -46,7 +46,8 @@ class UserOut(BaseModel):
 
 
 class LoginIn(BaseModel):
-    email: str = Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=254)
+    # Explicit ASCII whitespace: "\s" means different things in Python and JSON-Schema regex.
+    email: str = Field(pattern=r"^[^@ \t\r\n]+@[^@ \t\r\n]+\.[^@ \t\r\n]+$", max_length=254)
     password: str = Field(min_length=1, max_length=1024)
 
 
@@ -193,7 +194,12 @@ def _audit(request: Request, db: Db, actor: Actor, action: str, user: User, **de
 
 
 # ------------------------------------------------------------------ routes
-@router.post("/login", response_model=LoginOut, dependencies=[Depends(public)])
+@router.post(
+    "/login",
+    response_model=LoginOut,
+    dependencies=[Depends(public)],
+    responses={423: problem_doc("LOCKED after 5 failures in 15 min")},
+)
 def login(body: LoginIn, request: Request, response: Response, db: Db) -> LoginOut:
     if request.app.state.cookie_key is None:
         raise ProblemError(

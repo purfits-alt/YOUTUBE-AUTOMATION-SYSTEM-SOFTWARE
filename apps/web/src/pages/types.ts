@@ -20,4 +20,6 @@ export interface PageDef {
   safety: boolean;
   /** Pages 11–18 share the Project header. */
   projectScoped: boolean;
+  /** Backed by the real API (packages/shared/openapi.json) rather than mock data. */
+  real?: true;
 }

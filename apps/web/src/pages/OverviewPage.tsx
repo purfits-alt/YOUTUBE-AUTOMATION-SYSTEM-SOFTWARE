@@ -9,8 +9,8 @@ import { StatTile } from "../components/StatTile";
 import { StateCard } from "../components/StateCard";
 import { Badge, Button, Card, toneFor } from "../components/ui";
 import { t } from "../i18n";
-import { api, call } from "../lib/api/client";
-import { useShell } from "../lib/useShell";
+import { call, stubApi } from "../lib/api/client";
+import { useShell } from "../lib/useBackend";
 import { asProblem, LoadingSkeleton } from "./PageView";
 import { getPage } from "./registry";
 
@@ -29,7 +29,7 @@ export function OverviewPage() {
   const shell = useShell();
   const query = useQuery({
     queryKey: ["overview"],
-    queryFn: () => call(() => api.GET("/dashboard/overview")),
+    queryFn: () => call(() => stubApi.GET("/dashboard/overview")),
   });
   const data = query.data;
   const empty = data !== undefined && data.kpis.length === 0;

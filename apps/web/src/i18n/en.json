@@ -101,7 +101,8 @@
     "body": "This action needs your password again.",
     "password": "Password",
     "submit": "Confirm",
-    "wrong": "That password was not accepted."
+    "wrong": "That password was not accepted.",
+    "code": "Authenticator code"
   },
   "confirm": {
     "cancel": "Cancel"
@@ -520,8 +521,70 @@
     "settings": {
       "title": "Settings & Integrations",
       "purpose": "System settings, Google Cloud/OAuth clients, research sources, AI providers shortcuts, notifications targets, backups, account & 2FA, about/versions.",
-      "empty": "No settings loaded.",
+      "empty": "Settings could not be loaded.",
       "emptyAction": "Reload settings"
     }
+  },
+  "login": {
+    "title": "Sign in",
+    "subtitle": "Owner account on this PC.",
+    "email": "E-mail",
+    "password": "Password",
+    "submit": "Sign in",
+    "help": "Forgot the password? Run tubeforge.ps1 reset-owner-password on this PC.",
+    "emailRequired": "Enter your e-mail.",
+    "passwordRequired": "Enter your password.",
+    "mfaTitle": "Two-factor check",
+    "mfaSubtitle": "Enter the 6-digit code from your authenticator app, or one of your recovery codes.",
+    "code": "Code",
+    "codeRequired": "Enter the 6-digit code.",
+    "verify": "Verify",
+    "useOtherAccount": "Sign out"
+  },
+  "user": {
+    "menu": "Account",
+    "signOut": "Sign out",
+    "signedInAs": "Signed in as {name}"
+  },
+  "security": {
+    "auditLog": "Audit log",
+    "events": "Security events",
+    "noEvents": "No security events.",
+    "loadMore": "Load more",
+    "chainOk": "Chain verified: {count} rows intact",
+    "chainBroken": "Chain broken at row {id} — the log was changed outside TubeForge"
+  },
+  "settingsPage": {
+    "general": "General",
+    "nightStart": "Night render window — start",
+    "nightEnd": "Night render window — end",
+    "quietStart": "Quiet hours — start",
+    "quietEnd": "Quiet hours — end",
+    "timezone": "Your time zone (IANA, e.g. Asia/Karachi)",
+    "disk": "Disk budget on D: (GB)",
+    "saved": "Settings saved.",
+    "conflict": "These settings were changed in another window.",
+    "reload": "Reload",
+    "mfa": "Two-factor sign-in",
+    "mfaOn": "On",
+    "mfaOff": "Off (recommended: turn on)",
+    "mfaHelp": "Uses a free authenticator app on your phone (for example Google Authenticator, Microsoft Authenticator or Aegis).",
+    "mfaScan": "Scan this code with your authenticator app, then type the 6-digit code it shows.",
+    "mfaQr": "QR code for your authenticator app",
+    "mfaManual": "Can't scan? Enter this link manually",
+    "mfaConfirm": "Turn on two-factor",
+    "mfaDisable": "Turn off two-factor",
+    "mfaDisabled": "Two-factor sign-in is off.",
+    "recoveryTitle": "Save your recovery codes now",
+    "recoveryHelp": "Each code works once if you lose your phone. They are shown only this time — write them down or print them.",
+    "password": "Password",
+    "currentPassword": "Current password",
+    "newPassword": "New password (12+ characters)",
+    "passwordShort": "Use at least 12 characters.",
+    "changePassword": "Change password",
+    "passwordChanged": "Password changed. Other sessions were signed out.",
+    "sessions": "Signed-in sessions",
+    "lastSeen": "Last active {when}",
+    "thisSession": "This session"
   }
 }

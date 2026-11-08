@@ -87,3 +87,19 @@ def test_login_without_master_key_is_not_ready(settings: Settings, monkeypatch: 
     monkeypatch.delenv("TUBEFORGE_MASTER_KEY", raising=False)
     r = client(settings).post("/api/v1/auth/login", json={"email": "a@b.co", "password": "x"})
     assert r.status_code == 503 and r.json()["code"] == "NOT_READY"
+
+
+def test_405_lists_every_documented_method(settings: Settings) -> None:
+    r = client(settings).request("DELETE", "/api/v1/settings")
+    assert r.status_code == 405
+    assert r.headers["allow"] == "GET, PUT"
+    assert r.json()["code"] == "METHOD_NOT_ALLOWED"
+    r = client(settings).request("PATCH", "/api/v1/system/kill-switches/abc")
+    assert r.headers["allow"] == "DELETE"
+
+
+def test_cursor_must_match_documented_pattern(settings: Settings, monkeypatch: pytest.MonkeyPatch) -> None:
+    from tubeforge.api.pagination import decode_cursor, encode_cursor
+
+    assert decode_cursor(encode_cursor(42)) == 42
+    assert decode_cursor(None) is None

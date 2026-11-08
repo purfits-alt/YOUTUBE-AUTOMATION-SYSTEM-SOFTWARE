@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import real from "../../../../packages/shared/openapi.json";
 import stub from "../../../../packages/shared/openapi.stub.json";
 import { hasKey } from "../i18n";
 import { GROUP_ORDER, PAGES, pageHref } from "./registry";
@@ -26,9 +27,15 @@ describe("page registry", () => {
     }
   });
 
-  it("uses only endpoints declared in the OpenAPI stub", () => {
-    const paths = Object.keys(stub.paths);
-    for (const p of PAGES) expect(paths).toContain(p.api);
+  it("uses only endpoints declared in the real contract or the stub", () => {
+    for (const p of PAGES) {
+      if (p.real) expect(Object.keys(real.paths)).toContain("/api/v1" + p.api);
+      else expect(Object.keys(stub.paths)).toContain(p.api);
+    }
+  });
+
+  it("marks Security and Settings as real (Phase 3)", () => {
+    expect(PAGES.filter((p) => p.real).map((p) => p.id)).toEqual(["security", "settings"]);
   });
 
   it("builds concrete links without route parameters", () => {

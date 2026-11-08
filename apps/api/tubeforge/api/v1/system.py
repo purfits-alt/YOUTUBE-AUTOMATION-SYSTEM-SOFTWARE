@@ -18,13 +18,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from tubeforge.api.deps import Db, Principal, client_ip, request_id, require, require_recent_reauth
-from tubeforge.api.errors import ProblemError, not_found
+from tubeforge.api.errors import ProblemError, not_found, problem_doc
 from tubeforge.api.idempotency import Idempotency
 from tubeforge.audit import record, security_event
 from tubeforge.db.models import KillSwitch, SystemSettings
 from tubeforge.db.repository import VersionConflictError, update_versioned
 
 router = APIRouter(tags=["system"])
+
+IDEMPOTENT: dict[int | str, dict[str, Any]] = {
+    422: problem_doc("IDEMPOTENCY_MISMATCH: the key was used for a different request")
+}
 
 
 class EmergencyStopOut(BaseModel):
@@ -64,11 +68,24 @@ class KillSwitchIn(BaseModel):
     reason: str = Field(min_length=3, max_length=500)
 
 
+# Local wall-clock times in the owner's time zone, as "HH:MM" (JSON-Schema "time" would need an offset).
+HHMM = Annotated[str, Field(pattern=r"^([01][0-9]|2[0-3]):[0-5][0-9]$", examples=["01:00"])]
+
+
+def _hhmm(value: time) -> str:
+    return value.strftime("%H:%M")
+
+
+def _parse_hhmm(value: str) -> time:
+    hours, minutes = value.split(":")
+    return time(int(hours), int(minutes))
+
+
 class SettingsOut(BaseModel):
-    night_render_start: time
-    night_render_end: time
-    quiet_hours_start: time
-    quiet_hours_end: time
+    night_render_start: HHMM
+    night_render_end: HHMM
+    quiet_hours_start: HHMM
+    quiet_hours_end: HHMM
     owner_timezone: str
     disk_budget_gb: int
     settings: dict[str, Any]
@@ -77,10 +94,10 @@ class SettingsOut(BaseModel):
 
 
 class SettingsIn(BaseModel):
-    night_render_start: time
-    night_render_end: time
-    quiet_hours_start: time
-    quiet_hours_end: time
+    night_render_start: HHMM
+    night_render_end: HHMM
+    quiet_hours_start: HHMM
+    quiet_hours_end: HHMM
     owner_timezone: str = Field(max_length=64)
     disk_budget_gb: int = Field(ge=10, le=100_000)
     settings: dict[str, Any] = Field(default_factory=dict)
@@ -151,7 +168,7 @@ def get_controls(db: Db, _: Annotated[Principal, Depends(require("dashboard.view
     return controls_snapshot(db)
 
 
-@router.post("/system/emergency-stop", response_model=ControlsOut)
+@router.post("/system/emergency-stop", response_model=ControlsOut, responses=IDEMPOTENT)
 def emergency_stop(
     body: ReasonIn, request: Request, db: Db, p: Annotated[Principal, Depends(require("emergency.activate"))]
 ) -> Any:
@@ -183,7 +200,7 @@ def emergency_stop(
     return after
 
 
-@router.post("/system/emergency-stop/clear", response_model=ControlsOut)
+@router.post("/system/emergency-stop/clear", response_model=ControlsOut, responses=IDEMPOTENT)
 def emergency_stop_clear(
     body: ReasonIn, request: Request, db: Db, p: Annotated[Principal, Depends(require("emergency.clear"))]
 ) -> Any:
@@ -221,7 +238,7 @@ def emergency_stop_clear(
     return after
 
 
-@router.post("/system/publishing-kill-switch", response_model=ControlsOut)
+@router.post("/system/publishing-kill-switch", response_model=ControlsOut, responses=IDEMPOTENT)
 def publishing_kill_switch(
     body: PublishingSwitchIn,
     request: Request,
@@ -260,7 +277,7 @@ def publishing_kill_switch(
     return after
 
 
-@router.post("/system/kill-switches", response_model=KillSwitchOut)
+@router.post("/system/kill-switches", response_model=KillSwitchOut, responses=IDEMPOTENT)
 def set_kill_switch(
     body: KillSwitchIn, request: Request, db: Db, p: Annotated[Principal, Depends(require("controls.manage"))]
 ) -> Any:
@@ -334,7 +351,17 @@ def clear_kill_switch(
 
 
 def _settings_out(row: SystemSettings) -> SettingsOut:
-    return SettingsOut.model_validate(row, from_attributes=True)
+    return SettingsOut(
+        night_render_start=_hhmm(row.night_render_start),
+        night_render_end=_hhmm(row.night_render_end),
+        quiet_hours_start=_hhmm(row.quiet_hours_start),
+        quiet_hours_end=_hhmm(row.quiet_hours_end),
+        owner_timezone=row.owner_timezone,
+        disk_budget_gb=row.disk_budget_gb,
+        settings=row.settings,
+        version=row.version,
+        updated_at=row.updated_at,
+    )
 
 
 @router.get("/settings", response_model=SettingsOut)
@@ -346,7 +373,14 @@ def get_settings_route(
     return _settings_out(row)
 
 
-@router.put("/settings", response_model=SettingsOut)
+@router.put(
+    "/settings",
+    response_model=SettingsOut,
+    responses={
+        412: problem_doc("VERSION_CONFLICT (body has current_version)"),
+        428: problem_doc("IF_MATCH_REQUIRED"),
+    },
+)
 def put_settings(
     body: SettingsIn,
     request: Request,
@@ -369,7 +403,10 @@ def put_settings(
         ) from exc
     before = _settings_out(_settings_row(db)).model_dump(mode="json")
     try:
-        update_versioned(db, SystemSettings, 1, expected, body.model_dump())
+        values = body.model_dump()
+        for key in ("night_render_start", "night_render_end", "quiet_hours_start", "quiet_hours_end"):
+            values[key] = _parse_hhmm(values[key])
+        update_versioned(db, SystemSettings, 1, expected, values)
     except VersionConflictError as exc:
         raise ProblemError(
             412,

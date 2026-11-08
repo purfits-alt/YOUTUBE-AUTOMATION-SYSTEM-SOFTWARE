@@ -2,8 +2,8 @@
 
 > Living document. Updated at every checkpoint and at the end of every phase.
 
-**Current phase:** Phase 2 — Frontend shell
-**Current step:** Phase 2 merged to `main` (PR #5, CI green). Waiting for the owner's demo on the PC and "approved" before Phase 3.
+**Current phase:** Phase 3 — Backend, database & auth
+**Current step:** Phase 3 built on `claude/vigilant-tesla-lkhgme` (Phase 2 approved by the owner 2026-11-08). Waiting for CI, the owner demo and "approved".
 **Last updated:** 2026-11-08
 
 ---
@@ -159,7 +159,7 @@ P1 Foundation ─┬─ P2 Frontend shell
 **Open questions for the owner:** (1) ~~Licence~~ MIT, decided 2026-11-08 (ADR-0022). (2) Remote Control folder sharing for D: (lets Claude work directly on the PC).
 
 
-### Phase 2 — Frontend shell · report 2026-11-08 · branch `claude/vigilant-tesla-lkhgme` · merged to `main` (PR #5, 2026-11-08) · ⏳ awaiting owner demo + "approved"
+### Phase 2 — Frontend shell · report 2026-11-08 · branch `claude/vigilant-tesla-lkhgme` · merged to `main` (PR #5) · ✅ approved by the owner 2026-11-08
 
 **Plan (IMPLEMENTATION_ROADMAP Phase 2, FRONTEND_SPECIFICATION §0–§32):**
 1. Shell: grouped sidebar (desktop), icon rail (tablet), bottom tab bar + drawer (mobile); top bar; light/dark/system theme via CSS tokens; `i18n/en.json`.
@@ -213,6 +213,53 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 10. **Remaining tasks for Phase 2 acceptance:** ~~CI green on the PR~~ ✔ (PR #5 green on all four jobs, merged 2026-11-08); owner demo below; owner replies "approved".
 
 **Demo script (owner):** `git pull` in `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app` → install Node.js 22 LTS from nodejs.org and then `npm install -g pnpm@10.28.0` (one time, free) → `tubeforge.ps1 setup` (now builds the dashboard) → `tubeforge.ps1 start` → open http://127.0.0.1:8765 → click through every sidebar item → use "Scenario (dev)" bottom-right to show empty / loading / error → press Emergency Stop (add a reason) → clear it (any password) → `Ctrl+K` and search "thumb" → switch Theme to Dark → make the window phone-sized.
+
+### Phase 3 — Backend, database & auth · report 2026-11-08 · branch `claude/vigilant-tesla-lkhgme` · ⏳ awaiting owner approval
+
+**Plan (IMPLEMENTATION_ROADMAP Phase 3):** full schema + migrations; repository with channel scoping, optimistic locking, soft delete; owner auth with 2FA, sessions, CSRF, Host/Origin checks, lockout, step-up; RBAC on every route; audit log hash chain + security events; secrets (AES-GCM, Credential Manager); controls & settings API; problem+json, idempotency, cursor pagination, SSE; wire the dashboard to the real API with a generated client and a committed OpenAPI snapshot; contract tests.
+
+1. **Modules implemented**
+   - **Schema:** `tools/gen_schema_sql.py` generates the DDL for all **80 tables** from DATABASE_SCHEMA.md (ADR-0024): enum CHECKs from `enums.json`, FKs after all tables, `updated_at` triggers, append-only triggers on (AO) tables. Migrations 0002 (schema) and 0003 (41 permissions, 4 roles, settings row). `upgrade head` / `downgrade base` both work.
+   - **Repository** (`db/repository.py`): explicit `ChannelScope` on every scoped query (out of scope = 404), `update_versioned` (optimistic locking), soft delete. Typed ORM models for the tables Phase 3 uses.
+   - **Secrets** (`secrets/`): AES-256-GCM, HKDF per-purpose keys, AAD `table:column:row_id`; master key in Windows Credential Manager (`keyring`), test-only env key refused in prod on Windows.
+   - **Auth** (`api/v1/auth.py`, `auth/`): Argon2id; lockout (5 failures / 15 min → 423); signed session cookie (HMAC, HttpOnly, SameSite=Strict, idle 8 h / absolute 7 d, rotated on login and MFA); double-submit CSRF; Origin check; TOTP enrol/confirm/verify/disable with QR and 10 one-time recovery codes; 5-minute step-up (`/auth/reauth`); password change (≥ 12 chars + zxcvbn ≥ 3, other sessions revoked); sessions list/revoke.
+   - **RBAC** (`api/deps.py`): `require("perm")` on routes; denial → 403 + `PERMISSION_DENIED` event. A test walks every `/api/v1` route and fails if one has no rule; only login is public.
+   - **Audit** (`audit/`): SHA-256 hash chain under an advisory lock; `/audit-log` (cursor pages), `/audit-log/verify-chain`, `/security-events`. Every write route writes exactly one row.
+   - **Controls & settings** (`api/v1/system.py`): Emergency Stop (press: `emergency.activate`; clear: `emergency.clear` + step-up), publishing kill switch, kill switches; settings with ETag / If-Match (428 / 412). Recorded and broadcast now; enforced by the orchestrator/workers from Phase 5.
+   - **Cross-cutting:** problem+json everywhere (documented on every route), Idempotency-Key (replay / 422 mismatch, 24 h), cursor pagination, SSE `/events/stream` with Last-Event-ID replay.
+   - **Admin CLI:** `tubeforge-admin init-keys | create-owner | has-owner | reset-password`. `tubeforge.ps1 setup` now creates the master key and asks for the owner account; new `tubeforge.ps1 reset-password`.
+   - **Web:** sign-in and 2FA screens; real Emergency Stop (Idempotency-Key, password re-entry to clear), live updates over SSE (other tabs see Emergency Stop at once), account menu with Sign out; **Settings** (general settings, 2FA with QR + recovery codes, password, sessions) and **Audit & Security Center** (audit log, verify chain, security events) use the real API. Other pages keep mock data until their phases.
+   - **Contract:** `packages/shared/openapi.json` (committed, test fails if stale) → generated TS client; schemathesis property tests on every GET endpoint.
+2. **Files created/modified:** `apps/api/tubeforge/{admin.py, api/*, audit/, auth/, events/, secrets/, db/{ids.py, models/, repository.py, schema_v1.sql}, main.py}`, `apps/api/migrations/versions/0002_*, 0003_*`, `tools/{gen_schema_sql.py, export_openapi.py}`, `packages/shared/{openapi.json, openapi.stub.json}`, `apps/web/src/{app/AuthGate.tsx, pages/{SecurityPage,SettingsPage}.tsx, components/UserMenu.tsx, lib/{api/client.ts, useBackend.ts, sse.ts}, mocks/testApi.ts}`, e2e (`global-setup.ts`, `stateful.spec.ts`), `infra/windows/tubeforge.ps1`, CI, docs (DATABASE_SCHEMA, DEPLOYMENT_GUIDE, FRONTEND/ADR index, CLAUDE.md, ADR-0024).
+3. **Database changes:** migrations 0002 + 0003. Schema document additions (fixed in the document first): `idempotency_keys`, `user_recovery_codes`, `sessions.reauth_at` — the API/security specs required them but the approved schema had no place for them.
+4. **APIs implemented:** 22 under `/api/v1` (auth ×11, controls/settings ×8, audit/security ×3) + `/events/stream`; `/readyz` now also checks the master key.
+5. **Agents created:** none (Phase 5).
+6. **Tests executed (Linux, this session):**
+
+   | Suite | Result |
+   |---|---|
+   | Python unit + integration (real PostgreSQL 16) | **88 passed** |
+   | Contract (schemathesis: every GET endpoint, generated cases; status codes, content types, schemas, Allow, positive-data acceptance) | **pass (25 groups)** |
+   | Vitest (incl. sign-in, sign-out, settings If-Match, security, Emergency Stop + re-auth) | **22 passed** |
+   | Playwright: routes × states (124), axe light/dark (62), mobile (4), shell/smoke (7) | **198 passed** |
+   | Playwright stateful (Emergency Stop live across tabs + re-auth, audit page, sign-in/out + axe) | **3 passed** |
+   | Visual snapshots | to be re-rendered by CI (`[update-snapshots]`): the top bar gained Sign out |
+   | ruff, mypy --strict, eslint, prettier, tsc, `api:check`, OpenAPI snapshot, schema-SQL sync, traceability | pass |
+   | gitleaks (tree + branch commits), pip-audit, pnpm audit, licence gate | clean |
+
+   Real defects the tests found and fixed this phase: non-IP client addresses broke `inet` columns; sign-out left the app open; the app did not render when service workers are blocked; the contract documented `application/json` errors instead of problem+json, dropped the 405 `Allow` header for multi-method paths, used a regex that differs between Python and JSON Schema, and documented times as JSON-Schema `time` (needs an offset) — settings times are now `HH:MM`; cursors now have a documented pattern.
+7. **Free-tier services used:** none. New dependencies (all free): argon2-cffi, pyotp, cryptography, keyring, segno, zxcvbn; dev: schemathesis. **This phase introduces no paid dependency: ✔**
+8. **Resource consumption:** unchanged process count; Argon2 uses 64 MiB for ≈ 0.1–0.3 s per sign-in.
+9. **Known limitations:**
+   - Emergency Stop / kill switches are recorded, audited and broadcast, but nothing runs yet to stop (enforcement in Phase 5).
+   - SSE uses an in-process buffer (API process only); worker events join via PostgreSQL LISTEN/NOTIFY in Phase 5.
+   - Separate auditor / read-only DB roles arrive with the auditors (Phase 11); append-only tables are protected by triggers.
+   - Expired `idempotency_keys` are skipped on read; the cleanup job comes with the maintenance queue (Phase 5).
+   - General rate limiting (600/min) is not implemented yet (login is protected by the lockout); planned for Phase 15.
+   - Only the OWNER role is used; channel-scoped roles are modelled and tested but no UI to invite users (out of scope v1).
+10. **Remaining tasks for Phase 3 acceptance:** CI green (incl. Windows `init-keys` against real Credential Manager and CI-rendered snapshots); owner demo; owner replies "approved".
+
+**Demo script (owner, Windows):** `git -C "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app" pull` → `tubeforge.ps1 setup` (creates the master key; asks your e-mail, name and a password) → `tubeforge.ps1 start` → sign in → Settings › Two-factor sign-in › scan the QR with a phone authenticator, enter the code, save the recovery codes → press Emergency Stop (red banner on every page; open a second tab to see it appear there too) → clear it (asks your password and code) → Audit & Security Center › Verify chain.
 
 ## Resource consumption
 

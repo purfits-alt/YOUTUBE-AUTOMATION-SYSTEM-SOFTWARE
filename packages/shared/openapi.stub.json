@@ -3,7 +3,7 @@
   "info": {
     "title": "TubeForge API (Phase 2 stub)",
     "version": "0.0.0-stub",
-    "description": "Hand-maintained stub used by the web app until Phase 3 generates the real spec from FastAPI. Paths are relative to /api/v1."
+    "description": "Stub for endpoints that are still mocked (MSW) until their phase: page data, /shell extras (channels, quota, unread), search. Auth, controls, settings, audit and events are real (packages/shared/openapi.json). Paths are relative to /api/v1."
   },
   "servers": [
     {
@@ -1040,75 +1040,13 @@
         }
       }
     },
-    "/audit-log": {
-      "get": {
-        "operationId": "get_security",
-        "tags": [
-          "control"
-        ],
-        "summary": "Page 30 data (security)",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageData"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error (RFC 9457 problem+json)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/settings": {
-      "get": {
-        "operationId": "get_settings",
-        "tags": [
-          "control"
-        ],
-        "summary": "Page 31 data (settings)",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageData"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error (RFC 9457 problem+json)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/shell": {
       "get": {
         "operationId": "get_shell",
         "tags": [
           "system"
         ],
-        "summary": "Top bar and banner state",
+        "summary": "Top bar extras still mocked: channels (Phase 4), quota (Phase 4), unread notifications (Phase 14)",
         "responses": {
           "200": {
             "description": "OK",
@@ -1119,108 +1057,6 @@
                 }
               }
             }
-          },
-          "default": {
-            "description": "Error (RFC 9457 problem+json)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/system/emergency-stop": {
-      "post": {
-        "operationId": "emergency_stop",
-        "tags": [
-          "system"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmergencyStopRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Controls"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error (RFC 9457 problem+json)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "operationId": "clear_emergency_stop",
-        "tags": [
-          "system"
-        ],
-        "summary": "Needs step-up (403 REAUTH_REQUIRED otherwise)",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Controls"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error (RFC 9457 problem+json)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/step-up": {
-      "post": {
-        "operationId": "step_up",
-        "tags": [
-          "auth"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StepUpRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "Re-authenticated"
           },
           "default": {
             "description": "Error (RFC 9457 problem+json)",
@@ -1578,48 +1414,12 @@
           }
         }
       },
-      "Controls": {
-        "type": "object",
-        "required": [
-          "emergency_stop",
-          "publishing_kill_switch"
-        ],
-        "properties": {
-          "emergency_stop": {
-            "type": "object",
-            "required": [
-              "active"
-            ],
-            "properties": {
-              "active": {
-                "type": "boolean"
-              },
-              "reason": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "since": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
-            }
-          },
-          "publishing_kill_switch": {
-            "type": "boolean"
-          }
-        }
-      },
       "Shell": {
         "type": "object",
         "required": [
           "channels",
           "quota",
-          "unread_notifications",
-          "controls"
+          "unread_notifications"
         ],
         "properties": {
           "channels": {
@@ -1645,32 +1445,6 @@
           },
           "unread_notifications": {
             "type": "integer"
-          },
-          "controls": {
-            "$ref": "#/components/schemas/Controls"
-          }
-        }
-      },
-      "EmergencyStopRequest": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "maxLength": 500
-          }
-        }
-      },
-      "StepUpRequest": {
-        "type": "object",
-        "required": [
-          "password"
-        ],
-        "properties": {
-          "password": {
-            "type": "string"
-          },
-          "totp": {
-            "type": "string"
           }
         }
       },

@@ -19,6 +19,8 @@ export function watchConsole(page: Page, expectedHttp: readonly number[] = []): 
   const problems: string[] = [];
   page.on("console", (msg) => {
     if (msg.type() !== "error" && msg.type() !== "warning") return;
+    // Printed by Playwright itself when a test blocks service workers (real-page tests).
+    if (msg.text() === "Service Worker registration blocked by Playwright") return;
     const http = HTTP_LOG.exec(msg.text());
     if (http && expectedHttp.includes(Number(http[1]))) return;
     problems.push(`${msg.type()}: ${msg.text()}`);
@@ -27,7 +29,55 @@ export function watchConsole(page: Page, expectedHttp: readonly number[] = []): 
   return problems;
 }
 
+/**
+ * Real pages (Security, Settings) are backed by the API, so their empty/loading/error states are
+ * produced by intercepting the page's main request; mock pages use the MSW scenario switch.
+ */
+const SHELL_STUB = {
+  channels: [{ id: "ch-1", name: "Calm Science", mode: "MANUAL", private_only: true, token_expiring: false }],
+  quota: { youtube_default_pct: 17, free_tier_peak_pct: 41 },
+  unread_notifications: 2,
+};
+
+async function interceptRealPage(page: Page, def: PageDef, state: State): Promise<void> {
+  if (!def.real) return;
+  // These tests block the MSW service worker (see routes.spec.ts), so answer its one mocked call here.
+  await page.route(
+    (url) => url.pathname === "/api/v1/shell",
+    (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(SHELL_STUB) }),
+  );
+  if (state === "success") return;
+  if (def.id === "settings" && state === "empty") return; // no empty state for Settings (spec: N/A)
+  const path = `/api/v1${def.api}`;
+  await page.route(
+    (url) => url.pathname === path,
+    async (route) => {
+      if (state === "loading") return; // never answer → skeleton stays
+      if (state === "error") {
+        await route.fulfill({
+          status: 503,
+          contentType: "application/problem+json",
+          body: JSON.stringify({
+            title: "Service unavailable",
+            status: 503,
+            code: "MOCK_ERROR",
+            detail: "Simulated.",
+          }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ items: [], next_cursor: null }),
+      });
+    },
+  );
+}
+
 export async function openPage(page: Page, def: PageDef, state: State = "success"): Promise<void> {
+  await interceptRealPage(page, def, state);
   await page.goto(`${pageHref(def)}?scenario=${state}`);
   await expect(page.getByRole("heading", { level: 1, name: en.pages[def.id].title })).toBeVisible();
 }

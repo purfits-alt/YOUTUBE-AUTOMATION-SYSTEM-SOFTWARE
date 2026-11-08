@@ -1,25 +1,71 @@
-import createClient from "openapi-fetch";
+import createClient, { type Middleware } from "openapi-fetch";
 import type { components, paths } from "./schema";
+import type { components as stubComponents, paths as stubPaths } from "./stub-schema";
 
+/** Real API types, generated from packages/shared/openapi.json (the committed FastAPI contract). */
 export type Schemas = components["schemas"];
-export type Problem = Schemas["Problem"];
-export type PageData = Schemas["PageData"];
-export type Overview = Schemas["Overview"];
-export type Shell = Schemas["Shell"];
-export type Controls = Schemas["Controls"];
-export type Row = Schemas["Row"];
+export type Controls = Schemas["ControlsOut"];
+export type Me = Schemas["MeOut"];
+export type SettingsOut = Schemas["SettingsOut"];
+export type SettingsIn = Schemas["SettingsIn"];
+export type AuditLogEntry = Schemas["AuditLogOut"];
+export type SecurityEventEntry = Schemas["SecurityEventOut"];
+export type SessionInfo = Schemas["SessionOut"];
+
+/** Still-mocked endpoints (MSW until their phase), from packages/shared/openapi.stub.json. */
+export type StubSchemas = stubComponents["schemas"];
+export type PageData = StubSchemas["PageData"];
+export type Overview = StubSchemas["Overview"];
+export type Shell = StubSchemas["Shell"];
+export type Row = StubSchemas["Row"];
+
+/** RFC 9457 problem body (BACKEND_SPECIFICATION §1). */
+export interface Problem {
+  type?: string;
+  title: string;
+  status: number;
+  detail?: string | null;
+  code: string;
+  request_id?: string;
+  errors?: { field: string; message: string }[];
+  guards?: { code: string; message: string; fix_href?: string }[];
+  current_version?: number;
+}
 
 export const API_BASE = "/api/v1";
+const origin = typeof window !== "undefined" ? window.location.origin : "";
 
-/** Typed client generated from packages/shared/openapi.stub.json (Phase 3: the FastAPI spec). */
-export const api = createClient<paths>({
-  // Absolute URL so the same client works in the browser and in Node-based tests (jsdom).
-  baseUrl: (typeof window !== "undefined" ? window.location.origin : "") + API_BASE,
-  // Look fetch up on every call (not once at import) so test interceptors are honoured.
-  fetch: (request: Request) => globalThis.fetch(request),
-});
+export function readCookie(name: string): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  const prefix = `${name}=`;
+  return document.cookie
+    .split("; ")
+    .find((c) => c.startsWith(prefix))
+    ?.slice(prefix.length);
+}
 
-/** A failed request, carrying the RFC 9457 problem body. */
+/** Double-submit CSRF (OAUTH_SECURITY §2): every non-GET request carries the tf_csrf cookie value. */
+const csrf: Middleware = {
+  onRequest({ request }) {
+    if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) {
+      const token = readCookie("tf_csrf");
+      if (token) request.headers.set("X-CSRF-Token", decodeURIComponent(token));
+    }
+    return request;
+  },
+};
+
+// Look fetch up on every call (not once at import) so test interceptors are honoured.
+const lateFetch = (request: Request) => globalThis.fetch(request);
+
+/** Real backend (paths include /api/v1). */
+export const api = createClient<paths>({ baseUrl: origin, fetch: lateFetch, credentials: "same-origin" });
+api.use(csrf);
+
+/** Mocked endpoints (paths relative to /api/v1). */
+export const stubApi = createClient<stubPaths>({ baseUrl: origin + API_BASE, fetch: lateFetch });
+
+/** A failed request, carrying the problem body. */
 export class ProblemError extends Error {
   readonly problem: Problem;
   constructor(problem: Problem) {
@@ -67,11 +113,16 @@ export async function call<T>(run: () => Promise<FetchResult<T>>): Promise<T> {
   return result.data as T;
 }
 
+/** A fresh Idempotency-Key for one user action (BACKEND_SPECIFICATION §1). Reused on its retry. */
+export function idempotencyKey(): string {
+  return crypto.randomUUID();
+}
+
 /**
- * Page data for registry pages. The path comes from the page registry at runtime, so it is
- * typed as one representative PageData path; openapi-fetch fills `{id}` for any path that has it.
+ * Page data for registry pages that are still mocked. The path comes from the page registry at
+ * runtime, so it is typed as one representative PageData path; openapi-fetch fills `{id}`.
  */
 export function getPageData(apiPath: string, id: string | undefined, fallbackId: string): Promise<PageData> {
   const path = apiPath as "/niches/candidates/{id}";
-  return call(() => api.GET(path, { params: { path: { id: id ?? fallbackId } } }));
+  return call(() => stubApi.GET(path, { params: { path: { id: id ?? fallbackId } } }));
 }
