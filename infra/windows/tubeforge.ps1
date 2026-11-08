@@ -233,6 +233,9 @@ function Invoke-Setup {
 
     Push-Location -LiteralPath $AppDir
     try {
+        # Keep uv's cache on the same drive as the venv (D:), as DEPLOYMENT_GUIDE §2.4 says.
+        # This also lets uv hardlink instead of copying (no 'Failed to hardlink' warning).
+        $env:UV_CACHE_DIR = Join-Path $AppDir '.cache\uv'
         & uv sync --frozen --no-dev
         if ($LASTEXITCODE -ne 0) { throw 'uv sync failed' }
         Write-Check 'Python environment' 'OK' (Join-Path $AppDir '.venv')
