@@ -3,7 +3,18 @@ import { API_BASE, type Problem } from "../lib/api/client";
 import { getScenario } from "../lib/scenario";
 import { PAGES, pageHref } from "../pages/registry";
 import en from "../i18n/en.json";
-import { overviewData, pageData, shellData } from "./data";
+import { overviewData, pageData, replicateData, shellData } from "./data";
+
+/** Mock similarity of a variation to its source, per kind (the real check is A08 + embeddings, Phase 7). */
+const VARIATION_SIMILARITY: Record<string, number> = {
+  PART_2: 0.55,
+  NEW_ANGLE: 0.42,
+  UPDATE: 0.78,
+  SHORT_FROM_LONG: 0.64,
+  LONG_FROM_SHORT: 0.48,
+  SERIES: 0.36,
+};
+export const REPLICATE_THRESHOLD = 0.7;
 
 function problem(status: number, code: string, title: string, detail: string): HttpResponse<Problem> {
   const body: Problem = {
@@ -52,6 +63,23 @@ export const handlers: HttpHandler[] = [
   }),
   ...pageHandlers,
   http.get(API_BASE + "/shell", () => HttpResponse.json(shellData())),
+  http.get(API_BASE + "/channels/:id/replicate", async () => {
+    const gate = await scenarioGate();
+    if (gate) return gate;
+    return HttpResponse.json(replicateData(getScenario() === "empty"));
+  }),
+  http.post(API_BASE + "/channels/:id/ideas/replicate", async ({ request }) => {
+    const body = (await request.json()) as { youtube_video_id: string; kind: string; note?: string };
+    const similarity = VARIATION_SIMILARITY[body.kind] ?? 0.5;
+    if (similarity > REPLICATE_THRESHOLD) {
+      return problem(422, "TOO_SIMILAR", "Too similar", "The variation is too close to the original video.");
+    }
+    return HttpResponse.json({
+      idea_title: `Variation (${body.kind.toLowerCase().replace(/_/g, " ")})`,
+      similarity_to_source: similarity,
+      threshold: REPLICATE_THRESHOLD,
+    });
+  }),
   http.get(API_BASE + "/search", ({ request }) => {
     const q = (new URL(request.url).searchParams.get("q") ?? "").trim().toLowerCase();
     if (!q) return HttpResponse.json([]);

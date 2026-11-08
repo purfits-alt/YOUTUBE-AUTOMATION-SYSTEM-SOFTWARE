@@ -27,7 +27,7 @@ test("bottom tab bar and More drawer reach every page", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "Owner Approval Center" })).toBeVisible();
   await page.getByTestId("more-button").click();
   const drawer = page.getByTestId("nav-drawer");
-  await expect(drawer.getByRole("link")).toHaveCount(31);
+  await expect(drawer.getByRole("link")).toHaveCount(32);
   await drawer.getByRole("link", { name: /Settings & Integrations/ }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Settings & Integrations" })).toBeVisible();
   await expect(drawer).not.toBeVisible();

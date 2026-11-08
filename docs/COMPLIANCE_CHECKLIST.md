@@ -41,6 +41,7 @@ Sources: [Channel monetization policies](https://support.google.com/youtube/answ
 |---|---|---|---|
 | ☐ | Original, authentic; not mass-produced/repetitive ("inauthentic content") | Owner value-add, originality score, variety rules, caps, Policy Auditor | 7–11 |
 | ☐ | Reused content needs significant original commentary | Stock-share rule, REUSED_CONTENT finding | 11 |
+| ☐ | Replicate/Milk variations of own winners differ from the source (similarity ≤ 0.70) and carry owner value-add; outliers use own-channel analytics only | US-4.6, ADR-0025, A08 variation-mode tests | 7, 13 |
 | ☐ | Community Guidelines | CG_RISK classifier + owner review | 11 |
 | ☐ | Advertiser-friendly guidelines (informative) | ADVERTISER_RISK findings | 11 |
 | ☐ | No misleading metadata/thumbnails | MISLEADING_METADATA, PROMISE_NOT_DELIVERED | 10/11 |

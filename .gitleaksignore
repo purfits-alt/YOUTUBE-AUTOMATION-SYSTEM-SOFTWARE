@@ -1,3 +1,5 @@
-# False positives only. Each line: <commit>:<file>:<rule>:<line> + reason.
-# "Forgot the password: `tubeforge.ps1 reset-password`" in a doc (reworded in the next commit).
+# Reviewed false positives only (fingerprint = <commit>:<file>:<rule>:<line>).
+# Both are a documentation sentence about the reset command that the generic-api-key rule reads as
+# a credential; the sentence was reworded in e3af6b4 and this file's comment no longer quotes it.
 85c0dd928fe690063434272eca42916e64b08c9f:docs/DEPLOYMENT_GUIDE.md:generic-api-key:31
+0914b864fc500a04c8a98c3b4c4c10031ae72dfd:.gitleaksignore:generic-api-key:2

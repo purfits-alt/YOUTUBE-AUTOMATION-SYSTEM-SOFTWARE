@@ -35,8 +35,8 @@ test("every sidebar link opens its page", async ({ page }) => {
   await page.goto("/");
   const nav = page.getByRole("navigation", { name: "Main navigation" });
   const links = nav.getByRole("link");
-  await expect(links).toHaveCount(31);
-  for (let i = 0; i < 31; i++) {
+  await expect(links).toHaveCount(32);
+  for (let i = 0; i < 32; i++) {
     const link = links.nth(i);
     const name = ((await link.textContent()) ?? "").replace(/^\d+/, "").trim();
     await link.click();

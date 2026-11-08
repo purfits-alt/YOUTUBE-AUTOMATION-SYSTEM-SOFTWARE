@@ -225,7 +225,8 @@ flowchart LR
 | **Performance metrics** | Common metrics |
 | **Cost & usage limits** | 30 calls/day (owner-adjustable in Agent Control Center; Gateway-enforced) |
 | **Human approval gates** | Owner shortlists/approves |
-| **Testing requirements** | Similarity threshold tests; diversity test (no two ideas > 0.85) |
+| **Testing requirements** | Similarity threshold tests; diversity test (no two ideas > 0.85); variation mode: every variation ≤ 0.70 similar to its source (US-4.6) |
+| **Variation mode (US-4.6, ADR-0025)** | Input `VariationRequest{channel_id, source:{youtube_video_id, title, angle?, script_summary?, metrics}, kind: PART_2\|NEW_ANGLE\|UPDATE\|SHORT_FROM_LONG\|LONG_FROM_SHORT\|SERIES, note?}` (source must be the owner's own video). Output: ideas with `source=REPLICATE`, `based_on_youtube_video_id`, `variation_kind`, `similarity_to_source`. Refuses near-copies; always fills `owner_value_add_prompt`. |
 
 ### A09 — Research
 | Field | Specification |

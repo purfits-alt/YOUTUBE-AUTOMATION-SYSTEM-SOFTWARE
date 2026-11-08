@@ -264,6 +264,7 @@ Phases 2 and 3 can run in parallel after Phase 1. Phase 14 can start any time af
 2. Idea Generator, Content Calendar, Script Studio (versions, diff, claims, value-add, owner slots)
 3. Project state machine wired IDEA → SCRIPT_REVIEW → STORYBOARDING gate
 4. Script craft validators: hook 10–15 s, promise ≤ 15 s (Shorts 3 s), re-hook bands, open loops closed, banned phrases, duration
+5. A08 variation mode + `POST /channels/{id}/ideas/replicate` with the originality guard (US-4.6); Channel Trending › Replicate and New Ideas tabs on real data
 
 **Files to create/modify (main):** workers/tubeforge_agents/{a08..a11}.py, apps/api/tubeforge/content/*, apps/web/src/routes/{ideas,calendar,projects/script}/*
 
@@ -451,6 +452,7 @@ Phases 2 and 3 can run in parallel after Phase 1. Phase 14 can start any time af
 3. A27 growth suggestions incl. retention dips vs hook/re-hook positions
 4. A28 comment moderation (incremental consent, owner approves every action)
 5. Growth & Optimization Center
+6. Own-channel outlier detection (`GET /channels/{id}/outliers`, US-4.6) feeding Channel Trending › Outliers and A08
 
 **Files to create/modify (main):** workers/tubeforge_agents/{a26,a27,a28}.py, apps/web/src/routes/{analytics,growth}/*
 

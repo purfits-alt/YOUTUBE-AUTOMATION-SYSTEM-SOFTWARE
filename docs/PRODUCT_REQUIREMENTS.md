@@ -178,6 +178,14 @@ As the owner, I want AI-drafted scripts that I can edit, with version history, s
 - AC2: The script has a hook section, a body and a call to action, plus an estimated spoken duration for the channel language.
 - AC3: **Owner value-add fields** (own opinion, own experience, own data, own examples) are shown in the editor. The amount filled in feeds the originality score.
 
+**US-4.6 Channel Trending: outliers, replicate own winners, new ideas** (data in Phases 7 and 13; screens with sample data now) — *owner request, 2026-11-08 (ADR-0025)*
+As the owner, I want to see which of **my own** videos are outliers, turn my winners into new videos, and get fresh ideas in one place, so that I double down on what works for my channel.
+- AC1 **Outliers (own channels only):** a video is an outlier when its views at age N days are ≥ 2× the channel median at the same age (last 30 videos of the same format); ≥ 5× is a "big outlier". Shown with views, engaged views, CTR, average view duration and the outlier multiple. Uses only the owner's own YouTube Analytics (same content owner, allowed by ADR-0015). **Other channels' videos are never ranked or compared.**
+- AC2 **Replicate / Milk (own winners only):** from an own outlier, the owner can request variations: Part 2 / sequel, new angle, updated version, Short from a long video, long from a Short, or a series. Each becomes a normal idea (source REPLICATE) linked to the source video.
+- AC3 **Originality guard:** a variation must differ from its source (title + angle + planned script similarity ≤ 0.70; default, owner-adjustable) and needs an owner value-add prompt. Exact or near copies are refused (YouTube reused-content / inauthentic-content risk); the Policy and Originality auditors still apply.
+- AC4 **New Ideas:** the newest suggested ideas from A08 (trends + the patterns of the owner's own outliers), with the reason for each idea.
+- AC5 Every score shows "Estimates with sources — not a promise of views or earnings."
+
 ### E5 — Storyboard, visuals and voice
 
 **US-4.5 Engaging, human-sounding scripts** (Phase 7) — *owner request at C5*
@@ -408,5 +416,6 @@ As the owner, I want warnings when my channel looks templated or mass-produced s
 | 1.1 | 2026-11-08 | Approved at C2 | — |
 | 1.2 | 2026-11-08 | US-5.3: owner voice cloning (converter + zero-shot), consent and anti-misuse controls | Owner request at C2, ADR-0019 |
 | 1.4 | 2026-11-08 | US-4.5: packaging promise in intro, 10–15 s hook, mid-video re-hooks, honest curiosity/suspense, human voice | Owner request at C5 |
+| 1.5 | 2026-11-08 | US-4.6: Channel Trending — own-channel outliers, replicate/milk own winners with an originality guard, new ideas (ADR-0025) | Owner request during Phase 3 |
 | 1.3 | 2026-11-08 | US-6.4: optional external editors (Canva, CapCut, InShot, Filmora, any other) via hand-off/re-import | Owner request in Step 0.5, ADR-0021 |
 | 1.2 | 2026-11-08 | US-5.2: optional stock media — manual import, free API adapters, paid API adapters (disabled, budget cap 0) | Owner request at C2, ADR-0020 |

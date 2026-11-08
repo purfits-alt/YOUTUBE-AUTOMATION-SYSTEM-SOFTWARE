@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { en, openPage, PAGES, STATES, watchConsole } from "./helpers";
 
-// Roadmap Phase 2: 31 routes × 4 states = 124 cases, no console errors, Emergency Stop on every route.
+// Roadmap Phase 2: every route (31 + Channel Trending = 32) × 4 states = 128 cases, no console errors, Emergency Stop on every route.
 for (const def of PAGES) {
   test.describe(`${String(def.num).padStart(2, "0")} ${en.pages[def.id].title}`, () => {
     // Real pages: block the MSW service worker so Playwright can intercept their API calls (requests

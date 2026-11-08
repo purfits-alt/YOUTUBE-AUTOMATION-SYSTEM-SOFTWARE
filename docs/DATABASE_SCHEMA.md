@@ -280,7 +280,10 @@ CREATE TABLE video_ideas (                            -- (SD)
   originality_notes text NULL,
   similarity_max numeric(4,3) NULL, similar_to_id uuid NULL,
   calendar_date date NULL, expires_at timestamptz NULL,
-  source text NOT NULL CHECK (source IN ('AGENT','OWNER','BLUEPRINT')),
+  source text NOT NULL CHECK (source IN ('AGENT','OWNER','BLUEPRINT','REPLICATE')),
+  based_on_youtube_video_id text NULL,                -- REPLICATE: the owner's own source video (US-4.6, ADR-0025)
+  variation_kind text NULL CHECK (variation_kind IN ('PART_2','NEW_ANGLE','UPDATE','SHORT_FROM_LONG','LONG_FROM_SHORT','SERIES')),
+  similarity_to_source numeric(4,3) NULL,
   version int NOT NULL DEFAULT 1, created_at, updated_at, deleted_at
 );
 CREATE INDEX ON video_ideas (channel_id, state);

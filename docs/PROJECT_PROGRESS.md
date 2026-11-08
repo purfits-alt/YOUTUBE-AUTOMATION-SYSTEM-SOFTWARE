@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 3 — Backend, database & auth
-**Current step:** Phase 3 built on `claude/vigilant-tesla-lkhgme` (Phase 2 approved by the owner 2026-11-08). Waiting for CI, the owner demo and "approved".
+**Current step:** Phase 3 (+ Channel Trending screens) approved by the owner 2026-11-08; PR into `main` opened. Next: Phase 4 — channel onboarding, OAuth & quota ledger.
 **Last updated:** 2026-11-08
 
 ---
@@ -214,7 +214,7 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 
 **Demo script (owner):** `git pull` in `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app` → install Node.js 22 LTS from nodejs.org and then `npm install -g pnpm@10.28.0` (one time, free) → `tubeforge.ps1 setup` (now builds the dashboard) → `tubeforge.ps1 start` → open http://127.0.0.1:8765 → click through every sidebar item → use "Scenario (dev)" bottom-right to show empty / loading / error → press Emergency Stop (add a reason) → clear it (any password) → `Ctrl+K` and search "thumb" → switch Theme to Dark → make the window phone-sized.
 
-### Phase 3 — Backend, database & auth · report 2026-11-08 · branch `claude/vigilant-tesla-lkhgme` · ⏳ awaiting owner approval
+### Phase 3 — Backend, database & auth · report 2026-11-08 · branch `claude/vigilant-tesla-lkhgme` · ✅ approved by the owner 2026-11-08
 
 **Plan (IMPLEMENTATION_ROADMAP Phase 3):** full schema + migrations; repository with channel scoping, optimistic locking, soft delete; owner auth with 2FA, sessions, CSRF, Host/Origin checks, lockout, step-up; RBAC on every route; audit log hash chain + security events; secrets (AES-GCM, Credential Manager); controls & settings API; problem+json, idempotency, cursor pagination, SSE; wire the dashboard to the real API with a generated client and a committed OpenAPI snapshot; contract tests.
 
@@ -248,7 +248,7 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
    | gitleaks (tree + branch commits), pip-audit, pnpm audit, licence gate | clean |
 
    Real defects the tests found and fixed this phase: non-IP client addresses broke `inet` columns; sign-out left the app open; the app did not render when service workers are blocked; the contract documented `application/json` errors instead of problem+json, dropped the 405 `Allow` header for multi-method paths, used a regex that differs between Python and JSON Schema, and documented times as JSON-Schema `time` (needs an offset) — settings times are now `HH:MM`; cursors now have a documented pattern.
-7. **Free-tier services used:** none. New dependencies (all free): argon2-cffi, pyotp, cryptography, keyring, segno, zxcvbn; dev: schemathesis. **This phase introduces no paid dependency: ✔**
+7. **Free-tier services used:** none. New dependencies (all free): argon2-cffi, pyotp, cryptography (≥ 50.0.2: four advisories fixed in 48–50), keyring, segno, zxcvbn; dev: schemathesis. **This phase introduces no paid dependency: ✔**
 8. **Resource consumption:** unchanged process count; Argon2 uses 64 MiB for ≈ 0.1–0.3 s per sign-in.
 9. **Known limitations:**
    - Emergency Stop / kill switches are recorded, audited and broadcast, but nothing runs yet to stop (enforcement in Phase 5).
@@ -259,7 +259,9 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
    - Only the OWNER role is used; channel-scoped roles are modelled and tested but no UI to invite users (out of scope v1).
 10. **Remaining tasks for Phase 3 acceptance:** CI green (incl. Windows `init-keys` against real Credential Manager and CI-rendered snapshots); owner demo; owner replies "approved".
 
-**Demo script (owner, Windows):** `git -C "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app" pull` → `tubeforge.ps1 setup` (creates the master key; asks your e-mail, name and a password) → `tubeforge.ps1 start` → sign in → Settings › Two-factor sign-in › scan the QR with a phone authenticator, enter the code, save the recovery codes → press Emergency Stop (red banner on every page; open a second tab to see it appear there too) → clear it (asks your password and code) → Audit & Security Center › Verify chain.
+**Owner request during Phase 3 — Channel Trending (2026-11-08):** Outliers, Replicate / "milky" videos and New Ideas. Owner decisions: **own channels only** for outliers (YouTube data policy, ADR-0015), **variations of own winners** with an originality guard (similarity ≤ 0.70 + owner value-add; near copies refused), **plan + screens now**. Done: US-4.6, ADR-0025, FRONTEND_SPECIFICATION §32 (test plan moved to §33), A08 variation mode, API endpoints, schema (`video_ideas.source` + REPLICATE, `based_on_youtube_video_id`, `variation_kind`, `similarity_to_source`), roadmap (Phase 7 variation mode, Phase 13 outliers), compliance line; **Page 32 Channel Trending** (Channels group) with three keyboard-accessible tabs on sample data and the replicate dialog (the guard refuses "Updated version" in the sample). Tests: Vitest 23, Playwright 128 route×state cases + axe for page 32. Also fixed: the menu highlighted "Channel Manager" on every /channels/… page (links now match exactly).
+
+**Demo script (owner, Windows):** `git -C "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app" pull` → `tubeforge.ps1 setup` (creates the master key; asks your e-mail, name and a password) → `tubeforge.ps1 start` → sign in → Settings › Two-factor sign-in › scan the QR with a phone authenticator, enter the code, save the recovery codes → press Emergency Stop (red banner on every page; open a second tab to see it appear there too) → clear it (asks your password and code) → Audit & Security Center › Verify chain → Channels › Channel Trending: switch tabs, press Replicate this, try "Updated version" (refused as too similar) and "New angle" (created).
 
 ## Resource consumption
 

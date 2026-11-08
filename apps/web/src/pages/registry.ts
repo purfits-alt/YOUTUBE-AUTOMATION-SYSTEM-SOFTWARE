@@ -345,6 +345,17 @@ export const PAGES: readonly PageDef[] = [
     safety: false,
     projectScoped: false,
   },
+  {
+    id: "trending",
+    num: 32,
+    path: "/channels/:id/trending",
+    group: "channels",
+    api: "/channels/{id}/outliers",
+    columns: ["title", "published", "views", "multiple", "engagedViews", "ctr", "avd"],
+    actions: ["refreshAnalytics", "replicateThis"],
+    safety: true,
+    projectScoped: false,
+  },
 ];
 
 export const GROUP_ORDER: readonly GroupKey[] = [
