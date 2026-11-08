@@ -10,7 +10,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # Snapshot-refresh runs ([update-snapshots] in the commit message) get their own group, so a
+  # later push to the same branch cannot cancel them half-way.
+  group: ci-${{ github.ref }}${{ contains(github.event.head_commit.message, '[update-snapshots]') && '-snapshots' || '' }}
   cancel-in-progress: true
 
 env:
@@ -98,9 +100,17 @@ jobs:
           pnpm -s -C apps/web licenses list --json --prod > web-licences.json
           uv run --frozen python tools/check_licenses.py --web web-licences.json
       - name: Start API serving the built dashboard
+        env:
+          # CI-only throwaway credentials (never real secrets): a random master key and an e2e owner.
+          TUBEFORGE_OWNER_PASSWORD: correct horse battery staple 42
         run: |
           uv sync --frozen --no-dev
+          KEY="$(head -c 32 /dev/urandom | base64)"
+          echo "::add-mask::$KEY"
+          echo "TUBEFORGE_MASTER_KEY=$KEY" >> "$GITHUB_ENV"
+          export TUBEFORGE_MASTER_KEY="$KEY"
           uv run --no-dev tubeforge-db upgrade
+          uv run --no-dev tubeforge-admin create-owner --email owner@example.com --name Owner
           mkdir -p "$RUNNER_TEMP/tf home"
           # Run the venv's script directly, not via `uv run`: a long-lived `uv run`
           # holds uv's cache lock, and setup-uv's post-job `uv cache prune` then
@@ -204,6 +214,9 @@ jobs:
           $script = "$env:INSTALL_ROOT\app\infra\windows\tubeforge.ps1"
           Push-Location "$env:INSTALL_ROOT\app"
           & "$env:INSTALL_ROOT\app\.venv\Scripts\tubeforge-db.exe" upgrade
+          # Real Windows Credential Manager (keyring WinVault backend), as on the owner's PC.
+          & "$env:INSTALL_ROOT\app\.venv\Scripts\tubeforge-admin.exe" init-keys
+          if ($LASTEXITCODE -ne 0) { Write-Error 'init-keys failed'; exit 1 }
           Pop-Location
           New-Item -ItemType Directory -Force -Path "$env:INSTALL_ROOT\config" | Out-Null
           & $script start -InstallRoot "$env:INSTALL_ROOT" -NonInteractive -NoBrowser

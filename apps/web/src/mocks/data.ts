@@ -285,7 +285,7 @@ export function overviewData(empty: boolean): Overview {
   };
 }
 
-export function shellData(estopActive: boolean, reason: string | null): Shell {
+export function shellData(): Shell {
   return {
     channels: [
       { id: "ch-1", name: "Calm Science", mode: "MANUAL", private_only: true, token_expiring: false },
@@ -293,9 +293,5 @@ export function shellData(estopActive: boolean, reason: string | null): Shell {
     ],
     quota: { youtube_default_pct: 17, free_tier_peak_pct: 41 },
     unread_notifications: 2,
-    controls: {
-      emergency_stop: { active: estopActive, reason, since: estopActive ? new Date().toISOString() : null },
-      publishing_kill_switch: false,
-    },
   };
 }

@@ -5,10 +5,12 @@ import { MobileNav, Sidebar } from "../components/Navigation";
 import { ScenarioSwitcher } from "../components/ScenarioSwitcher";
 import { TopBar } from "../components/TopBar";
 import { t } from "../i18n";
+import { useEventStream } from "../lib/sse";
 
 /** App shell (FRONTEND_SPECIFICATION §0.1). */
 export function Layout() {
   const [channelId, setChannelId] = useState("ch-1");
+  useEventStream(true);
   return (
     <div className="flex min-h-screen bg-bg text-fg">
       <a

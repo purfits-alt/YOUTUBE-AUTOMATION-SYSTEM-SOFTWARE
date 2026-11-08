@@ -42,7 +42,13 @@ def test_migrations_up_down_up(migrated: str) -> None:
     assert table_exists(migrated, "procrastinate_jobs")
 
 
-def test_readyz_ok_with_real_database(migrated: str, settings: Settings) -> None:
+def test_readyz_ok_with_real_database(
+    migrated: str, settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import base64
+    import os
+
+    monkeypatch.setenv("TUBEFORGE_MASTER_KEY", base64.b64encode(os.urandom(32)).decode())
     app = create_app(settings.model_copy(update={"database_url": migrated}))
     r = TestClient(app, base_url="http://127.0.0.1:8765").get("/readyz")
     assert r.status_code == 200, r.text
@@ -88,3 +94,50 @@ async def test_idempotency_key_blocks_duplicate_waiting_job(migrated: str) -> No
         await q.enqueue(task_name("mnt.ping"), queue="maintenance", idempotency_key="same", message="a")
         with pytest.raises(AlreadyEnqueued):
             await q.enqueue(task_name("mnt.ping"), queue="maintenance", idempotency_key="same", message="b")
+
+
+def test_schema_v1_tables_constraints_and_seeds(migrated: str) -> None:
+    engine = create_engine(migrated)
+    with engine.connect() as conn:
+        tables = set(
+            conn.execute(
+                text(
+                    "SELECT tablename FROM pg_tables "
+                    "WHERE schemaname='public' AND tablename NOT LIKE 'procrastinate%'"
+                )
+            ).scalars()
+        )
+        roles = dict(
+            conn.execute(
+                text(
+                    "SELECT r.name, count(rp.*) FROM roles r "
+                    "LEFT JOIN role_permissions rp ON rp.role_id = r.id GROUP BY r.name"
+                )
+            ).all()
+        )
+        settings_rows = conn.execute(text("SELECT count(*) FROM system_settings")).scalar_one()
+    engine.dispose()
+    assert {"users", "sessions", "audit_log", "channels", "upload_jobs", "provider_registry"} <= tables
+    assert len(tables - {"alembic_version"}) == 80
+    assert roles["OWNER"] > roles["EDITOR"] > roles["REVIEWER"] > roles["VIEWER"] > 0
+    assert settings_rows == 1
+
+
+def test_append_only_and_enum_checks_are_enforced(migrated: str) -> None:
+    from sqlalchemy.exc import DBAPIError, IntegrityError
+
+    engine = create_engine(migrated)
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO security_events (kind, severity) VALUES ('TEST', 'INFO')"))
+    with pytest.raises(DBAPIError, match="append-only"), engine.begin() as conn:
+        conn.execute(text("UPDATE security_events SET kind = 'X'"))
+    with pytest.raises(DBAPIError, match="append-only"), engine.begin() as conn:
+        conn.execute(text("DELETE FROM security_events"))
+    with pytest.raises(IntegrityError), engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO channels (id, name, state, content_language) "
+                "VALUES (gen_random_uuid(), 'x', 'NOT_A_STATE', 'en')"
+            )
+        )
+    engine.dispose()

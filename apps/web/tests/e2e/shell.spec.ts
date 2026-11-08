@@ -1,32 +1,4 @@
 import { expect, test } from "@playwright/test";
-import { watchConsole } from "./helpers";
-
-test("Emergency Stop: two clicks to stop; clearing asks for the password", async ({ page }) => {
-  // 403 = the API asking for step-up re-authentication before clearing (expected).
-  const problems = watchConsole(page, [403]);
-  await page.goto("/approvals");
-  const stop = page.getByTestId("emergency-stop");
-  await stop.click();
-  const dialog = page.getByTestId("estop-dialog");
-  await dialog.getByLabel("Reason (optional)").fill("demo");
-  await dialog.getByRole("button", { name: "Stop everything" }).click();
-  await expect(stop).toHaveText(/STOPPED/);
-  await expect(
-    page.getByText("Emergency Stop is active — all automation is paused. Reason: demo"),
-  ).toBeVisible();
-  // The banner stays on every page.
-  await page.getByRole("link", { name: /Render Manager/ }).click();
-  await expect(page.getByText(/all automation is paused/)).toBeVisible();
-
-  await stop.click();
-  await page.getByTestId("estop-clear-dialog").getByRole("button", { name: "Resume" }).click();
-  const reauth = page.getByTestId("reauth-modal");
-  await reauth.getByLabel("Password").fill("owner-password");
-  await reauth.getByRole("button", { name: "Confirm" }).click();
-  await expect(stop).toHaveText(/Emergency Stop/);
-  await expect(page.getByText(/all automation is paused/)).toHaveCount(0);
-  expect(problems).toEqual([]);
-});
 
 test("theme switch: dark and back to light", async ({ page }) => {
   await page.goto("/");

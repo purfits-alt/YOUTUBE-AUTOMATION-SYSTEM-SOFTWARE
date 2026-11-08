@@ -15,12 +15,19 @@ dependencies = [
     "psycopg[binary]>=3.3,<3.4",
     "procrastinate>=3.10,<3.11",
     "structlog>=26.1,<27",
+    "argon2-cffi>=25,<26",
+    "pyotp>=2.9,<3",
+    "cryptography>=46,<47",
+    "keyring>=25,<26",
+    "segno>=1.6,<2",
+    "zxcvbn>=4.5,<5",
 ]
 
 [project.scripts]
 tubeforge-api = "tubeforge.cli:run_api"
 tubeforge-worker = "tubeforge_workers.cli:main"
 tubeforge-db = "tubeforge.cli:db_main"
+tubeforge-admin = "tubeforge.admin:main"
 
 [dependency-groups]
 dev = [
@@ -32,6 +39,7 @@ dev = [
     "pip-audit>=2.10,<3",
     "pip-licenses>=5,<6",
     "pre-commit>=4,<5",
+    "schemathesis>=4,<5",
 ]
 
 [build-system]
@@ -70,6 +78,11 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 module = ["procrastinate.*"]
 ignore_missing_imports = false
+
+[[tool.mypy.overrides]]
+# zxcvbn ships no type information; it is only called in auth/passwords.py.
+module = ["zxcvbn"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

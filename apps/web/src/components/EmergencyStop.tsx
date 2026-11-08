@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { t } from "../i18n";
-import { api, call, ProblemError } from "../lib/api/client";
-import { useShell } from "../lib/useShell";
+import { api, call, idempotencyKey, ProblemError } from "../lib/api/client";
+import { useControls } from "../lib/useBackend";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { Icon } from "./icons";
 import { useToast } from "./Toasts";
@@ -12,24 +12,34 @@ import { useToast } from "./Toasts";
  * step-up re-authentication (the API answers 403 REAUTH_REQUIRED and the ReauthModal opens).
  */
 export function EmergencyStop({ compact = false }: { compact?: boolean }) {
-  const shell = useShell();
+  const controls = useControls();
   const qc = useQueryClient();
   const toast = useToast();
   const [dialog, setDialog] = useState<"stop" | "clear" | null>(null);
   const [reason, setReason] = useState("");
-  const active = shell.data?.controls.emergency_stop.active ?? false;
+  const active = controls.data?.emergency_stop.active ?? false;
 
   const stop = async () => {
-    await call(() => api.POST("/system/emergency-stop", { body: { reason } }));
-    await qc.invalidateQueries({ queryKey: ["shell"] });
+    const key = idempotencyKey();
+    const next = await call(() =>
+      api.POST("/api/v1/system/emergency-stop", { body: { reason }, headers: { "Idempotency-Key": key } }),
+    );
+    qc.setQueryData(["controls"], next);
     setDialog(null);
     setReason("");
     toast(t("estop.stoppedToast"));
   };
   const clear = async () => {
     try {
-      await call(() => api.DELETE("/system/emergency-stop"));
-      await qc.invalidateQueries({ queryKey: ["shell"] });
+      // Same key on the automatic retry after re-authentication (the first attempt stored nothing).
+      const key = idempotencyKey();
+      const next = await call(() =>
+        api.POST("/api/v1/system/emergency-stop/clear", {
+          body: { reason: "" },
+          headers: { "Idempotency-Key": key },
+        }),
+      );
+      qc.setQueryData(["controls"], next);
       toast(t("estop.clearedToast"));
     } catch (e) {
       if (e instanceof ProblemError) toast(e.problem.detail ?? e.problem.title, "danger");

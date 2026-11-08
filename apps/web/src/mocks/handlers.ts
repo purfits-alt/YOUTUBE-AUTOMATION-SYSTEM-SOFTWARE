@@ -5,15 +5,6 @@ import { PAGES, pageHref } from "../pages/registry";
 import en from "../i18n/en.json";
 import { overviewData, pageData, shellData } from "./data";
 
-/** Mock backend state (resets on reload). */
-const state = { estopActive: false, estopReason: null as string | null, stepUpUntil: 0 };
-
-export function resetMockState(): void {
-  state.estopActive = false;
-  state.estopReason = null;
-  state.stepUpUntil = 0;
-}
-
 function problem(status: number, code: string, title: string, detail: string): HttpResponse<Problem> {
   const body: Problem = {
     type: "about:blank",
@@ -44,7 +35,8 @@ async function scenarioGate(): Promise<HttpResponse<Problem> | null> {
   return null;
 }
 
-const pageHandlers: HttpHandler[] = PAGES.filter((p) => p.id !== "overview").map((page) =>
+/** Pages still on mock data (Overview has its own handler; Security and Settings are real since Phase 3). */
+const pageHandlers: HttpHandler[] = PAGES.filter((p) => !p.real && p.id !== "overview").map((page) =>
   http.get(API_BASE + page.api.replace("{id}", ":id"), async () => {
     const gate = await scenarioGate();
     if (gate) return gate;
@@ -59,30 +51,7 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json(overviewData(getScenario() === "empty"));
   }),
   ...pageHandlers,
-  http.get(API_BASE + "/shell", () => HttpResponse.json(shellData(state.estopActive, state.estopReason))),
-  http.post(API_BASE + "/system/emergency-stop", async ({ request }) => {
-    const body = (await request.json().catch(() => ({}))) as { reason?: string };
-    state.estopActive = true;
-    state.estopReason = body.reason?.trim() ? body.reason.trim() : null;
-    return HttpResponse.json(shellData(state.estopActive, state.estopReason).controls);
-  }),
-  http.delete(API_BASE + "/system/emergency-stop", () => {
-    if (Date.now() > state.stepUpUntil) {
-      return problem(403, "REAUTH_REQUIRED", "Confirm it's you", "This action needs your password again.");
-    }
-    state.estopActive = false;
-    state.estopReason = null;
-    return HttpResponse.json(shellData(false, null).controls);
-  }),
-  http.post(API_BASE + "/auth/step-up", async ({ request }) => {
-    const body = (await request.json().catch(() => ({}))) as { password?: string };
-    // Mock: any non-empty password except "wrong" is accepted. Real step-up arrives in Phase 3.
-    if (!body.password || body.password === "wrong") {
-      return problem(401, "BAD_CREDENTIALS", "Not accepted", "That password was not accepted.");
-    }
-    state.stepUpUntil = Date.now() + 5 * 60_000;
-    return new HttpResponse(null, { status: 204 });
-  }),
+  http.get(API_BASE + "/shell", () => HttpResponse.json(shellData())),
   http.get(API_BASE + "/search", ({ request }) => {
     const q = (new URL(request.url).searchParams.get("q") ?? "").trim().toLowerCase();
     if (!q) return HttpResponse.json([]);

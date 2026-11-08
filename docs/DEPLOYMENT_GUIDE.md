@@ -26,9 +26,9 @@
 4. **Python & tools:** `setup` installs **uv** (user-level), which installs Python 3.12 into `app\.python\` and creates the venv. All caches are redirected to `D:\…\app\.cache`.
 5. **FFmpeg:** `setup` downloads a pinned, hash-verified Windows build into `tools\` (LGPL/GPL build, used as an external program).
 6. **Models** (prompted downloads, hash-checked) into `models\`: Kokoro-82M (Apache-2.0), Piper voices you choose (licences shown), faster-whisper small (int8), OpenVoice V2 (optional), Chatterbox (optional, large). Ollama is optional (`OLLAMA_MODELS` set to `models\ollama`).
-7. **Database:** `setup` creates DB `tubeforge`, roles `tf_app` / `tf_auditor` / `tf_readonly`, and runs migrations.
+7. **Database:** `setup` creates DB `tubeforge` and its login role `tubeforge` (password kept in `%APPDATA%\postgresql\pgpass.conf`), then runs migrations (all tables, roles/permissions seed). Separate auditor/read-only DB roles (`tf_auditor`, `tf_readonly`) arrive with the auditors in Phase 11; until then append-only tables are protected by triggers.
 8. **Master key:** `setup` creates the master key in **Windows Credential Manager** (`TubeForge / master-key-v1`).
-9. **Owner account:** `setup` asks for email, display name and password (≥ 12 chars). Enable 2FA later in Settings (recommended).
+9. **Owner account:** `setup` asks for e-mail, display name and password (≥ 12 chars, hard to guess; typed twice, hidden). Enable 2FA later in Settings (recommended). If you forget it, run `tubeforge.ps1 reset-password` on this PC (it signs out every session).
 10. **Desktop shortcut:** `TubeForge.lnk` → `tubeforge.ps1 start` + opens `http://127.0.0.1:8765`.
 
 ## 3. First-run configuration (in the dashboard)

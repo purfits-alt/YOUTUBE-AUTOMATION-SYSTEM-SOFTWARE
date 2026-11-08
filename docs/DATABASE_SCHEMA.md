@@ -1,7 +1,7 @@
 # Database Schema
 
 **Version:** 1.0 (approved at C4, 2026-11-08) · **Date:** 2026-11-08 · **Engine:** PostgreSQL 16+
-**Migrations:** Alembic. The SQLAlchemy 2.0 models in `apps/api/tubeforge/db/models/` must match this document exactly. A CI check compares `alembic upgrade head` + `pg_dump --schema-only` against a committed snapshot.
+**Migrations:** Alembic. The DDL is **generated from this document** by `tools/gen_schema_sql.py` into `apps/api/tubeforge/db/schema_v1.sql` (migration 0002); a unit test fails if the committed SQL differs from what this document produces. SQLAlchemy 2.0 models in `apps/api/tubeforge/db/models/` are added per phase for the tables that phase uses and must match this document (Phase 3 decision, recorded in PROJECT_PROGRESS).
 
 ---
 
@@ -55,10 +55,17 @@ CREATE TABLE sessions (
   user_id uuid NOT NULL REFERENCES users,
   csrf_token_hash char(64) NOT NULL,
   mfa_passed boolean NOT NULL DEFAULT false,
+  reauth_at timestamptz NULL,                         -- last step-up re-auth; sensitive actions need it within 5 min (added in Phase 3)
   created_at, last_seen_at timestamptz NOT NULL, expires_at timestamptz NOT NULL,
   revoked_at timestamptz NULL, user_agent text, ip inet
 );
 CREATE INDEX ON sessions (user_id) WHERE revoked_at IS NULL;
+
+CREATE TABLE user_recovery_codes (                    -- 10 one-time TOTP recovery codes, Argon2-hashed (added in Phase 3)
+  id uuid PRIMARY KEY, user_id uuid NOT NULL REFERENCES users,
+  code_hash text NOT NULL, used_at timestamptz NULL, created_at
+);
+CREATE INDEX ON user_recovery_codes (user_id) WHERE used_at IS NULL;
 
 CREATE TABLE system_settings (                        -- single row, id = 1
   id smallint PRIMARY KEY CHECK (id = 1),
@@ -765,6 +772,15 @@ CREATE TABLE backups (id uuid PK, kind text NOT NULL CHECK (kind IN ('DB','SECRE
   size_bytes bigint, sha256 char(64), started_at timestamptz, finished_at timestamptz, status text NOT NULL, error text NULL, restore_tested_at timestamptz NULL);
 CREATE TABLE provider_reverify_reminders (provider_code text PRIMARY KEY REFERENCES provider_registry, due_at date NOT NULL);
 CREATE TABLE adr_references (adr_id text PRIMARY KEY, title text NOT NULL, status text NOT NULL, path text NOT NULL);
+
+CREATE TABLE idempotency_keys (                       -- BACKEND_SPECIFICATION §1: replay the first response for 24 h (added in Phase 3)
+  user_id uuid NOT NULL REFERENCES users, key uuid NOT NULL,
+  method text NOT NULL, path text NOT NULL, request_sha256 char(64) NOT NULL,
+  status_code int NULL, response_body jsonb NULL,     -- NULL while the first request is still running
+  created_at, expires_at timestamptz NOT NULL,
+  PRIMARY KEY (user_id, key)
+);
+CREATE INDEX ON idempotency_keys (expires_at);
 ```
 
 ## 13. Relationships (summary)

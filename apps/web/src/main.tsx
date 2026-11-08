@@ -16,12 +16,16 @@ async function startMocks(): Promise<void> {
   await worker.start({ onUnhandledRequest: "bypass", quiet: true });
 }
 
-void startMocks().then(() => {
-  const root = document.getElementById("root");
-  if (!root) throw new Error("#root element missing");
-  createRoot(root).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  );
-});
+// If the mock worker cannot start (service workers blocked or unsupported), render anyway: real
+// pages work, and mocked pages show their error state instead of a blank screen.
+void startMocks()
+  .catch(() => undefined)
+  .then(() => {
+    const root = document.getElementById("root");
+    if (!root) throw new Error("#root element missing");
+    createRoot(root).render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+  });

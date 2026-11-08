@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { createMemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 import { setScenario } from "../lib/scenario";
+import { resetTestApi } from "../mocks/testApi";
 import { App, makeQueryClient } from "./App";
 import { routes } from "./routes";
 
@@ -90,5 +91,45 @@ describe("app shell", () => {
   it("shows a not-found page for unknown routes", async () => {
     renderAt("/nope");
     expect(await screen.findByTestId("page-not-found")).toBeInTheDocument();
+  });
+
+  it("shows the sign-in screen when signed out, rejects a wrong password, then opens the app", async () => {
+    resetTestApi({ signedIn: false });
+    renderAt("/");
+    const form = await screen.findByTestId("login-form");
+    fireEvent.change(within(form).getByLabelText("E-mail"), { target: { value: "owner@example.com" } });
+    fireEvent.change(within(form).getByLabelText("Password"), { target: { value: "nope" } });
+    fireEvent.click(within(form).getByRole("button", { name: "Sign in" }));
+    expect(await within(form).findByRole("alert")).toHaveTextContent("not correct");
+    fireEvent.change(within(form).getByLabelText("Password"), { target: { value: "right password" } });
+    fireEvent.click(within(form).getByRole("button", { name: "Sign in" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Overview Dashboard" })).toBeInTheDocument();
+  });
+
+  it("Settings saves with If-Match and shows the version conflict message", async () => {
+    renderAt("/settings");
+    const form = await screen.findByTestId("settings-form");
+    await waitFor(() => expect(within(form).getByLabelText(/Disk budget/)).toHaveValue(200));
+    fireEvent.change(within(form).getByLabelText(/Disk budget/), { target: { value: "150" } });
+    fireEvent.click(within(form).getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("Settings saved.")).toBeInTheDocument();
+    // The form still holds version 1 → the next save conflicts until reloaded.
+    resetTestApi({ settings: { ...(await import("../mocks/testApi")).testSettings(), version: 5 } });
+    fireEvent.click(within(form).getByRole("button", { name: "Save" }));
+    expect(await within(form).findByText(/changed in another window/)).toBeInTheDocument();
+  });
+
+  it("Security verifies the audit chain", async () => {
+    renderAt("/security");
+    await screen.findByTestId("state-success");
+    expect(screen.getByText("auth.login")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("verify-chain"));
+    expect(await screen.findByTestId("chain-result")).toHaveTextContent("2 rows intact");
+  });
+
+  it("Sign out returns to the sign-in screen", async () => {
+    renderAt("/");
+    fireEvent.click(await screen.findByTestId("sign-out"));
+    expect(await screen.findByTestId("login-form")).toBeInTheDocument();
   });
 });

@@ -5,6 +5,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
+.hypothesis/
 .coverage
 htmlcov/
 *.egg-info/
@@ -18,12 +19,14 @@ apps/web/test-results/
 apps/web/playwright-report/
 *.tsbuildinfo
 
-# TubeForge runtime data & secrets — never commit
-data/
-pgdata/
-models/
-tools/bin/
-config/tubeforge.toml
+# TubeForge runtime data & secrets — never commit.
+# Anchored to the repository root (leading /): an unanchored "models/" once hid the code package
+# apps/api/tubeforge/db/models/ (tests/unit/test_repo_checks.py now guards against that).
+/data/
+/pgdata/
+/models/
+/tools/bin/
+/config/tubeforge.toml
 .env
 .env.*
 !.env.example

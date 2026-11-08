@@ -9,6 +9,7 @@
     start   - start the API and both workers, then open the dashboard
     stop    - stop the API and workers
     status  - show running processes and readiness
+    reset-password - set a new owner password (if you forgot it); signs out all sessions
 
   Install root (owner decision C3): D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE
   The program lives in <root>\app (this repository). Data, models, database and backups
@@ -20,7 +21,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('doctor', 'setup', 'start', 'stop', 'status')]
+    [ValidateSet('doctor', 'setup', 'start', 'stop', 'status', 'reset-password')]
     [string]$Command = 'status',
 
     [string]$InstallRoot = '',
@@ -266,6 +267,12 @@ function Invoke-Setup {
         if ($LASTEXITCODE -ne 0) { throw 'database migration failed' }
         Write-Check 'Database schema' 'OK' 'migrations applied'
 
+        # Master key in Windows Credential Manager (encrypts tokens, keys and the 2FA secret).
+        & (Join-Path $VenvScripts 'tubeforge-admin.exe') init-keys
+        if ($LASTEXITCODE -ne 0) { throw 'creating the master key failed' }
+        Write-Check 'Master key' 'OK' 'Windows Credential Manager: TubeForge / master-key-v1'
+        Initialize-Owner
+
         if (Get-Command pnpm -ErrorAction SilentlyContinue) {
             & pnpm -C (Join-Path $AppDir 'apps\web') install --frozen-lockfile
             & pnpm -C (Join-Path $AppDir 'apps\web') build
@@ -277,6 +284,34 @@ function Invoke-Setup {
 
     if (-not $NonInteractive) { New-DesktopShortcut }
     Write-Host "Setup complete. Start TubeForge with: tubeforge.ps1 start" -ForegroundColor Green
+}
+
+function Initialize-Owner {
+    $admin = Join-Path $VenvScripts 'tubeforge-admin.exe'
+    & $admin has-owner
+    if ($LASTEXITCODE -eq 0) { Write-Check 'Owner account' 'OK' 'exists'; return }
+    if ($NonInteractive) {
+        if (-not $env:TUBEFORGE_OWNER_EMAIL -or -not $env:TUBEFORGE_OWNER_PASSWORD) {
+            Write-Check 'Owner account' 'WARN' 'not created (set TUBEFORGE_OWNER_EMAIL and TUBEFORGE_OWNER_PASSWORD)'
+            return
+        }
+        & $admin create-owner --email $env:TUBEFORGE_OWNER_EMAIL --name 'Owner'
+    } else {
+        Write-Host 'Create the owner account (you sign in to the dashboard with it).' -ForegroundColor Cyan
+        $email = Read-Host 'Your e-mail address'
+        $name = Read-Host 'Your name (shown in the dashboard)'
+        if (-not $name) { $name = 'Owner' }
+        & $admin create-owner --email $email --name $name
+    }
+    if ($LASTEXITCODE -ne 0) { throw 'creating the owner account failed' }
+    Write-Check 'Owner account' 'OK' 'created'
+}
+
+function Invoke-ResetPassword {
+    Set-TubeForgeEnvironment
+    $email = Read-Host 'Owner e-mail address'
+    & (Join-Path $VenvScripts 'tubeforge-admin.exe') reset-password --email $email
+    if ($LASTEXITCODE -ne 0) { throw 'password reset failed' }
 }
 
 function New-DesktopShortcut {
@@ -420,6 +455,7 @@ function Invoke-Status {
 switch ($Command) {
     'doctor' { exit (Invoke-Doctor) }
     'setup'  { Invoke-Setup; exit 0 }
+    'reset-password' { Invoke-ResetPassword; exit 0 }
     'start'  { Invoke-Start; exit 0 }
     'stop'   { Invoke-Stop; exit 0 }
     'status' { exit (Invoke-Status) }

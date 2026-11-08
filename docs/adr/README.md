@@ -25,3 +25,4 @@
 | [ADR-0021](ADR-0021-optional-external-editors.md) | Optional external editors for video and thumbnails | Accepted |
 | [ADR-0022](ADR-0022-project-licence-mit.md) | Project licence: MIT | Accepted |
 | [ADR-0023](ADR-0023-dashboard-visual-design.md) | Dashboard visual design: tokens, inline icons, own Lottie animations | Accepted |
+| [ADR-0024](ADR-0024-schema-generated-from-document.md) | Database DDL generated from DATABASE_SCHEMA.md | Accepted |

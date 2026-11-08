@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from tubeforge.config import Settings
@@ -73,3 +74,32 @@ def test_spa_deep_links_fall_back_to_index(settings: Settings, tmp_path: Path) -
     # Missing files and API paths stay 404 (no HTML served in their place).
     assert c.get("/assets/missing.js").status_code == 404
     assert c.get("/api/v1/unknown").status_code == 404
+
+
+def test_readyz_reports_missing_master_key(settings: Settings, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("TUBEFORGE_MASTER_KEY", raising=False)
+    body = client(settings).get("/readyz").json()
+    assert body["checks"]["keyring"]["ok"] is False
+    assert "init-keys" in body["checks"]["keyring"]["detail"]
+
+
+def test_login_without_master_key_is_not_ready(settings: Settings, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("TUBEFORGE_MASTER_KEY", raising=False)
+    r = client(settings).post("/api/v1/auth/login", json={"email": "a@b.co", "password": "x"})
+    assert r.status_code == 503 and r.json()["code"] == "NOT_READY"
+
+
+def test_405_lists_every_documented_method(settings: Settings) -> None:
+    r = client(settings).request("DELETE", "/api/v1/settings")
+    assert r.status_code == 405
+    assert r.headers["allow"] == "GET, PUT"
+    assert r.json()["code"] == "METHOD_NOT_ALLOWED"
+    r = client(settings).request("PATCH", "/api/v1/system/kill-switches/abc")
+    assert r.headers["allow"] == "DELETE"
+
+
+def test_cursor_must_match_documented_pattern(settings: Settings, monkeypatch: pytest.MonkeyPatch) -> None:
+    from tubeforge.api.pagination import decode_cursor, encode_cursor
+
+    assert decode_cursor(encode_cursor(42)) == 42
+    assert decode_cursor(None) is None
