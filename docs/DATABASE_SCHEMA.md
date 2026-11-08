@@ -490,6 +490,34 @@ CREATE TABLE caption_tracks (
 );
 ```
 
+### 6a. External editors (ADR-0021)
+
+```sql
+CREATE TABLE external_editors (
+  code text PRIMARY KEY,                              -- 'canva','capcut','inshot','filmora','davinci','kdenlive','shotcut','openshot','gimp','krita','photopea','adobe_express','premiere','photoshop','custom:<slug>'
+  name text NOT NULL, kind text NOT NULL CHECK (kind IN ('DESKTOP','WEB','MOBILE')),
+  supports_video boolean NOT NULL, supports_thumbnail boolean NOT NULL,
+  launch_type text NOT NULL CHECK (launch_type IN ('EXE','URL','MANUAL')),
+  exe_path text NULL, url text NULL,
+  enabled boolean NOT NULL DEFAULT false,
+  licence_notes text NULL,                            -- e.g. 'Library music not cleared for monetised YouTube on free plan'
+  watermark_on_free_plan boolean NULL,
+  updated_at
+);
+
+CREATE TABLE external_edit_sessions (
+  id uuid PRIMARY KEY, project_id uuid NOT NULL REFERENCES video_projects, channel_id uuid NOT NULL,
+  subject text NOT NULL CHECK (subject IN ('VIDEO','THUMBNAIL')),
+  editor_code text NOT NULL REFERENCES external_editors,
+  handoff_path text NOT NULL, source_asset_ids uuid[] NOT NULL,
+  state text NOT NULL CHECK (state IN ('HANDED_OFF','RETURNED','CANCELLED')),
+  returned_asset_id uuid NULL REFERENCES media_assets,
+  declaration jsonb NULL,                             -- schema external_edit_declaration.json (app plan, library assets+licences, AI content)
+  started_at timestamptz NOT NULL DEFAULT now(), returned_at timestamptz NULL
+);
+CREATE INDEX ON external_edit_sessions (project_id, state);
+```
+
 ## 7. Audits, approvals, policy
 
 ```sql
@@ -778,7 +806,7 @@ erDiagram
 |---|---|
 | channel_state | PROPOSED, APPROVED, REJECTED, ONBOARDING, CONNECTED, ACTIVE, PAUSED, NEEDS_REAUTH, DISCONNECTING, DISCONNECTED |
 | idea_state | SUGGESTED, SHORTLISTED, SCHEDULED, APPROVED, IN_PRODUCTION, PRODUCED, DISCARDED |
-| project_state | IDEA, RESEARCHING, RESEARCH_REVIEW, SCRIPTING, SCRIPT_REVIEW, STORYBOARDING, ASSET_GENERATION, VOICEOVER, ASSEMBLY, ROUGH_CUT_REVIEW, RENDERING, PACKAGING, QC_AUDIT, BLOCKED, READY_FOR_APPROVAL, APPROVED, UPLOADING, PROCESSING, SCHEDULED, PRIVATE_DONE, PUBLISHED, ANALYZING, ARCHIVED, PAUSED, CANCELLED, FAILED |
+| project_state | IDEA, RESEARCHING, RESEARCH_REVIEW, SCRIPTING, SCRIPT_REVIEW, STORYBOARDING, ASSET_GENERATION, VOICEOVER, ASSEMBLY, ROUGH_CUT_REVIEW, EXTERNAL_EDITING, RENDERING, PACKAGING, QC_AUDIT, BLOCKED, READY_FOR_APPROVAL, APPROVED, UPLOADING, PROCESSING, SCHEDULED, PRIVATE_DONE, PUBLISHED, ANALYZING, ARCHIVED, PAUSED, CANCELLED, FAILED |
 | render_state | QUEUED, WAITING_RESOURCES, RUNNING, SEGMENT_DONE, CONCATENATING, QC_CHECK, SUCCEEDED, QC_FAILED, RETRYING, FAILED, CANCELLED |
 | upload_state | PREFLIGHT, REJECTED, WAITING_QUOTA, SESSION_STARTED, TRANSFERRING, RESUMING, UPLOADED, SETTING_THUMBNAIL, SETTING_CAPTIONS, SETTING_PLAYLIST, POLLING_PROCESSING, COMPLETED, PROCESSING_FAILED, FAILED |
 | approval_state | PENDING, APPROVED, CHANGES_REQUESTED, REJECTED, EXPIRED, INVALIDATED |
@@ -786,7 +814,7 @@ erDiagram
 | voice_profile_state | RECORDING_SAMPLES, CONSENT_PENDING, VERIFYING, READY, DISABLED, REJECTED, DELETED |
 | stock_purchase_state | QUOTED, REFUSED, CONFIRMED, LICENSED, DOWNLOADED, FAILED |
 | asset_kind | IMAGE, VIDEO_CLIP, AUDIO_NARRATION, AUDIO_MUSIC, AUDIO_SFX, FONT, RENDER_PROXY, RENDER_FINAL, THUMBNAIL, CAPTION, VOICE_SAMPLE, LICENCE_PROOF, OTHER |
-| asset_origin | OWNER_UPLOAD, OWNER_RECORDING, PROCEDURAL, TTS, VOICE_CLONE, STOCK_FREE_API, STOCK_PAID_API, STOCK_MANUAL_IMPORT, CC0_IMPORT, AI_IMAGE, RENDER |
+| asset_origin | OWNER_UPLOAD, OWNER_RECORDING, PROCEDURAL, TTS, VOICE_CLONE, STOCK_FREE_API, STOCK_PAID_API, STOCK_MANUAL_IMPORT, CC0_IMPORT, AI_IMAGE, RENDER, EXTERNAL_EDIT |
 | rights_basis | OWNER_CREATED, SYSTEM_GENERATED, CC0, PUBLIC_DOMAIN, CC_BY, STOCK_FREE_LICENCE, STOCK_PAID_LICENCE, YOUTUBE_AUDIO_LIBRARY, MODEL_OUTPUT |
 
 ## 15. Retention jobs (maintenance queue)

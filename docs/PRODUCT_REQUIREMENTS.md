@@ -1,6 +1,6 @@
 # TubeForge — Product Requirements Document (PRD)
 
-**Version:** 1.2 (v1.0 approved at C1; v1.1 approved at C2; v1.2 adds owner-requested voice cloning and stock media at C2 — all 2026-11-08; see §11) · **Date:** 2026-11-08
+**Version:** 1.3 (v1.0 approved at C1; v1.1 approved at C2; v1.2 adds owner-requested voice cloning and stock media at C2 — all 2026-11-08; see §11; v1.3 adds optional external editors, ADR-0021) · **Date:** 2026-11-08
 **Sources:** `00_MASTER_PROMPT.md`, `PHASE0_VALIDATION_REPORT.md`, C0 answers in `PROJECT_PROGRESS.md`
 **Requirement IDs** (`FR-…`, `NFR-…`, `US-…`) are stable. Later specs, tests and roadmap tasks refer back to them.
 
@@ -215,6 +215,14 @@ As the owner, I want to record my own voice, **or generate narration in a clone 
 - AC3: An ffprobe-based QC report checks duration, streams, resolution, frame rate, loudness, black/frozen frames and silence gaps.
 - AC4: On H-LITE, renders run one at a time, can be scheduled for night hours, and can resume or restart after a crash.
 
+**US-6.4 Optional external editing** (Phase 9 video, Phase 10 thumbnails) — *owner request, ADR-0021*
+As the owner, I want to optionally pick an external app (Canva, CapCut, InShot, Filmora or any other) to edit a video or thumbnail, while the built-in editor stays the default.
+- AC1: An "Edit with…" picker in Video Studio and Thumbnail Creator lists *Built-in (default)* plus every editor enabled in Settings. Custom editors can be added (name + exe path or URL).
+- AC2: Choosing an editor creates a hand-off folder on D: with the files and specs, opens it, and launches the app or website (mobile: copy instructions). No external app UI is automated.
+- AC3: The re-import needs a declaration (app and plan, library assets used with licences, AI content added). The imported file runs through QC, rights, originality, policy and thumbnail checks. Earlier approvals are invalidated.
+- AC4: CapCut library music and Canva Popular Music are treated as not licensed for monetised YouTube unless the owner attaches licence proof. Free-plan watermarks produce a warning.
+- AC5: The built-in cut is kept and can be restored.
+
 **US-6.3 Captions** (Phase 9/10)
 - AC: Subtitles come from the script and are aligned with faster-whisper, exported as SRT/VTT, and editable. Urdu captions always need owner review.
 
@@ -390,4 +398,5 @@ As the owner, I want warnings when my channel looks templated or mass-produced s
 | 1.1 | 2026-11-08 | Windows 10 ESU note | Consumer ESU reportedly extended to Oct 2027 |
 | 1.1 | 2026-11-08 | Approved at C2 | — |
 | 1.2 | 2026-11-08 | US-5.3: owner voice cloning (converter + zero-shot), consent and anti-misuse controls | Owner request at C2, ADR-0019 |
+| 1.3 | 2026-11-08 | US-6.4: optional external editors (Canva, CapCut, InShot, Filmora, any other) via hand-off/re-import | Owner request in Step 0.5, ADR-0021 |
 | 1.2 | 2026-11-08 | US-5.2: optional stock media — manual import, free API adapters, paid API adapters (disabled, budget cap 0) | Owner request at C2, ADR-0020 |

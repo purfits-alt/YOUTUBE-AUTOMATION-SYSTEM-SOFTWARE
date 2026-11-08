@@ -97,6 +97,10 @@ stateDiagram-v2
     ASSEMBLY --> ROUGH_CUT_REVIEW : timeline JSON + proxy render ready
     ROUGH_CUT_REVIEW --> ASSEMBLY : OWNER requests changes
     ROUGH_CUT_REVIEW --> RENDERING : OWNER approves cut
+    ROUGH_CUT_REVIEW --> EXTERNAL_EDITING : OWNER picks Edit with external app (optional, ADR-0021)
+    PACKAGING --> EXTERNAL_EDITING : OWNER edits final video externally (optional)
+    EXTERNAL_EDITING --> RENDERING : OWNER re-imports file + declaration (QC runs on the imported master)
+    EXTERNAL_EDITING --> ROUGH_CUT_REVIEW : OWNER cancels external edit (built-in cut kept)
     RENDERING --> PACKAGING : final render + QC report OK
     RENDERING --> ASSEMBLY : QC failed (auto-fixable) – max 2 loops
     PACKAGING --> QC_AUDIT : thumbnails ≥3, SEO package, captions, AI-disclosure assessment done
@@ -135,6 +139,15 @@ Universal: any non-terminal state → `PAUSED` | `CANCELLED` | `FAILED`.
 | BLOCKED → READY_FOR_APPROVAL | OWNER override with a written reason (≥ 20 chars). **Not available** for copyright-critical failures (missing rights record) — those must be fixed. | OWNER |
 | READY_FOR_APPROVAL → APPROVED | Owner selected: thumbnail, final title, `privacyStatus` (explicit), `selfDeclaredMadeForKids` (explicit), `containsSyntheticMedia` (confirmed), publish time (optional). If Private-only mode is ON, privacy must be `private` and no `publishAt`. Approval record stores a hash of the exact metadata + render + thumbnail. | OWNER [S][F] |
 | APPROVED → UPLOADING | Approval hash == current package hash (any change after approval invalidates it). Channel ACTIVE. Publishing kill switch OFF (for public or scheduled). | ORCH |
+
+### 3a. Optional external editing (ADR-0021)
+| Transition | Guard | Responsible |
+|---|---|---|
+| ROUGH_CUT_REVIEW / PACKAGING → EXTERNAL_EDITING | Editor enabled in Settings. Hand-off folder created. | OWNER |
+| EXTERNAL_EDITING → RENDERING | Re-imported file present. **Declaration form complete** (app, plan, library assets + licences, AI content). In RENDERING the imported master skips FFmpeg rendering and goes straight to QC_CHECK. All later audits and approvals apply as normal (content hash changed → old approvals invalidated). | OWNER |
+| EXTERNAL_EDITING → ROUGH_CUT_REVIEW | Owner cancels. The session is closed and the built-in timeline is kept. | OWNER |
+
+**Thumbnails:** the same round trip without a project-state change. The re-imported image becomes a new thumbnail variant (`origin = EXTERNAL_EDIT`) that must pass thumbnail checks and the rights declaration before it can be selected.
 
 ### What "auto-fixable" means (RENDERING → ASSEMBLY)
 Loudness out of range (re-normalise), a small A/V drift (re-mux), or a missing caption track. After two loops the project goes to `FAILED` and the owner is notified.

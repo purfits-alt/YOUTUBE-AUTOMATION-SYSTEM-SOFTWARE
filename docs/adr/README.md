@@ -22,3 +22,4 @@
 | [ADR-0018](ADR-0018-repo-tooling.md) | Monorepo layout and tooling | Accepted |
 | [ADR-0019](ADR-0019-owner-voice-cloning.md) | Owner voice recording and owner-only voice cloning | Accepted |
 | [ADR-0020](ADR-0020-stock-media-providers.md) | Optional stock video and image providers (free and paid) | Accepted |
+| [ADR-0021](ADR-0021-optional-external-editors.md) | Optional external editors for video and thumbnails | Accepted |
