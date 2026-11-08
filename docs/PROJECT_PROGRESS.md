@@ -2,8 +2,8 @@
 
 > Living document. Updated at every checkpoint and at the end of every phase.
 
-**Current phase:** Phase 3 — Backend, database & auth
-**Current step:** Phase 3 (+ Channel Trending screens) approved by the owner 2026-11-08; PR into `main` opened. Next: Phase 4 — channel onboarding, OAuth & quota ledger.
+**Current phase:** Phase 4 — Channel onboarding, OAuth & quota ledger
+**Current step:** P4-A (YouTube core) built; next P4-B (OAuth PKCE). Phase 3 merged to `main` (PR #7).
 **Last updated:** 2026-11-08
 
 ---
@@ -262,6 +262,16 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 **Owner request during Phase 3 — Channel Trending (2026-11-08):** Outliers, Replicate / "milky" videos and New Ideas. Owner decisions: **own channels only** for outliers (YouTube data policy, ADR-0015), **variations of own winners** with an originality guard (similarity ≤ 0.70 + owner value-add; near copies refused), **plan + screens now**. Done: US-4.6, ADR-0025, FRONTEND_SPECIFICATION §32 (test plan moved to §33), A08 variation mode, API endpoints, schema (`video_ideas.source` + REPLICATE, `based_on_youtube_video_id`, `variation_kind`, `similarity_to_source`), roadmap (Phase 7 variation mode, Phase 13 outliers), compliance line; **Page 32 Channel Trending** (Channels group) with three keyboard-accessible tabs on sample data and the replicate dialog (the guard refuses "Updated version" in the sample). Tests: Vitest 23, Playwright 128 route×state cases + axe for page 32. Also fixed: the menu highlighted "Channel Manager" on every /channels/… page (links now match exactly).
 
 **Demo script (owner, Windows):** `git -C "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app" pull` → `tubeforge.ps1 setup` (creates the master key; asks your e-mail, name and a password) → `tubeforge.ps1 start` → sign in → Settings › Two-factor sign-in › scan the QR with a phone authenticator, enter the code, save the recovery codes → press Emergency Stop (red banner on every page; open a second tab to see it appear there too) → clear it (asks your password and code) → Audit & Security Center › Verify chain → Channels › Channel Trending: switch tabs, press Replicate this, try "Updated version" (refused as too similar) and "New angle" (created).
+
+### Phase 4 — Channel onboarding, OAuth & quota ledger · in progress · branch `claude/vigilant-tesla-lkhgme`
+
+**Plan (from IMPLEMENTATION_ROADMAP Phase 4), in four steps:**
+- **P4-A YouTube core** ✅ — `youtube/errors.py` (classification §7), `youtube/quota.py` (buckets, PT day + PKT reset time, reservations under an advisory lock, ledger, research share, forecast), migration 0004 seeding `quota_config` with the costs verified 2026-11-08, `youtube/client.py` `SafeYouTubeClient` preflight I-1…I-12 (I-4 refuses non-test uploads until Phase 9; I-12 refuses auto-publish until Phase 14) and an httpx REST client (ADR-0026). ORM models for the Phase 4 tables. 5-second private test clip (`youtube/assets/test_clip.mp4`, own artwork). `tzdata` added so time zones work on Windows.
+- **P4-B OAuth** — OAuth client registration (secret encrypted), PKCE loopback flow (`/oauth/callback` on 127.0.0.1:8765), identity confirmation via `channels.list mine=true`, token refresh → NEEDS_REAUTH, revoke + 7-day data deletion, token-health job with Testing-mode 7-day warnings. Mocked Google in tests.
+- **P4-C Channels & test upload** — Channels API (CRUD, start-onboarding/pause/resume/disconnect/reconnect, publishing rules, private-only/mode with step-up), 10 onboarding steps, resumable private test upload job (8 MiB chunks, persisted offset, resume, idempotent) with a fault-injection test, retention jobs (cache purge, deletion tasks, 30-day re-auth check), minimal notifications + bell count.
+- **P4-D Web, site & docs** — Channel Manager + Onboarding pages on the real API, bell, `site/privacy.html` + `site/terms.html` (DP-5), owner guide for the Google Cloud project (no billing), OAuth Desktop client and test channel, e2e + CI, phase report. Then the one **manual** real OAuth + private upload on the owner PC.
+
+**Decisions so far:** ADR-0026 (httpx instead of the Google client libraries). Fix: the schema generator now keeps commas inside quoted defaults together (`min_audit_scores`).
 
 ## Resource consumption
 

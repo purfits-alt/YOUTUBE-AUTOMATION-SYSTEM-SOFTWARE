@@ -1373,6 +1373,7 @@ dependencies = [
     { name = "argon2-cffi" },
     { name = "cryptography" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "keyring" },
     { name = "procrastinate" },
     { name = "psycopg", extra = ["binary"] },
@@ -1382,13 +1383,13 @@ dependencies = [
     { name = "segno" },
     { name = "sqlalchemy" },
     { name = "structlog" },
+    { name = "tzdata" },
     { name = "uvicorn", extra = ["standard"] },
     { name = "zxcvbn" },
 ]
 
 [package.dev-dependencies]
 dev = [
-    { name = "httpx" },
     { name = "mypy" },
     { name = "pip-audit" },
     { name = "pip-licenses" },
@@ -1405,6 +1406,7 @@ requires-dist = [
     { name = "argon2-cffi", specifier = ">=25,<26" },
     { name = "cryptography", specifier = ">=50.0.2,<51" },
     { name = "fastapi", specifier = ">=0.162,<0.163" },
+    { name = "httpx", specifier = ">=0.28,<0.29" },
     { name = "keyring", specifier = ">=25,<26" },
     { name = "procrastinate", specifier = ">=3.10,<3.11" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3,<3.4" },
@@ -1414,13 +1416,13 @@ requires-dist = [
     { name = "segno", specifier = ">=1.6,<2" },
     { name = "sqlalchemy", specifier = ">=2.1,<2.2" },
     { name = "structlog", specifier = ">=26.1,<27" },
+    { name = "tzdata", specifier = ">=2025.2" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.54,<0.55" },
     { name = "zxcvbn", specifier = ">=4.5,<5" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "httpx", specifier = ">=0.28,<0.29" },
     { name = "mypy", specifier = ">=1.19,<2" },
     { name = "pip-audit", specifier = ">=2.10,<3" },
     { name = "pip-licenses", specifier = ">=5,<6" },

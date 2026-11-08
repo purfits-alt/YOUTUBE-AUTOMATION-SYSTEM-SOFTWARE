@@ -1023,6 +1023,7 @@
             "schema": {
               "anyOf": [
                 {
+                  "pattern": "^[A-Za-z0-9_.:-]{1,64}$",
                   "type": "string"
                 },
                 {
@@ -1039,6 +1040,7 @@
             "schema": {
               "anyOf": [
                 {
+                  "pattern": "^[A-Za-z0-9_.:-]{1,64}$",
                   "type": "string"
                 },
                 {
@@ -2785,6 +2787,7 @@
             "schema": {
               "anyOf": [
                 {
+                  "pattern": "^[A-Za-z0-9_.:-]{1,64}$",
                   "type": "string"
                 },
                 {
@@ -2801,6 +2804,11 @@
             "schema": {
               "anyOf": [
                 {
+                  "enum": [
+                    "INFO",
+                    "WARNING",
+                    "CRITICAL"
+                  ],
                   "type": "string"
                 },
                 {

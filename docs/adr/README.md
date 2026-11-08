@@ -27,3 +27,4 @@
 | [ADR-0023](ADR-0023-dashboard-visual-design.md) | Dashboard visual design: tokens, inline icons, own Lottie animations | Accepted |
 | [ADR-0024](ADR-0024-schema-generated-from-document.md) | Database DDL generated from DATABASE_SCHEMA.md | Accepted |
 | [ADR-0025](ADR-0025-channel-trending-own-outliers.md) | Channel Trending: own-channel outliers and replicating own winners | Accepted |
+| [ADR-0026](ADR-0026-youtube-rest-via-httpx.md) | YouTube and Google OAuth REST via httpx (no Google client libraries) | Accepted |

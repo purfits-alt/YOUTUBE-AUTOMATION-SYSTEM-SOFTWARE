@@ -64,7 +64,7 @@ See `FREE_TIER_PROVIDER_MATRIX.md` §2 (DP-1 … DP-10) and ADR-0015 / ADR-0016.
 | `retention.py` | DP-2/3/4 jobs (DATABASE_SCHEMA §15) |
 | `errors.py` | Error classification table (§7) |
 
-Library: `google-api-python-client` + `google-auth` + `google-auth-oauthlib` (Apache-2.0), versions pinned in `uv.lock`. The upload engine uses `MediaFileUpload(resumable=True, chunksize=8 MiB)` and persists the resumable session URI itself.
+Library: **httpx** against the documented REST endpoints (ADR-0026; the Google client libraries are not used). The upload engine speaks the resumable protocol directly (`uploadType=resumable`, 8 MiB chunks) and persists the session URI and confirmed offset itself. Only `www.googleapis.com` and `youtube.googleapis.com` are allowed in `client.py`; OAuth uses `accounts.google.com` and `oauth2.googleapis.com`.
 
 ## 5. `SafeYouTubeClient` preflight invariants (every mutating call)
 
@@ -117,10 +117,10 @@ Every refusal → `audit_log` + `security_events` (WARNING) + a notification. Un
 
 - **Buckets:** `VIDEO_UPLOADS` (100 calls), `SEARCH` (100 calls), `DEFAULT` (10,000 units), `ANALYTICS` (YouTube Analytics API, separate — limits read from Cloud Console by the owner and entered in `quota_config`).
 - **PT day:** `pt_day = (now() AT TIME ZONE 'America/Los_Angeles')::date`. The reset time is shown in Asia/Karachi too (e.g. "resets at 13:00 PKT", which changes with US daylight saving).
-- **Reservation:** `INSERT quota_reservations` in a SERIALIZABLE transaction, checking `sum(ledger today) + sum(held) + units ≤ limit × (1 − reserve%)`. Settled after the call (actual units from config). Released on failure-before-call. Held reservations expire after 30 min.
+- **Reservation:** `INSERT quota_reservations` under a transaction-level advisory lock per (project, PT day, bucket) — same effect as SERIALIZABLE without retry loops — checking `sum(ledger today) + sum(held) + units ≤ limit × (1 − reserve%)`. Settled after the call (actual units from config). Released on failure-before-call. Held reservations expire after 30 min.
 - **Research share:** SEARCH bucket use by research agents ≤ `research_share_pct` (default 30 → 30 searches/day).
 - **Forecast:** daily job computes the planned uploads × package cost for the next 7 days against capacity, and shows warnings in the Upload Manager and the Cost & Usage Manager.
-- Every request is recorded, including invalid ones (≥ 1 unit, per Google).
+- Every request is recorded, including invalid ones (≥ 1 unit, per Google). A `quotaExceeded` answer holds the rest of that bucket until the PT reset. A method without a configured cost is refused (no guessing).
 
 ## 9. Analytics (Phase 13)
 

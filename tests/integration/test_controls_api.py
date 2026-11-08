@@ -128,3 +128,17 @@ def test_sse_broadcasts_control_changes_and_replays(owner_client: tuple[TestClie
 
     anonymous = TestClient(app, base_url="http://127.0.0.1:8765")
     assert anonymous.get("/api/v1/events/stream").status_code == 401
+
+
+def test_log_filters_reject_nul_and_junk(owner_client: tuple[TestClient, dict[str, str]]) -> None:
+    """Regression: ?kind=%00 reached PostgreSQL and became a 500 (contract test finding)."""
+    client, _ = owner_client
+    for url in (
+        "/api/v1/security-events?kind=%00",
+        "/api/v1/security-events?severity=LOUD",
+        "/api/v1/audit-log?action=a%00b",
+        "/api/v1/audit-log?entity_type=" + "x" * 65,
+    ):
+        assert client.get(url).status_code == 400, url
+    assert client.get("/api/v1/security-events?kind=LOGIN_FAILED&severity=WARNING").status_code == 200
+    assert client.get("/api/v1/audit-log?action=auth.login").status_code == 200

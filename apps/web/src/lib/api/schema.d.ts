@@ -2015,7 +2015,7 @@ export interface operations {
                 /** @description Opaque cursor: pass back the previous page's next_cursor. */
                 cursor?: string | null;
                 kind?: string | null;
-                severity?: string | null;
+                severity?: ("INFO" | "WARNING" | "CRITICAL") | null;
             };
             header?: never;
             path?: never;

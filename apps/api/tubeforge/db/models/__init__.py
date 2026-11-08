@@ -8,11 +8,25 @@ the database with a compatible type and nullability.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, time
+from datetime import date, datetime, time
+from decimal import Decimal
 from typing import Any, ClassVar
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, SmallInteger, String, Text, Time
-from sqlalchemy.dialects.postgresql import CITEXT, INET, JSONB, UUID
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    SmallInteger,
+    String,
+    Text,
+    Time,
+    text,
+)
+from sqlalchemy.dialects.postgresql import ARRAY, CITEXT, INET, JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from tubeforge.db.ids import uuid7
@@ -201,19 +215,314 @@ class IdempotencyKey(Base):
     expires_at: Mapped[datetime] = _ts()
 
 
+# --------------------------------------------------------------- Phase 4: channels, OAuth, YouTube
+class ChannelPublishingRules(Base):
+    __tablename__ = "channel_publishing_rules"
+    channel_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("channels.id"), primary_key=True)
+    max_long_per_day: Mapped[int] = mapped_column(Integer, default=1)
+    max_long_per_week: Mapped[int] = mapped_column(Integer, default=7)
+    max_shorts_per_day: Mapped[int] = mapped_column(Integer, default=2)
+    min_originality_score: Mapped[Decimal] = mapped_column(Numeric(4, 1), default=Decimal(70))
+    min_audit_scores: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))
+    allowed_topics: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
+    blocked_topics: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
+    block_high_inauthentic_risk_in_manual: Mapped[bool] = mapped_column(Boolean, default=False)
+    max_stock_runtime_share: Mapped[Decimal] = mapped_column(Numeric(3, 2), default=Decimal("0.60"))
+    auto_publish_rules: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    auto_publish_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    auto_publish_accepted_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    required_private_test_runs: Mapped[int] = mapped_column(Integer, default=10)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class OnboardingStep(Base):
+    __tablename__ = "onboarding_steps"
+    id: Mapped[uuid.UUID] = _id()
+    channel_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("channels.id"))
+    step_code: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text, default="TODO")
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    notes: Mapped[str | None] = mapped_column(Text)
+
+
+class OAuthClient(Base):
+    __tablename__ = "oauth_clients"
+    id: Mapped[uuid.UUID] = _id()
+    label: Mapped[str] = mapped_column(Text)
+    client_id: Mapped[str] = mapped_column(Text)
+    client_secret_enc: Mapped[bytes | None]
+    key_id: Mapped[str | None] = mapped_column(Text)
+    gcp_project_id: Mapped[str | None] = mapped_column(Text)
+    publishing_status: Mapped[str] = mapped_column(Text, default="TESTING")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class OAuthConnection(Base):
+    __tablename__ = "oauth_connections"
+    id: Mapped[uuid.UUID] = _id()
+    channel_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("channels.id"))
+    oauth_client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("oauth_clients.id"))
+    google_account_hint: Mapped[str | None] = mapped_column(Text)
+    scopes: Mapped[list[str]] = mapped_column(ARRAY(Text))
+    refresh_token_enc: Mapped[bytes]
+    key_id: Mapped[str] = mapped_column(Text)
+    access_token_enc: Mapped[bytes | None]
+    access_token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(Text)
+    last_refresh_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error: Mapped[str | None] = mapped_column(Text)
+    refresh_expected_expiry: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    authorized_at: Mapped[datetime] = _ts()
+    last_authorization_check_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class OAuthPendingFlow(Base):
+    __tablename__ = "oauth_pending_flows"
+    state: Mapped[str] = mapped_column(String(43), primary_key=True)
+    code_verifier_enc: Mapped[bytes]
+    key_id: Mapped[str] = mapped_column(Text)
+    channel_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("channels.id"))
+    scopes: Mapped[list[str]] = mapped_column(ARRAY(Text))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    expires_at: Mapped[datetime] = _ts()
+
+
+class VideoProject(Base):
+    __tablename__ = "video_projects"
+    id: Mapped[uuid.UUID] = _id()
+    channel_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("channels.id"))
+    idea_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    parent_project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    format: Mapped[str] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(Text)
+    resume_to_state: Mapped[str | None] = mapped_column(Text)
+    working_title: Mapped[str] = mapped_column(Text)
+    packaging_promise: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    target_duration_s: Mapped[int] = mapped_column(Integer)
+    render_profile: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    youtube_video_id: Mapped[str | None] = mapped_column(Text, unique=True)
+    is_test: Mapped[bool] = mapped_column(Boolean, default=False)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class MediaAsset(Base):
+    __tablename__ = "media_assets"
+    id: Mapped[uuid.UUID] = _id()
+    channel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    kind: Mapped[str] = mapped_column(Text)
+    mime_type: Mapped[str] = mapped_column(Text)
+    size_bytes: Mapped[int] = mapped_column(BigInteger)
+    sha256: Mapped[str] = mapped_column(String(64))
+    width: Mapped[int | None] = mapped_column(Integer)
+    height: Mapped[int | None] = mapped_column(Integer)
+    duration_s: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
+    origin: Mapped[str] = mapped_column(Text)
+    retention_class: Mapped[str] = mapped_column(Text)
+    encrypted: Mapped[bool] = mapped_column(Boolean, default=False)
+    quarantined: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_by_type: Mapped[str] = mapped_column(Text)
+    created_by_id: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AssetRights(Base):
+    __tablename__ = "asset_rights"
+    asset_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("media_assets.id"), primary_key=True)
+    rights_basis: Mapped[str] = mapped_column(Text)
+    licence_name: Mapped[str] = mapped_column(Text)
+    licence_url: Mapped[str | None] = mapped_column(Text)
+    commercial_use_allowed: Mapped[bool] = mapped_column(Boolean)
+    editorial_only: Mapped[bool] = mapped_column(Boolean, default=False)
+    attribution_required: Mapped[bool] = mapped_column(Boolean, default=False)
+    lineage: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class ApprovalRequest(Base):
+    __tablename__ = "approval_requests"
+    id: Mapped[uuid.UUID] = _id()
+    channel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    subject_type: Mapped[str] = mapped_column(Text)
+    subject_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    subject_sha256: Mapped[str] = mapped_column(String(64))
+    state: Mapped[str] = mapped_column(Text)
+    requested_by_type: Mapped[str] = mapped_column(Text)
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    decided_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    auto_rule_id: Mapped[str | None] = mapped_column(Text)
+    comment: Mapped[str | None] = mapped_column(Text)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    expires_at: Mapped[datetime] = _ts()
+
+
+class UploadJob(Base):
+    __tablename__ = "upload_jobs"
+    id: Mapped[uuid.UUID] = _id()
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("video_projects.id"))
+    channel_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    approval_request_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("approval_requests.id"))
+    file_asset_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("media_assets.id"))
+    file_sha256: Mapped[str] = mapped_column(String(64))
+    state: Mapped[str] = mapped_column(Text)
+    privacy_status: Mapped[str] = mapped_column(Text)
+    publish_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    made_for_kids: Mapped[bool] = mapped_column(Boolean)
+    contains_synthetic_media: Mapped[bool] = mapped_column(Boolean)
+    session_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    session_uri_enc: Mapped[bytes | None]
+    key_id: Mapped[str | None] = mapped_column(Text)
+    bytes_total: Mapped[int] = mapped_column(BigInteger)
+    bytes_confirmed: Mapped[int] = mapped_column(BigInteger, default=0)
+    youtube_video_id: Mapped[str | None] = mapped_column(Text)
+    processing_status: Mapped[str | None] = mapped_column(Text)
+    steps: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    attempt: Mapped[int] = mapped_column(Integer, default=0)
+    error_class: Mapped[str | None] = mapped_column(Text)
+    error_detail: Mapped[str | None] = mapped_column(Text)
+    is_test: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class QuotaLedger(Base):
+    __tablename__ = "quota_ledger"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    pt_day: Mapped[date] = mapped_column(Date)
+    gcp_project: Mapped[str] = mapped_column(Text)
+    bucket: Mapped[str] = mapped_column(Text)
+    method: Mapped[str] = mapped_column(Text)
+    units: Mapped[int] = mapped_column(Integer)
+    reservation_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    channel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    job_id: Mapped[str | None] = mapped_column(Text)
+    http_status: Mapped[int | None] = mapped_column(Integer)
+    error_reason: Mapped[str | None] = mapped_column(Text)
+
+
+class QuotaReservation(Base):
+    __tablename__ = "quota_reservations"
+    id: Mapped[uuid.UUID] = _id()
+    gcp_project: Mapped[str] = mapped_column(Text)
+    pt_day: Mapped[date] = mapped_column(Date)
+    bucket: Mapped[str] = mapped_column(Text)
+    units: Mapped[int] = mapped_column(Integer)
+    purpose: Mapped[str] = mapped_column(Text)
+    job_id: Mapped[str | None] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    expires_at: Mapped[datetime] = _ts()
+
+
+class QuotaConfig(Base):
+    __tablename__ = "quota_config"
+    gcp_project: Mapped[str] = mapped_column(Text, primary_key=True)
+    bucket: Mapped[str] = mapped_column(Text, primary_key=True)
+    daily_limit: Mapped[int] = mapped_column(Integer)
+    reserve_pct: Mapped[int] = mapped_column(Integer, default=10)
+    research_share_pct: Mapped[int] = mapped_column(Integer, default=30)
+    method_costs: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    verified_at: Mapped[date] = mapped_column(Date)
+    source_url: Mapped[str] = mapped_column(Text)
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    id: Mapped[uuid.UUID] = _id()
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    channel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    event_type: Mapped[str] = mapped_column(Text)
+    severity: Mapped[str] = mapped_column(Text)
+    title: Mapped[str] = mapped_column(Text)
+    body: Mapped[str] = mapped_column(Text)
+    link: Mapped[str | None] = mapped_column(Text)
+    entity_type: Mapped[str | None] = mapped_column(Text)
+    entity_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    dedup_key: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class DataDeletionTask(Base):
+    __tablename__ = "data_deletion_tasks"
+    id: Mapped[uuid.UUID] = _id()
+    channel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    reason: Mapped[str] = mapped_column(Text)
+    scope: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    due_at: Mapped[datetime] = _ts()
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class YoutubeApiCache(Base):
+    __tablename__ = "youtube_api_cache"
+    id: Mapped[uuid.UUID] = _id()
+    requested_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    lookup_kind: Mapped[str] = mapped_column(Text)
+    query_key: Mapped[str] = mapped_column(Text)
+    response: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    fetched_at: Mapped[datetime] = _ts()
+    expires_at: Mapped[datetime] = _ts()
+
+
+class WorkflowTransition(Base):
+    __tablename__ = "workflow_transitions"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    entity_type: Mapped[str] = mapped_column(Text)
+    entity_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    channel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    from_state: Mapped[str] = mapped_column(Text)
+    to_state: Mapped[str] = mapped_column(Text)
+    event: Mapped[str] = mapped_column(Text)
+    actor_type: Mapped[str] = mapped_column(Text)
+    actor_id: Mapped[str] = mapped_column(Text)
+    reason: Mapped[str | None] = mapped_column(Text)
+    idempotency_key: Mapped[str] = mapped_column(Text)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
 __all__ = [
+    "ApprovalRequest",
+    "AssetRights",
     "AuditLog",
     "Base",
     "Channel",
+    "ChannelPublishingRules",
+    "DataDeletionTask",
     "IdempotencyKey",
     "KillSwitch",
+    "MediaAsset",
+    "Notification",
+    "OAuthClient",
+    "OAuthConnection",
+    "OAuthPendingFlow",
+    "OnboardingStep",
     "Permission",
+    "QuotaConfig",
+    "QuotaLedger",
+    "QuotaReservation",
     "Role",
     "RolePermission",
     "SecurityEvent",
     "Session",
     "SystemSettings",
+    "UploadJob",
     "User",
     "UserRecoveryCode",
     "UserRole",
+    "VideoProject",
+    "WorkflowTransition",
+    "YoutubeApiCache",
 ]

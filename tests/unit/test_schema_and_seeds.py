@@ -69,3 +69,12 @@ def test_uuid7_layout_and_ordering() -> None:
     assert all(i.version == 7 and i.variant == uuid.RFC_4122 for i in ids)
     assert len(set(ids)) == 50
     assert [i.int >> 80 for i in ids] == sorted(i.int >> 80 for i in ids)
+
+
+def test_commas_inside_string_defaults_are_kept_together() -> None:
+    assert gen_schema_sql.split_top_level("a text DEFAULT 'x,y', b int") == ["a text DEFAULT 'x,y'", "b int"]
+    _, sql = gen_schema_sql.build()
+    assert (
+        """min_audit_scores jsonb NOT NULL DEFAULT '{"content":70,"policy":80,"quality":75,"thumbnail":70}'"""
+        in sql
+    )

@@ -21,6 +21,8 @@ dependencies = [
     "keyring>=25,<26",
     "segno>=1.6,<2",
     "zxcvbn>=4.5,<5",
+    "httpx>=0.28,<0.29",
+    "tzdata>=2025.2",
 ]
 
 [project.scripts]
@@ -33,7 +35,6 @@ tubeforge-admin = "tubeforge.admin:main"
 dev = [
     "pytest>=9,<10",
     "pytest-asyncio>=1,<2",
-    "httpx>=0.28,<0.29",
     "ruff>=0.15,<0.16",
     "mypy>=1.19,<2",
     "pip-audit>=2.10,<3",
