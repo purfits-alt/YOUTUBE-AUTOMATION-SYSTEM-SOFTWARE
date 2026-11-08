@@ -1,6 +1,6 @@
 # ADR-0004: Task queue: Procrastinate (PostgreSQL-backed)
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 A separate Redis/Valkey broker costs RAM. Redis 8+ is tri-licensed RSALv2/SSPLv1/AGPLv3 (verified 2026-11-08). Jobs must be enqueued in the same transaction as the state change.

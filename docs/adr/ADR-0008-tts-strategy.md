@@ -1,6 +1,6 @@
 # ADR-0008: Text-to-speech: owner voice first, then Kokoro / Piper with per-voice licence gate
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 Verified 2026-11-08: Kokoro-82M is Apache-2.0 (EN/ES/FR, no DE/UR). Piper voice licences vary per voice (CC0, CC-BY, CC BY-NC-SA, MIT). Many EN Piper voices are fine-tuned from lessac (dataset licence needs review). Urdu Piper voices model card says MIT. The Piper engine repo is GPL-3.0.

@@ -1,6 +1,6 @@
 # ADR-0017: Testing and CI: pytest, Vitest, Playwright, GitHub Actions
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 Verified 2026-11-08: standard GitHub-hosted runners are free for public repositories.

@@ -1,6 +1,6 @@
 # ADR-0001: Native Windows install as the primary deployment
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 Owner PC is Windows 10, 8 GB RAM, no GPU (H-LITE). Docker Desktop on WSL2 reserves ~2 GB+ RAM.

@@ -1,6 +1,6 @@
 # ADR-0015: Research data policy: comply with the YouTube 'Data Aggregation' rule
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 Verified 2026-11-08, Developer Policies: 'Do not aggregate API Data except … channels under the same content owner' and 'Do not … use API Data … to gain insights into YouTube's usage, revenue, or any other aspects of YouTube's business.' Non-authorized data may be stored ≤ 30 days. This conflicts with master prompt §8 ideas such as cross-channel competitor pattern scoring.

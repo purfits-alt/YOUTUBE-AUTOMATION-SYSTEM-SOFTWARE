@@ -1,6 +1,6 @@
 # ADR-0007: LLM strategy: Gateway with Gemini free tier → Groq free tier → local Ollama
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 H-LITE cannot run models good enough for multilingual scripts. Verified 2026-11-08: Gemini API free tier exists for Flash/Flash-Lite/2.5 Pro/Gemma 4 models, and **free-tier content is used to improve Google products**. Linking billing moves a project to a paid tier. Groq has a free plan (exact limits per account).

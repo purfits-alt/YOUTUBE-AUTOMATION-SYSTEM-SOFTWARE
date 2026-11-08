@@ -1,6 +1,6 @@
 # ADR-0016: Publishing safety after the 2 Nov 2026 change: explicit privacy, private by default
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 Verified 2026-11-08: unverified API projects are no longer restricted to private, and an omitted `privacyStatus` now defaults to **public**.

@@ -1,6 +1,6 @@
 # ADR-0014: Notifications: in-app SSE + Telegram; SMTP optional; WhatsApp disabled
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 Verified 2026-11-08: Telegram bots message users at no cost (≈1 msg/s per chat).

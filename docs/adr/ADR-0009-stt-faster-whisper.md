@@ -1,6 +1,6 @@
 # ADR-0009: Speech-to-text and captions: faster-whisper (local)
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 Captions are needed in 5 languages. CPU only.

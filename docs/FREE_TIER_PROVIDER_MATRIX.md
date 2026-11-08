@@ -89,6 +89,15 @@ Tier: **L** local · **F** permanent free cloud tier · **P** paid / trial (disa
 | Groq whisper-large-v3(-turbo) | F | Multilingual | Groq terms | Check | 🟡 optional fallback |
 | **Owner's own voice** | L | Any | Owner-owned | Yes | ✅ **recommended** |
 
+### 3.3a Owner voice cloning (ADR-0019, added at C2)
+
+| Engine | Tier | Languages | Licence | Commercial | Notes | Status |
+|---|---|---|---|---|---|---|
+| **OpenVoice V2** tone-colour converter (on top of Kokoro/Piper) | L | Any TTS input language (native base: EN, ES, FR, ZH, JA, KO) | **MIT** ("Free for commercial use", since Apr 2024) | Yes | Light on CPU. Default clone engine. | ✅ code licence · 🟡 weights re-check Phase 8 |
+| **Chatterbox Multilingual V3** | L | 23 langs incl. **EN, ES, FR, DE**, HI. **No UR.** | **MIT** | Yes | 0.5B. Slow on CPU. Built-in PerTh watermark. Repo archived (frozen). | ✅ code licence · 🟡 weights re-check Phase 8 |
+| Paid cloud cloning (e.g. ElevenLabs) | P | — | — | — | Adapter slot only, disabled | ⛔ |
+| **YouTube disclosure rule** | — | — | — | — | "Cloning one's own voice to create voice overs or dubs" is listed under content creators **don't have to disclose** | ✅ [YouTube Help 14328491](https://support.google.com/youtube/answer/14328491) |
+
 ### 3.4 Images & video
 
 | Provider | Tier | Licence | Commercial | Status |
@@ -101,6 +110,21 @@ Tier: **L** local · **F** permanent free cloud tier · **P** paid / trial (disa
 | Free-tier cloud image APIs (e.g. Cloudflare Workers AI, Hugging Face) | F? | Model-dependent | Model-dependent | ❌ evaluate in Phase 8 (hosts not allowlisted) |
 | Generative video | P | — | — | ⛔ adapter only, disabled |
 | **FFmpeg** | L | LGPL/GPL (build-dependent) | Yes (personal use; not redistributed) | ✅ |
+
+### 3.4a Stock video & images (ADR-0020, added at C2) — all optional
+
+| Provider | Tier | Access path | Licence summary (to verify from official terms in Phase 8) | Default | Status |
+|---|---|---|---|---|---|
+| **Any site, manual import** | — | Owner downloads or buys on the site, imports the file + licence proof | As purchased | Always available | ✅ design |
+| **Pexels API** | F | Owner's free API key | Free commercial use. No standalone resale. No scraping or bulk / ML collection. Attribution requested. | OFF | 🟡 secondary sources |
+| **Pixabay API** | F | Owner's free API key | Pixabay Content License. Reportedly 24 h response caching and no mass downloads. | OFF | 🟡 secondary sources |
+| **Shutterstock** | P | API mostly enterprise / contact sales; else manual import | Per licence (standard / enhanced / editorial) | DISABLED, budget 0 | 🟡 |
+| **Adobe Stock** | P | Developer API (pricing undisclosed); else manual import | Per licence | DISABLED, budget 0 | 🟡 |
+| **Storyblocks** | P | API by custom contract; else manual import | Subscription licence | DISABLED, budget 0 | 🟡 |
+| **Pond5, Getty / iStock** | P | Enterprise API; else manual import | Per licence | DISABLED, budget 0 | ❌ |
+| **Envato Elements** | P | Manual import only (no general download API) | Subscription licence, register each project | Manual only | 🟡 |
+
+**Editorial-only licences are blocked for monetised channels.** Every paid purchase needs a separate owner confirmation with the price shown. The monthly stock budget cap defaults to 0.
 
 ### 3.5 Infrastructure & notifications
 

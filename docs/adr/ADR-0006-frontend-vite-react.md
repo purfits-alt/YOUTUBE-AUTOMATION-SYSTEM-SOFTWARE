@@ -1,6 +1,6 @@
 # ADR-0006: Frontend: Vite + React + TypeScript SPA served by FastAPI
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 Single-user, localhost-only dashboard. A Next.js server would add 150–300 MB of resident RAM for no SSR benefit.

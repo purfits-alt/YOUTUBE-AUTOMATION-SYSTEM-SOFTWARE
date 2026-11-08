@@ -1,6 +1,6 @@
 # ADR-0018: Monorepo layout and tooling
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 The brief asks for apps/web, apps/api, workers/, packages/shared, infra/.

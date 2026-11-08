@@ -1,6 +1,6 @@
 # TubeForge — Product Requirements Document (PRD)
 
-**Version:** 1.1-draft (v1.0 approved at C1 — 2026-11-08; v1.1 changes from Step 0.3 fact verification are listed in §11 and await approval at C2) · **Date:** 2026-11-08
+**Version:** 1.2 (v1.0 approved at C1; v1.1 approved at C2; v1.2 adds owner-requested voice cloning and stock media at C2 — all 2026-11-08; see §11) · **Date:** 2026-11-08
 **Sources:** `00_MASTER_PROMPT.md`, `PHASE0_VALIDATION_REPORT.md`, C0 answers in `PROJECT_PROGRESS.md`
 **Requirement IDs** (`FR-…`, `NFR-…`, `US-…`) are stable. Later specs, tests and roadmap tasks refer back to them.
 
@@ -185,15 +185,23 @@ As the owner, I want AI-drafted scripts that I can edit, with version history, s
 
 **US-5.2 Visual assets with rights records** (Phase 8)
 As the owner, I want visuals for every scene and a recorded right to use each one.
-- AC1: Supported sources: procedural graphics, charts, kinetic text, owner uploads, CC0/public-domain imports, and free-tier image APIs whose licence allows monetised use.
+- AC1: Supported sources: procedural graphics, charts, kinetic text, owner uploads, CC0/public-domain imports, free-tier image APIs whose licence allows monetised use, and **stock video/images (optional, ADR-0020)**:
+  - **Manual licensed import** from any free or paid stock site (file + licence type + licence proof + cost), always available.
+  - **Free stock API adapters** (Pexels, Pixabay), off by default, owner's own API key.
+  - **Paid stock API adapters** (Shutterstock, Adobe Stock, Storyblocks, Pond5, Getty/iStock), disabled by default, two-step activation, price shown and separate owner confirmation for **every** licence purchase, monthly stock budget cap (default 0). Agents can never buy.
 - AC2: **No asset can enter a render without a rights record** (source, licence, commercial-use flag, attribution text, proof URL or file).
-- AC3: Providers whose licences do not allow commercial use are blocked for channels marked as monetised.
+- AC3: Providers or licences that do not allow commercial use (incl. **editorial-only** stock) are blocked for channels marked as monetised.
+- AC4: The Originality Auditor warns when stock footage exceeds a configurable share of runtime (default 60 %) without owner narration or commentary (reused-content risk).
 
-**US-5.3 Voiceover** (Phase 8)
-As the owner, I want either to record my own voice or to use a licensed TTS voice.
+**US-5.3 Voiceover** (Phase 8) — *extended at C2 (ADR-0019)*
+As the owner, I want to record my own voice, **or generate narration in a clone of my own voice**, or use a licensed TTS voice.
 - AC1: In-browser recording with level meter, retake per scene, and noise reduction.
 - AC2: TTS voices come from the registry with their licence recorded. Each language shows which voices are available, and a missing language (e.g. Urdu, if none is found) is shown clearly.
-- AC3: Voice cloning is allowed only for the owner's own voice, with a signed consent record stored.
+- AC3: **Owner voice clone** is available in two modes: *converter* (Kokoro/Piper → OpenVoice V2 tone-colour conversion; all 5 languages) and *zero-shot* (Chatterbox Multilingual; EN/ES/FR/DE). Both are local and free.
+- AC4: A voice profile can be built **only from audio recorded live in TubeForge** (no file upload). The owner reads a consent statement with a random one-time code. STT verifies the code, and a speaker-similarity check confirms the consent audio and the samples are the same person. The consent record is stored.
+- AC5: Voice profiles are encrypted at rest, never exported, never sent to cloud providers, and deletable with one click (including derived audio).
+- AC6: Using the owner's own clone does not by itself set `containsSyntheticMedia` (YouTube Help 14328491). The disclosure assessment logs this reason.
+- AC7: Cloning anyone other than the owner is impossible by design and forbidden (NG-4).
 
 ### E6 — Editing and rendering
 
@@ -375,8 +383,11 @@ As the owner, I want warnings when my channel looks templated or mass-produced s
 | Version | Date | Change | Reason |
 |---|---|---|---|
 | 1.0 | 2026-11-08 | Approved at C1 | — |
-| 1.1-draft | 2026-11-08 | Operating modes: audit precondition removed; Private-only mode becomes a safety switch; explicit `privacyStatus` invariant | YouTube revision history 2 Nov 2026 (F1 reversed), ADR-0016 |
-| 1.1-draft | 2026-11-08 | US-2.1 / US-2.3: no cross-channel aggregation of YouTube API data | Developer Policies "Data Aggregation", ADR-0015 |
-| 1.1-draft | 2026-11-08 | US-9.3: three quota buckets | Granular quota since 1 Jun 2026 (F2) |
-| 1.1-draft | 2026-11-08 | US-3.3, US-10.1, US-9.4: 7-day deletion, 30-day re-authorization, privacy-policy content | Developer Policies III.A.2, III.E.4 |
-| 1.1-draft | 2026-11-08 | Windows 10 ESU note | Consumer ESU reportedly extended to Oct 2027 |
+| 1.1 | 2026-11-08 | Operating modes: audit precondition removed; Private-only mode becomes a safety switch; explicit `privacyStatus` invariant | YouTube revision history 2 Nov 2026 (F1 reversed), ADR-0016 |
+| 1.1 | 2026-11-08 | US-2.1 / US-2.3: no cross-channel aggregation of YouTube API data | Developer Policies "Data Aggregation", ADR-0015 |
+| 1.1 | 2026-11-08 | US-9.3: three quota buckets | Granular quota since 1 Jun 2026 (F2) |
+| 1.1 | 2026-11-08 | US-3.3, US-10.1, US-9.4: 7-day deletion, 30-day re-authorization, privacy-policy content | Developer Policies III.A.2, III.E.4 |
+| 1.1 | 2026-11-08 | Windows 10 ESU note | Consumer ESU reportedly extended to Oct 2027 |
+| 1.1 | 2026-11-08 | Approved at C2 | — |
+| 1.2 | 2026-11-08 | US-5.3: owner voice cloning (converter + zero-shot), consent and anti-misuse controls | Owner request at C2, ADR-0019 |
+| 1.2 | 2026-11-08 | US-5.2: optional stock media — manual import, free API adapters, paid API adapters (disabled, budget cap 0) | Owner request at C2, ADR-0020 |

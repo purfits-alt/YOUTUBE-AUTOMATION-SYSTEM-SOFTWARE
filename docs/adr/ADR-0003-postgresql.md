@@ -1,6 +1,6 @@
 # ADR-0003: Database: PostgreSQL for all environments
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 Needs JSONB, row locking for queues, LISTEN/NOTIFY, partial unique indexes for idempotency.

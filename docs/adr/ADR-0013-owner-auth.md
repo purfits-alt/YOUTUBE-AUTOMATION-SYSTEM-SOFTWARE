@@ -1,6 +1,6 @@
 # ADR-0013: Owner authentication: local accounts, Argon2id, optional TOTP
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 Localhost-only single owner. RBAC tables exist for future roles.

@@ -1,6 +1,6 @@
 # ADR-0002: Backend: Python FastAPI + Pydantic v2 + SQLAlchemy 2 + Alembic
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 We need typed REST contracts, async I/O for uploads and SSE, low RAM, and Python for the AI and media tooling.

@@ -1,6 +1,6 @@
 # ADR-0012: Secrets: AES-256-GCM envelope encryption, master key in Windows Credential Manager
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 OAuth refresh tokens give full channel control. The repo is public.

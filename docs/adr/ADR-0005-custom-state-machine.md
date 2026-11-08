@@ -1,6 +1,6 @@
 # ADR-0005: Orchestration: custom state machine persisted in PostgreSQL
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 Workflows are long-running (hours or days), contain owner-approval gates, and must survive crashes and restarts with a full audit trail.

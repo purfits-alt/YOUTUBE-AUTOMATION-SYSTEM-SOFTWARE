@@ -1,6 +1,6 @@
 # ADR-0010: Visuals: non-generative by default; generative image adapter disabled
 
-**Status:** Proposed (pending owner approval at C2) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
+**Status:** Accepted (owner approved at C2, 2026-11-08) · **Date:** 2026-11-08 · **Deciders:** Owner, Claude Code
 
 ## Context
 Verified 2026-11-08: Gemini image models are not on the free tier. Local diffusion is not feasible on H-LITE. Some open models are non-commercial.
