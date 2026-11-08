@@ -301,6 +301,30 @@ function Get-RunningProcess([string]$Name) {
     return Get-Process -Id $procId -ErrorAction SilentlyContinue
 }
 
+# The .exe files in .venv\Scripts are small launchers that start the real Python
+# process as a child (and that may start another). Memory and stop must cover the
+# whole tree, not just the launcher pid we recorded.
+function Get-ProcessTreeIds([int]$RootId) {
+    $all = @(Get-CimInstance Win32_Process -Property ProcessId, ParentProcessId)
+    $ids = New-Object System.Collections.Generic.List[int]
+    $ids.Add($RootId)
+    for ($i = 0; $i -lt $ids.Count; $i++) {
+        foreach ($child in $all) {
+            if ($child.ParentProcessId -eq $ids[$i] -and -not $ids.Contains([int]$child.ProcessId)) { $ids.Add([int]$child.ProcessId) }
+        }
+    }
+    return , $ids.ToArray()
+}
+
+function Get-ProcessTreeMemoryMB([int]$RootId) {
+    $total = 0
+    foreach ($id in (Get-ProcessTreeIds $RootId)) {
+        $proc = Get-Process -Id $id -ErrorAction SilentlyContinue
+        if ($proc) { $total += $proc.WorkingSet64 }
+    }
+    return [math]::Round($total / 1MB)
+}
+
 function Invoke-Start {
     New-Item -ItemType Directory -Force -Path $Paths.Run, $Paths.Logs | Out-Null
     Set-TubeForgeEnvironment
@@ -333,7 +357,10 @@ function Invoke-Stop {
     foreach ($p in $Processes) {
         $proc = Get-RunningProcess $p.Name
         if ($proc) {
-            Stop-Process -Id $proc.Id -Force
+            # Children first, then the launcher, so nothing is left orphaned.
+            $treeIds = Get-ProcessTreeIds $proc.Id
+            [array]::Reverse($treeIds)
+            foreach ($id in $treeIds) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue }
             Write-Check $p.Name 'OK' "stopped (pid $($proc.Id))"
         } else {
             Write-Check $p.Name 'INFO' 'not running'
@@ -344,13 +371,16 @@ function Invoke-Stop {
 
 function Invoke-Status {
     $allUp = $true
+    $totalMb = 0
     foreach ($p in $Processes) {
         $proc = Get-RunningProcess $p.Name
         if ($proc) {
-            $mb = [math]::Round($proc.WorkingSet64 / 1MB)
-            Write-Check $p.Name 'OK' "running (pid $($proc.Id), $mb MB)"
+            $mb = Get-ProcessTreeMemoryMB $proc.Id
+            $totalMb += $mb
+            Write-Check $p.Name 'OK' "running (pid $($proc.Id), $mb MB incl. child processes)"
         } else { Write-Check $p.Name 'WARN' 'not running'; $allUp = $false }
     }
+    if ($totalMb -gt 0) { Write-Check 'TubeForge memory' 'INFO' "$totalMb MB total (PostgreSQL not included; target <= 1.5 GB with it)" }
     try {
         $ready = Invoke-RestMethod -Uri "http://127.0.0.1:$Port/readyz" -TimeoutSec 3
         Write-Check 'Readiness' 'OK' $ready.status
