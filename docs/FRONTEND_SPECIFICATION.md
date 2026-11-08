@@ -32,7 +32,7 @@
 |---|---|
 | Home | 1 Overview |
 | Discover | 2 Channel Discovery · 5 Niche Research · 6 Trend Intelligence · 7 Competitor Research |
-| Channels | 3 Channel Manager · 4 Onboarding · 8 Branding Studio |
+| Channels | 3 Channel Manager · 4 Onboarding · 8 Branding Studio · 32 Channel Trending |
 | Create | 9 Idea Generator · 10 Content Calendar · 11 Script Studio · 12 Storyboard · 13 Video Studio · 14 Visual Assets · 15 Voiceover · 16 Thumbnails · 17 SEO · 18 Captions |
 | Publish | 19 Render Manager · 20 Upload Manager · 21 Scheduler · 22 Approval Center |
 | Grow | 23 Analytics · 24 Growth & Optimization |
@@ -688,7 +688,30 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 
 ---
 
-## 32. Test plan for the frontend (Phase 2 onward)
+## 32. Channel Trending
+
+*Owner request during Phase 3 (US-4.6, ADR-0025). Screens with sample data now; real data from Phase 7 (ideas) and Phase 13 (own analytics).*
+
+| Item | Specification |
+|---|---|
+| **Route** | `/channels/:id/trending` |
+| **Purpose** | One place to double down on what works **for this channel**: own outliers, variations of own winners, and fresh ideas. |
+| **Layout — desktop** | Channel header; three tabs: **Outliers** (own videos ranked by outlier multiple, with KPI tiles: outliers this month, best multiple, median views), **Replicate / Milk** (own winners with variation suggestions and their similarity to the source), **New Ideas** (newest suggested ideas with the reason). |
+| **Layout — mobile** | Tabs as a segmented control; tables as cards. |
+| **Components** | Tabs, StatTile, DataTable, OutlierBadge (×multiple), VariationCard, SimilarityMeter, SafetyNote |
+| **Forms & validation** | Replicate: variation kind (PART_2, NEW_ANGLE, UPDATE, SHORT_FROM_LONG, LONG_FROM_SHORT, SERIES), optional note ≤ 500 chars. |
+| **Buttons & actions** | Outliers: Refresh analytics (⚙), Replicate this. Replicate: Create variation idea (blocked when similarity > threshold), Open source on YouTube Studio. New Ideas: Generate ideas (⚙), Shortlist, Open in Idea Generator. |
+| **Tables** | Outliers: title, published, views, multiple, engaged views, CTR, AVD. Replicate: source, variation, angle, similarity, state. New Ideas: title, format, reason, similarity, state. |
+| **API calls** | GET /channels/{id}/outliers, GET /channels/{id}/replicate, POST /channels/{id}/ideas/replicate 🔁⚙, GET /channels/{id}/ideas?source=AGENT, POST /channels/{id}/ideas/generate 🔁⚙ |
+| **Real-time events** | job.finished, state.changed |
+| **Permissions** | content.view + analytics.view; create/generate content.edit |
+| **Empty state** | Outliers: "No outliers yet — they appear once your videos have 7 days of analytics." Replicate: "Pick an outlier to replicate." New Ideas: "Generate ideas from your trends and winners." |
+| **Loading state** | Tile and table skeletons. |
+| **Error state** | Per-tab problem card with Retry. |
+| **Success state** | "Variation idea created" toast with link to the Idea Generator. Safety note: "Estimates with sources — not a promise of views or earnings." |
+| **Compliance** | Own channels only (ADR-0015, ADR-0025): no other channel's videos are ranked or compared. Variations must pass the originality guard (similarity ≤ threshold, owner value-add) and the auditors. |
+
+## 33. Test plan for the frontend (Phase 2 onward)
 - **Phase 2 (shell):** all 31 routes render with mocked data in all four states. A Playwright test visits each route × state via MSW (Mock Service Worker) scenarios.
 - **Emergency Stop** button is visible on every route (Playwright asserts it on all 31).
 - **axe** accessibility scan per route: no serious or critical violations.

@@ -149,6 +149,15 @@ const SAMPLES: Partial<Record<ColumnKey, readonly (string | number | boolean)[]>
   setting: ["Timezone", "Night render window", "Backup time", "Disk budget"],
   value: ["Asia/Karachi", "01:00–07:00", "03:00 PKT", "60 GB"],
   updated: ["2026-11-08", "2026-11-08", "2026-11-08", "2026-11-08"],
+  multiple: ["6.2×", "3.4×", "2.1×", "2.0×"],
+  variation: ["Part 2 / sequel", "Short from long", "New angle", "Updated version"],
+  angle: ["What happened next", "The 45-second version", "Seen by a marine biologist", "New 2026 research"],
+  reason: [
+    "Pattern of your 6.2× outlier",
+    "Rising: deep-sea research",
+    "Your winner, new angle",
+    "Evergreen in your pillar",
+  ],
 };
 
 function rowsFor(page: PageDef, count = 4): Row[] {
@@ -176,36 +185,83 @@ export function pageData(page: PageDef, empty: boolean): PageData {
   const pageText = en.pages[page.id];
   const stats = empty
     ? []
-    : [
-        {
-          key: "total",
-          label: "Items",
-          value: "4",
-          delta: "+2",
-          delta_good: true,
-          trend: [1, 2, 2, 3, 2, 3, 4],
-        },
-        {
-          key: "attention",
-          label: "Need attention",
-          value: "1",
-          hint: pageText.title,
-          trend: [3, 2, 2, 1, 2, 1, 1],
-        },
-        {
-          key: "done",
-          label: "Done this week",
-          value: "7",
-          delta: "+40%",
-          delta_good: true,
-          trend: [2, 3, 3, 4, 5, 6, 7],
-        },
-      ];
+    : page.id === "trending"
+      ? [
+          {
+            key: "outliers",
+            label: "Outliers this month",
+            value: "4",
+            delta: "+2",
+            delta_good: true,
+            trend: [0, 1, 1, 2, 2, 3, 4],
+          },
+          { key: "best", label: "Best multiple", value: "6.2×", hint: "Why octopuses dream" },
+          {
+            key: "median",
+            label: "Your median views (7 days)",
+            value: "200",
+            trend: [150, 160, 170, 180, 185, 195, 200],
+          },
+        ]
+      : [
+          {
+            key: "total",
+            label: "Items",
+            value: "4",
+            delta: "+2",
+            delta_good: true,
+            trend: [1, 2, 2, 3, 2, 3, 4],
+          },
+          {
+            key: "attention",
+            label: "Need attention",
+            value: "1",
+            hint: pageText.title,
+            trend: [3, 2, 2, 1, 2, 1, 1],
+          },
+          {
+            key: "done",
+            label: "Done this week",
+            value: "7",
+            delta: "+40%",
+            delta_good: true,
+            trend: [2, 3, 3, 4, 5, 6, 7],
+          },
+        ];
   return {
     stats,
     rows: empty ? [] : rowsFor(page),
     next_cursor: null,
     ...(page.projectScoped ? { project: PROJECT } : {}),
+  };
+}
+
+/** Page 32 › Replicate / Milk: own winners and their variation ideas (US-4.6). */
+export function replicateData(empty: boolean): PageData {
+  if (empty) return { stats: [], rows: [], next_cursor: null };
+  const columns = ["title", "variation", "angle", "similarity", "state"] as const;
+  const titles = [
+    "Why octopuses dream",
+    "Why octopuses dream",
+    "The quiet maths of bridges",
+    "Why octopuses dream",
+  ];
+  const similarity = ["38%", "52%", "41%", "61%"];
+  const states = ["SUGGESTED", "SHORTLISTED", "SUGGESTED", "APPROVED"];
+  return {
+    stats: [
+      { key: "winners", label: "Winners to replicate", value: "2", hint: "≥ 2× your median" },
+      { key: "variations", label: "Variation ideas", value: "4", delta: "+3", delta_good: true },
+    ],
+    rows: titles.map((title, i) => {
+      const row: Row = { id: `rep-${String(i + 1)}`, title };
+      for (const col of columns.slice(1)) {
+        const sample = col === "similarity" ? similarity : col === "state" ? states : SAMPLES[col];
+        row[col] = sample?.[i % sample.length] ?? "—";
+      }
+      return row;
+    }),
+    next_cursor: null,
   };
 }
 

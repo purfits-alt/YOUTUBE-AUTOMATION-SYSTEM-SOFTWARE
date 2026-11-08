@@ -254,7 +254,11 @@
     "details": "Details",
     "setting": "Setting",
     "value": "Value",
-    "updated": "Updated"
+    "updated": "Updated",
+    "multiple": "Outlier ×",
+    "variation": "Variation",
+    "angle": "Angle",
+    "reason": "Why"
   },
   "actions": {
     "openApproval": "Open approvals",
@@ -335,7 +339,9 @@
     "revokeSession": "Revoke session",
     "enrolTotp": "Enrol TOTP",
     "runBackup": "Run backup",
-    "exportKeyFile": "Export key file"
+    "exportKeyFile": "Export key file",
+    "refreshAnalytics": "Refresh analytics",
+    "replicateThis": "Replicate this"
   },
   "pages": {
     "overview": {
@@ -523,6 +529,12 @@
       "purpose": "System settings, Google Cloud/OAuth clients, research sources, AI providers shortcuts, notifications targets, backups, account & 2FA, about/versions.",
       "empty": "Settings could not be loaded.",
       "emptyAction": "Reload settings"
+    },
+    "trending": {
+      "title": "Channel Trending",
+      "purpose": "Double down on what works for this channel: your own outliers, new videos from your winners, and fresh ideas.",
+      "empty": "No outliers yet — they appear once your videos have 7 days of analytics.",
+      "emptyAction": "Refresh analytics"
     }
   },
   "login": {
@@ -586,5 +598,32 @@
     "sessions": "Signed-in sessions",
     "lastSeen": "Last active {when}",
     "thisSession": "This session"
+  },
+  "trending": {
+    "tabs": "Trending views",
+    "outliers": "Outliers",
+    "replicate": "Replicate / Milk",
+    "ideas": "New Ideas",
+    "ownOnly": "Only your own channels' videos are compared — never other channels (YouTube data policy).",
+    "replicateEmpty": "Pick an outlier on the Outliers tab and choose Replicate this.",
+    "ideasEmpty": "Generate ideas from your trends and your winners.",
+    "ideasAction": "Generate ideas",
+    "dialogTitle": "Replicate “{title}”",
+    "kind": "Kind of variation",
+    "note": "Your note (optional)",
+    "similarity": "Similarity to your original: {value}% (limit {limit}%)",
+    "tooSimilar": "Too close to the original — YouTube may treat it as reused content. Pick another kind or add your own angle.",
+    "create": "Create variation idea",
+    "created": "Variation idea created: {title}",
+    "guard": "Each variation must differ from the original and needs your own added value (opinion, experience, examples).",
+    "kinds": {
+      "PART_2": "Part 2 / sequel",
+      "NEW_ANGLE": "New angle on the same topic",
+      "UPDATE": "Updated version (what changed)",
+      "SHORT_FROM_LONG": "Short from this long video",
+      "LONG_FROM_SHORT": "Long video from this Short",
+      "SERIES": "Start a series"
+    },
+    "source": "Your video"
   }
 }

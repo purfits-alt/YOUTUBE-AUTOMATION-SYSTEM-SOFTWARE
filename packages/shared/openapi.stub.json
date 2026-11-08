@@ -1114,6 +1114,139 @@
           }
         }
       }
+    },
+    "/channels/{id}/outliers": {
+      "get": {
+        "operationId": "get_trending_outliers",
+        "tags": [
+          "channels"
+        ],
+        "summary": "Page 32: own-channel outliers (US-4.6; real in Phase 13)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/channels/{id}/replicate": {
+      "get": {
+        "operationId": "get_trending_replicate",
+        "tags": [
+          "channels"
+        ],
+        "summary": "Page 32: own winners and their variation ideas (US-4.6; real in Phase 7)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/channels/{id}/ideas/replicate": {
+      "post": {
+        "operationId": "replicate_idea",
+        "tags": [
+          "channels"
+        ],
+        "summary": "Create a variation idea from an own video (originality guard; 422 TOO_SIMILAR)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplicateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplicateResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1464,6 +1597,52 @@
           },
           "href": {
             "type": "string"
+          }
+        }
+      },
+      "ReplicateRequest": {
+        "type": "object",
+        "required": [
+          "youtube_video_id",
+          "kind"
+        ],
+        "properties": {
+          "youtube_video_id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "PART_2",
+              "NEW_ANGLE",
+              "UPDATE",
+              "SHORT_FROM_LONG",
+              "LONG_FROM_SHORT",
+              "SERIES"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      },
+      "ReplicateResult": {
+        "type": "object",
+        "required": [
+          "idea_title",
+          "similarity_to_source",
+          "threshold"
+        ],
+        "properties": {
+          "idea_title": {
+            "type": "string"
+          },
+          "similarity_to_source": {
+            "type": "number"
+          },
+          "threshold": {
+            "type": "number"
           }
         }
       }

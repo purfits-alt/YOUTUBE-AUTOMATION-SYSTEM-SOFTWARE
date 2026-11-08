@@ -151,3 +151,4 @@ All 31 sections (§1–§31 of that file), each with route, purpose, desktop and
 | Install on D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE | ADR-0001 amendment, SYSTEM_ARCHITECTURE §11 | 1, 15 |
 | Optional external editors (Canva, CapCut, InShot, Filmora, …) | ADR-0021, US-6.4 | 9–10 |
 | Promise in intro, 10–15 s hook, mid-video re-hooks, curiosity/suspense, human voice | US-4.5, AGENT_PROMPTS A11 v1.1 | 7 |
+| Channel Trending: own outliers, replicate/milk own winners, new ideas | US-4.6, ADR-0025, FRONTEND_SPECIFICATION §32 | 2 (screens), 7, 13 |

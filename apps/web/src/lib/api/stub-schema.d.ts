@@ -530,6 +530,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/channels/{id}/outliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Page 32: own-channel outliers (US-4.6; real in Phase 13) */
+        get: operations["get_trending_outliers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/{id}/replicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Page 32: own winners and their variation ideas (US-4.6; real in Phase 7) */
+        get: operations["get_trending_replicate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/{id}/ideas/replicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a variation idea from an own video (originality guard; 422 TOO_SIMILAR) */
+        post: operations["replicate_idea"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -614,6 +665,17 @@ export interface components {
             kind: string;
             label: string;
             href: string;
+        };
+        ReplicateRequest: {
+            youtube_video_id: string;
+            /** @enum {string} */
+            kind: "PART_2" | "NEW_ANGLE" | "UPDATE" | "SHORT_FROM_LONG" | "LONG_FROM_SHORT" | "SERIES";
+            note?: string;
+        };
+        ReplicateResult: {
+            idea_title: string;
+            similarity_to_source: number;
+            threshold: number;
         };
     };
     responses: never;
@@ -1538,6 +1600,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchHit"][];
+                };
+            };
+            /** @description Error (RFC 9457 problem+json) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_trending_outliers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageData"];
+                };
+            };
+            /** @description Error (RFC 9457 problem+json) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_trending_replicate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageData"];
+                };
+            };
+            /** @description Error (RFC 9457 problem+json) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    replicate_idea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplicateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReplicateResult"];
                 };
             };
             /** @description Error (RFC 9457 problem+json) */

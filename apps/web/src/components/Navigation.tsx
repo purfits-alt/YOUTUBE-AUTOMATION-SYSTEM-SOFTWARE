@@ -53,7 +53,7 @@ function NavItem({
   return (
     <NavLink
       to={pageHref(page)}
-      end={page.path === "/"}
+      end // exact match: "/channels" must not also light up on "/channels/:id/trending"
       onClick={onNavigate}
       title={rail ? title : undefined}
       className={({ isActive }) => itemClass(isActive, onDark, rail)}
@@ -179,7 +179,7 @@ export function MobileNav() {
             <li key={key}>
               <NavLink
                 to={pageHref(page)}
-                end={page.path === "/"}
+                end
                 className={({ isActive }) =>
                   `flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs ${
                     isActive ? "font-bold text-accent" : "text-fg"

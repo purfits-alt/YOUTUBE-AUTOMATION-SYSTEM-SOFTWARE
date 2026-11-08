@@ -132,4 +132,36 @@ describe("app shell", () => {
     fireEvent.click(await screen.findByTestId("sign-out"));
     expect(await screen.findByTestId("login-form")).toBeInTheDocument();
   });
+
+  it("Channel Trending: outliers by default, tabs switch, replicate refuses near-copies", async () => {
+    renderAt("/channels/ch-1/trending");
+    expect(await screen.findByRole("heading", { level: 1, name: "Channel Trending" })).toBeInTheDocument();
+    expect(await screen.findByTestId("state-success")).toHaveTextContent("Outlier ×");
+    expect(screen.getByText(/Only your own channels/)).toBeInTheDocument();
+    // Exactly one menu item is active (Channel Manager "/channels" must not match this page too).
+    const nav = screen.getAllByRole("navigation", { name: "Main navigation" })[0];
+    expect(
+      nav &&
+        within(nav)
+          .getAllByRole("link")
+          .filter((a) => a.getAttribute("aria-current") === "page"),
+    ).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Replicate / Milk" }));
+    expect(screen.getByRole("tab", { name: "Replicate / Milk" })).toHaveAttribute("aria-selected", "true");
+    expect(await screen.findByText("Winners to replicate")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Replicate this" }));
+    const dialog = await screen.findByTestId("replicate-dialog");
+    await waitFor(() => expect(dialog).toHaveAttribute("open"));
+    fireEvent.change(within(dialog).getByLabelText("Kind of variation"), { target: { value: "UPDATE" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Create variation idea" }));
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Too close to the original");
+    fireEvent.change(within(dialog).getByLabelText("Kind of variation"), { target: { value: "NEW_ANGLE" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Create variation idea" }));
+    expect(await screen.findByText(/Variation idea created/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "New Ideas" }));
+    expect(await screen.findByRole("button", { name: "Generate ideas" })).toBeInTheDocument();
+  });
 });

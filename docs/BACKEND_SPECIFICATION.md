@@ -162,6 +162,9 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 | POST | `/channels/{id}/ideas/generate` 🔁⚙ | `{count ≤ 20, format?, pillar?}` | `content.edit` |
 | PATCH | `/ideas/{id}` | IdeaIn (If-Match) | `content.edit` |
 | POST | `/ideas/{id}/commands/{cmd}` 🔁 | `shortlist, schedule{date}, approve, discard` (approve creates a project) | `content.approve` for approve, else `content.edit` |
+| GET | `/channels/{id}/outliers` | Page[OutlierOut] own videos: `{youtube_video_id, title, published_at, views, engaged_views, ctr, avd_s, multiple, age_days}` — own analytics only (ADR-0015/0025) | `analytics.view` |
+| GET | `/channels/{id}/replicate` | `{winners:[OutlierOut], variations:[IdeaOut]}` | `content.view` |
+| POST | `/channels/{id}/ideas/replicate` 🔁⚙ | `{youtube_video_id (own), kind, note?}` → job; ideas with `source=REPLICATE`; 422 `TOO_SIMILAR` when similarity > threshold; 404 if the video is not the channel's own | `content.edit` |
 | GET | `/calendar?from=&to=&channel_id=` | `{items:[{date, idea|project, state}]}` | `content.view` |
 | PATCH | `/calendar/items/{id}` | `{date}` (drag & drop) | `content.edit` |
 
