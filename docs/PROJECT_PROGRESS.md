@@ -148,7 +148,7 @@ P1 Foundation ─┬─ P2 Frontend shell
    - `setup` does not yet install PostgreSQL, Python or FFmpeg automatically. It checks for them and prints install hints (automated installers: Phase 15).
    - The idempotency key currently maps to Procrastinate's queueing lock (blocks duplicate *waiting* jobs). Durable exactly-once via `job_meta` comes in Phase 5.
    - Opening a PR from this session is blocked (GitHub CLI not authorised). Pushing works.
-   - No LICENSE file: choosing a licence for a public repo is the owner's decision (open question).
+   - ~~No LICENSE file~~ resolved 2026-11-08: owner chose **MIT** (ADR-0022, `LICENSE`).
 10. **Remaining tasks for Phase 1 acceptance:**
     - Windows CI job green.
     - ~~Owner runs the demo on their PC~~ done 2026-11-08 ✔.
@@ -156,7 +156,7 @@ P1 Foundation ─┬─ P2 Frontend shell
 
 **Demo script (owner):** see README "Get it onto your PC" → `tubeforge.ps1 doctor` → (install PostgreSQL 16 if missing) → `tubeforge.ps1 setup` → `tubeforge.ps1 start` → browser shows "TubeForge is running · Backend: ok" → `tubeforge.ps1 status` → `tubeforge.ps1 stop`.
 
-**Open questions for the owner:** (1) Licence for the public repo (e.g. "All rights reserved" / MIT / other)? (2) Remote Control folder sharing for D: (lets Claude work directly on the PC).
+**Open questions for the owner:** (1) ~~Licence~~ MIT, decided 2026-11-08 (ADR-0022). (2) Remote Control folder sharing for D: (lets Claude work directly on the PC).
 
 
 ## Resource consumption

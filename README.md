@@ -38,4 +38,6 @@ The plan is in `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app\docs\` (start with `PR
 
 TubeForge has no connection to SEMRS OS or any other product.
 
+Licence: [MIT](LICENSE) (ADR-0022). Third-party dependencies, models and media keep their own licences.
+
 > This repository is **public**. Never commit secrets, OAuth tokens, `.env` files or API keys.

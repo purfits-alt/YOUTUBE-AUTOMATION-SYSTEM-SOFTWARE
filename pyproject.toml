@@ -3,6 +3,7 @@ name = "tubeforge"
 version = "0.1.0"
 description = "TubeForge — local-first, free-to-run, owner-directed AI YouTube production platform"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi>=0.162,<0.163",
