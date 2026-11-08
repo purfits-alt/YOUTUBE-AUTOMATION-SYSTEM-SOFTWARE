@@ -194,7 +194,7 @@ stateDiagram-v2
 
 Notes:
 - The DB enforces **one non-failed upload per (project_id, file_sha256)**. A second attempt reuses the existing job.
-- If a session expired and the resumable upload cannot continue, a new session is created **only** after confirming via `videos.list` (owner's uploads, matching the title and the stored `upload_marker` in the description) that the first attempt did not finish. This prevents duplicates.
+- If a session expired and the resumable upload cannot continue, a new session is created **only** after confirming via the uploads playlist (title + session time window + duration match, YOUTUBE_API_INTEGRATION §6) that the first attempt did not finish. This prevents duplicates without adding anything to the viewer-facing description.
 - Each `SETTING_*` step is retried on its own. On permanent failure the job completes with a warning and the owner is notified (for example, thumbnail rejected → set manually in Studio).
 
 ## 6. Notification
