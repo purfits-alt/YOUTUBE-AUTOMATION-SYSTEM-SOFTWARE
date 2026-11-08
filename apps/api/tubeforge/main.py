@@ -24,9 +24,12 @@ from starlette.types import Scope
 
 from tubeforge.api.errors import install_error_handlers, problem_response
 from tubeforge.api.v1 import auth as auth_v1
+from tubeforge.api.v1 import events as events_v1
 from tubeforge.api.v1 import security as security_v1
+from tubeforge.api.v1 import system as system_v1
 from tubeforge.config import Settings, get_settings
 from tubeforge.db.session import check_database, get_engine, table_exists
+from tubeforge.events import EventBus
 from tubeforge.logging import configure_logging, get_logger
 from tubeforge.secrets import MasterKeyMissingError, SecretBox, SecretsError, default_store
 
@@ -151,6 +154,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(auth_v1.router, prefix="/api/v1")
     app.include_router(security_v1.router, prefix="/api/v1")
+    app.include_router(system_v1.router, prefix="/api/v1")
+    app.include_router(events_v1.router, prefix="/api/v1")
+    app.state.events = EventBus()
+    app.state.sse_idle_limit_s = None
 
     @app.get("/healthz", tags=["system"])
     def healthz() -> dict[str, str]:
