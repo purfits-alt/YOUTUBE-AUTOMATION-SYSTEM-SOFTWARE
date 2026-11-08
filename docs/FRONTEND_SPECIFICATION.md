@@ -1,6 +1,6 @@
 # Frontend Specification
 
-**Version:** 0.1 (Step 0.5, for Checkpoint C4) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C4, 2026-11-08) · **Date:** 2026-11-08
 **Stack:** Vite + React + TypeScript (strict) + React Router + TanStack Query/Table + Tailwind + shadcn/ui + Recharts (ADR-0006). Served by FastAPI at `http://127.0.0.1:8765`.
 **API:** `BACKEND_SPECIFICATION.md` (typed client generated from OpenAPI) · **Permissions:** `OAUTH_SECURITY.md` §3
 

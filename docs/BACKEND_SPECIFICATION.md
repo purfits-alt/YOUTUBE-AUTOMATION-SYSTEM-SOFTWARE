@@ -1,6 +1,6 @@
 # Backend API Specification
 
-**Version:** 0.1 (Step 0.5, for Checkpoint C4) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C4, 2026-11-08) · **Date:** 2026-11-08
 **Base URL:** `http://127.0.0.1:8765/api/v1` · **Framework:** FastAPI (ADR-0002) · **Contract:** OpenAPI 3.1, generated from the Pydantic models. A TypeScript client is generated from it for the web app.
 **Schema reference:** `DATABASE_SCHEMA.md` (entity fields) · **Security:** `OAUTH_SECURITY.md`
 

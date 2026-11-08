@@ -1,6 +1,6 @@
 # OAuth & Security Specification
 
-**Version:** 0.1 (Step 0.5, for Checkpoint C4) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C4, 2026-11-08) · **Date:** 2026-11-08
 **Related:** ADR-0012 (secrets), ADR-0013 (auth), ADR-0016 (publishing safety), ADR-0019 (voice), SYSTEM_ARCHITECTURE §12
 
 ---

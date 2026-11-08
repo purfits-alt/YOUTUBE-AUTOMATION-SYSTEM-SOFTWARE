@@ -1,6 +1,6 @@
 # Database Schema
 
-**Version:** 0.1 (Step 0.5, for Checkpoint C4) · **Date:** 2026-11-08 · **Engine:** PostgreSQL 16+
+**Version:** 1.0 (approved at C4, 2026-11-08) · **Date:** 2026-11-08 · **Engine:** PostgreSQL 16+
 **Migrations:** Alembic. The SQLAlchemy 2.0 models in `apps/api/tubeforge/db/models/` must match this document exactly. A CI check compares `alembic upgrade head` + `pg_dump --schema-only` against a committed snapshot.
 
 ---

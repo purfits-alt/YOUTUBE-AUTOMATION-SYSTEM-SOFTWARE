@@ -1,6 +1,6 @@
 # YouTube API Integration
 
-**Version:** 0.1 (Step 0.5, for Checkpoint C4) · §1–§3 verified in Step 0.3, extended 2026-11-08
+**Version:** 1.0 (approved at C4, 2026-11-08) · §1–§3 verified in Step 0.3, extended 2026-11-08
 
 ---
 
