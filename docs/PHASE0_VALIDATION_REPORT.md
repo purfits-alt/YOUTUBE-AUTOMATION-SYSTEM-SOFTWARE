@@ -167,3 +167,29 @@ Microsoft ended Windows 10 support on 14 Oct 2025. As far as I know, the consume
 - Urdu needs RTL layout in thumbnails and captions, Nastaliq fonts (Noto Nastaliq Urdu, OFL licence) and an Urdu TTS check. **Urdu is the hardest of the five and is flagged high-risk for local quality.**
 - Recommended rollout: launch **one channel in one language** in Phase 16, then expand.
 - Translating a video into another language is not original content by default. The Policy Auditor treats near-duplicate translated catalogues as a repetition risk, unless the owner adds language-specific value.
+
+---
+
+## 11. Step 0.3 update — verification results that change the plan (2026-11-08)
+
+Full evidence is in `FREE_TIER_PROVIDER_MATRIX.md`. These findings **change** earlier assumptions:
+
+| # | Earlier assumption | Verified reality | Change |
+|---|---|---|---|
+| V-1 | F1: uploads forced private until audit | **Reversed 2 Nov 2026.** No audit needed. Omitted `privacyStatus` = **public**. | ADR-0016. Conflict **C-9 resolved**. Audit removed from FULLY-AUTO preconditions. New hard invariant: explicit privacy on every upload. |
+| V-2 | F2: ~4 uploads/day worst case | Uploads have their own 100/day bucket, so a full publish costs about 550 shared units | Quota is no longer a bottleneck. `search.list` (100/day) is the scarce resource. The ledger tracks 3 buckets. |
+| V-3 | Competitor patterns and niche scoring from YouTube data (brief §8) | **Developer Policies forbid aggregating API data** across channels not owned by the same content owner, and using it for insights into YouTube's business | ADR-0015: niche scoring from non-YouTube sources; competitor lookup shows single items only, ≤ 30-day cache. **New conflict C-11** with brief §8, resolved conservatively. |
+| V-4 | `mostPopular` chart as a trend signal | Since Jul 2025 it shows only Music, Movies and Gaming charts | Low value for most niches. Kept only as a minor signal. |
+| V-5 | Windows 10 unpatched | Consumer ESU reportedly extended to 12 Oct 2027 (secondary sources) | **Owner action:** enrol in free consumer ESU. Risk downgraded. |
+| V-6 | Image generation via free-tier APIs | Gemini image models are **not** on the free tier | ADR-0010: non-generative visuals by default. Image provider spike moved to Phase 8. |
+| V-7 | Urdu TTS may be missing | Two Urdu Piper voices exist (MIT per model card) | Urdu feasible locally. The owner checks quality and licence. |
+| V-8 | Free-tier LLM terms | Gemini free tier: content **is used to improve Google products**. Linking billing moves a project to paid automatically. | Data-use labels, local-only channel flag, "never link billing" setup rule (ADR-0007). |
+| V-9 | Thumbnails ≤ 2 MB | Now ≤ 50 MB. Shorts custom thumbnails via API. | Thumbnail spec updated in Step 0.6. |
+| V-10 | Free CI minutes limited | Standard runners free for **public** repos | Full CI on Linux + Windows at no cost while the repo is public. |
+
+### New risks for RISK_REGISTER
+
+- **R-new-1:** Accidental public upload (because the default flipped to public). Mitigation: client-side invariant, tests, Private-only switch.
+- **R-new-2:** API access revocation for policy misuse (aggregation). Mitigation: ADR-0015.
+- **R-new-3:** Free-tier terms or limits change without notice. Mitigation: 90-day re-verification, provider fallback chain.
+- **R-new-4:** Prompts sent to free tiers may be used for training. Mitigation: labels, local-only flag, no secrets or PII in prompts.

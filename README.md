@@ -8,6 +8,7 @@ An independent, local-first, free-to-run, AI-assisted YouTube production and cha
 - Validation report: `docs/PHASE0_VALIDATION_REPORT.md`
 - Product requirements: `docs/PRODUCT_REQUIREMENTS.md`
 - Progress tracker: `docs/PROJECT_PROGRESS.md`
+- Tech stack: `docs/TECH_STACK_EVALUATION.md` · Providers & verified facts: `docs/FREE_TIER_PROVIDER_MATRIX.md` · ADRs: `docs/adr/`
 
 TubeForge has no connection to SEMRS OS or any other product.
 

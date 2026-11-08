@@ -1,6 +1,6 @@
 # TubeForge — Product Requirements Document (PRD)
 
-**Version:** 1.0 (approved at C1 — 2026-11-08; open questions OQ-1…OQ-6 resolved with proposed defaults) · **Date:** 2026-11-08
+**Version:** 1.1-draft (v1.0 approved at C1 — 2026-11-08; v1.1 changes from Step 0.3 fact verification are listed in §11 and await approval at C2) · **Date:** 2026-11-08
 **Sources:** `00_MASTER_PROMPT.md`, `PHASE0_VALIDATION_REPORT.md`, C0 answers in `PROJECT_PROGRESS.md`
 **Requirement IDs** (`FR-…`, `NFR-…`, `US-…`) are stable. Later specs, tests and roadmap tasks refer back to them.
 
@@ -19,7 +19,7 @@ A local-first, free-to-run AI production studio. It helps one owner discover cha
 | Constraint | Value | Consequence |
 |---|---|---|
 | Owner machine | Windows 10, 8 GB RAM, no GPU (**H-LITE**) | Hybrid design: local DB, queue, render, TTS and STT; free-tier cloud for LLM text and images. One heavy job at a time. Native Windows install. |
-| OS support status | Windows 10 is past end of support | Accepted risk with mitigations (NFR-SEC-08) |
+| OS support status | Windows 10: general support ended 14 Oct 2025; consumer ESU reportedly extended to 12 Oct 2027 | Owner enrols in free consumer ESU; remaining risk accepted with mitigations (NFR-SEC-08) |
 | Languages | EN, ES, FR, DE, UR supported; **launch in English, one channel** | Per-channel content language. Urdu needs RTL and is high-risk for local quality. |
 | Timezone | Asia/Karachi (owner). YouTube quota day = Pacific Time | Times stored in UTC and shown in both zones where relevant |
 | Access | Dashboard on `127.0.0.1` only | No remote or LAN access in v1 |
@@ -72,9 +72,9 @@ The 25-step workflow in master prompt §2.4, covered by the epics in §6 below.
 |---|---|---|---|
 | MANUAL | ✅ Yes | Owner approves every stage | — |
 | SEMI-AUTOMATIC | No | Owner approves publication | Owner switches it on per channel |
-| FULLY-AUTOMATIC | No | Rules set by the owner | ≥ N (default 10) successful private test runs **and** YouTube compliance audit passed **and** two-step owner activation per channel |
+| FULLY-AUTOMATIC | No | Rules set by the owner | ≥ N (default 10) successful private test runs **and** a verified public-release test on the test channel **and** two-step owner activation per channel **and** an owner-accepted auto-publish rule set (DP-6 express consent) |
 
-**Private-only mode** is the expected long-term state until the audit passes, and it may stay that way permanently. In this mode every upload is `private` and the owner makes videos public in YouTube Studio. The UI shows a permanent banner while it is active.
+**Private-only mode** is an owner safety switch (since 2 Nov 2026 YouTube no longer forces unverified API projects to private, see ADR-0016). It is ON by default for a new channel until 3 successful private test uploads, then the owner may switch it off. When ON, every upload is `private` and the owner makes videos public in YouTube Studio, and the UI shows a banner. **Independently of this switch, `privacyStatus` is always sent explicitly, because an omitted value now defaults to public.**
 
 ---
 
@@ -114,17 +114,18 @@ As the owner, I want a ranked list of niche opportunities with evidence so that 
 - AC2: The owner can change weights, and scores recalculate immediately.
 - AC3: Every niche shows an **inauthentic-content risk** and a **production difficulty on H-LITE** rating.
 - AC4: No text anywhere states or implies guaranteed earnings. A test scans outputs for forbidden phrases.
-- AC5: Data comes only from permitted sources listed in the provider registry.
+- AC5: Data comes only from permitted sources listed in the provider registry. **Scores are not computed from aggregated YouTube API data about other channels** (ADR-0015). Sources: Wikipedia pageviews, RSS/news, Google Trends API (alpha, only if the owner is accepted), owner's own channel analytics, LLM reasoning with citations.
 
 **US-2.2 Trend intelligence** (Phase 6)
 As the owner, I want rising topics in my niche from permitted sources so that I can make timely videos.
 - AC: Each trend has its source, the time it was fetched, a confidence level, and an expiry. Expired trends are hidden by default.
 
-**US-2.3 Competitor research** (Phase 6)
-As the owner, I want a summary of competitor channels' public patterns (upload frequency, formats, topics) so that I can find gaps.
+**US-2.3 Competitor research** (Phase 6) — *revised for Developer Policies (ADR-0015)*
+As the owner, I want to look up a channel or video I name and see its public information, so that I can study it myself.
 - AC1: Uses only official API metadata. Never downloads videos or thumbnails for reuse.
-- AC2: Every API call is charged to the quota ledger. Research stops before it exceeds its share of the daily quota (configurable, default 30 %).
-- AC3: Stored API data follows the retention rules in `YOUTUBE_API_INTEGRATION.md`.
+- AC2: Shows each looked-up item **individually**. **No cross-channel statistics, rankings or aggregated pattern scores built from YouTube API data** (Developer Policies: Data Aggregation).
+- AC3: Non-authorized data is cached ≤ 30 days, then deleted or refreshed automatically.
+- AC4: Every API call is charged to the quota ledger (search.list has its own 100/day bucket). Research may use at most a configurable share (default 30 %) of each bucket.
 
 **US-2.4 Channel blueprint** (Phase 6)
 As the owner, I want a full channel plan from a chosen niche so that I can launch with a clear strategy.
@@ -145,7 +146,7 @@ As the owner, I want to connect a channel through Google sign-in so that TubeFor
 - AC1: OAuth uses the minimum scopes needed for the enabled features.
 - AC2: Tokens are encrypted at rest (AES-GCM). The key comes from the Windows Credential Manager / OS keyring, not from `.env`.
 - AC3: After connecting, the channel ID and title are shown and the owner must confirm they are the intended ones.
-- AC4: Disconnecting revokes the token with Google and deletes it locally.
+- AC4: Disconnecting revokes the token with Google and deletes it locally. All stored API data for that channel is deleted within 7 days (Developer Policies), with a deadline monitor.
 
 **US-3.4 Token health** (Phase 4)
 As the owner, I want to be warned before the connection breaks so that uploads don't fail silently.
@@ -246,19 +247,20 @@ As the owner, I want warnings when my channel looks templated or mass-produced s
 - AC4: Thumbnail and captions are set after upload. Partial failures are retried on their own without re-uploading the video.
 
 **US-9.2 Scheduling** (Phase 12)
-- AC: `publishAt` is used only with `private` status. The UI explains that scheduled public release works only after the compliance audit passes. Times are shown in Asia/Karachi and in the channel's audience timezone.
+- AC: `publishAt` is used only with `private` status. Scheduling a public release needs an owner approval record (or an owner-accepted auto-publish rule in FULLY-AUTO). Disabled while Private-only mode is ON. Times are shown in Asia/Karachi and in the channel's audience timezone.
 
 **US-9.3 Quota ledger** (Phase 4, extended in Phase 12)
 - AC1: Every YouTube API call records its unit cost, read from config.
-- AC2: A job that would exceed the remaining daily quota (with a safety reserve, default 10 %) does not start. It is rescheduled after the Pacific-midnight reset, and the owner is notified.
+- AC2: The ledger tracks **three buckets**: `videos.insert` (100 calls/day), `search.list` (100 calls/day), and the shared 10,000-unit pool. A job that would exceed the remaining quota of any bucket it needs (with a safety reserve, default 10 %) does not start. It is rescheduled after the Pacific-midnight reset, and the owner is notified.
 
-**US-9.4 Compliance audit package** (Phase 12)
-- AC: Privacy policy, terms, data-handling description and screenshots are prepared from templates for the owner to submit. The system never submits anything on its own.
+**US-9.4 Privacy policy & optional audit package** (Phase 4 policy, Phase 12 package)
+- AC1: A privacy policy and terms template meeting Developer Policy III.A.2 (links to the Google Privacy Policy and `security.google.com/settings/security/permissions`) is ready before the first OAuth connection.
+- AC2: A compliance-audit package (only needed for a quota extension) can be generated from templates for the owner. The system never submits anything on its own.
 
 ### E10 — Analytics and improvement
 
 **US-10.1 Analytics** (Phase 13)
-- AC: Daily snapshots of views, watch time, average view duration, CTR (when available), subscribers gained/lost and traffic sources. Stored data follows the API data-retention rules. No monetary metrics in v1 (D-8).
+- AC: Daily snapshots of views, watch time, average view duration, CTR (when available), subscribers gained/lost and traffic sources. Own-channel analytics may be kept long-term, but **authorization and video existence are re-checked at least every 30 days** (Developer Policies III.E.4). No monetary metrics in v1 (D-8).
 
 **US-10.2 Growth suggestions** (Phase 13)
 - AC: Suggestions (e.g. better hooks, topics, upload times) each cite the data behind them. **None is applied without owner approval.**
@@ -365,3 +367,16 @@ As the owner, I want warnings when my channel looks templated or mass-produced s
 | OQ-4 | Block (vs. warn) high inauthentic-risk videos in MANUAL mode too? | Warn in MANUAL, block in SEMI/FULLY |
 | OQ-5 | Quiet hours 23:00–08:00 Karachi OK? | Yes |
 | OQ-6 | Owner hands-on time target of ≤ 3 h/video realistic for you? | Yes, adjust later |
+
+---
+
+## 11. Change log
+
+| Version | Date | Change | Reason |
+|---|---|---|---|
+| 1.0 | 2026-11-08 | Approved at C1 | — |
+| 1.1-draft | 2026-11-08 | Operating modes: audit precondition removed; Private-only mode becomes a safety switch; explicit `privacyStatus` invariant | YouTube revision history 2 Nov 2026 (F1 reversed), ADR-0016 |
+| 1.1-draft | 2026-11-08 | US-2.1 / US-2.3: no cross-channel aggregation of YouTube API data | Developer Policies "Data Aggregation", ADR-0015 |
+| 1.1-draft | 2026-11-08 | US-9.3: three quota buckets | Granular quota since 1 Jun 2026 (F2) |
+| 1.1-draft | 2026-11-08 | US-3.3, US-10.1, US-9.4: 7-day deletion, 30-day re-authorization, privacy-policy content | Developer Policies III.A.2, III.E.4 |
+| 1.1-draft | 2026-11-08 | Windows 10 ESU note | Consumer ESU reportedly extended to Oct 2027 |
