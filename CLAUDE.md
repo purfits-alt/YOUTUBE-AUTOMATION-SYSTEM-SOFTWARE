@@ -17,19 +17,22 @@ docs/            specs, ADRs, progress
 ```
 Owner install root: `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE` (the path has spaces: always quote paths, and use argv lists for subprocesses).
 
-## Commands (finalised in Phase 1 — keep this section current)
+## Commands (verified in Phase 1 — keep this section current)
 | Task | Command |
 |---|---|
 | Install deps | `uv sync` · `pnpm -C apps/web install` |
-| Run API (dev) | `uv run tubeforge-api --reload` |
-| Run workers (dev) | `uv run tubeforge-worker --queues light` · `uv run tubeforge-worker --queues heavy` |
-| Run web (dev) | `pnpm -C apps/web dev` |
-| Migrations | `uv run alembic upgrade head` / `downgrade -1` |
-| Lint & types | `uv run ruff check . && uv run mypy --strict apps workers` · `pnpm -C apps/web lint && pnpm -C apps/web typecheck` |
-| Python tests | `uv run pytest -m "not integration and not media"` · `uv run pytest -m integration` · `uv run pytest -m media` |
-| Web tests | `pnpm -C apps/web test` · `pnpm -C apps/web e2e -- --trace off` |
-| Security | `pre-commit run --all-files` (includes gitleaks) · `uv run pip-audit` · `pnpm -C apps/web audit --audit-level high` |
-| Windows (owner PC) | `tubeforge.ps1 doctor` · `start` · `stop` · `status` · `backup` |
+| Database migrations | `uv run tubeforge-db upgrade` · `uv run tubeforge-db downgrade -1` · `uv run tubeforge-db current` |
+| Run API (dev) | `uv run tubeforge-api --reload` → http://127.0.0.1:8765 (`/healthz`, `/readyz`, `/api/docs`) |
+| Run workers (dev) | `uv run tubeforge-worker --queues light` · `uv run tubeforge-worker --queues heavy` (`--once` = drain and exit) |
+| Run web (dev) | `pnpm -C apps/web dev` → http://127.0.0.1:5173 (proxies the API) |
+| Build web | `pnpm -C apps/web build` (the API serves `apps/web/dist`) |
+| Lint & types | `uv run ruff check . && uv run ruff format --check . && uv run mypy` · `pnpm -C apps/web lint && pnpm -C apps/web typecheck` |
+| Python tests | `TUBEFORGE_TEST_DATABASE_URL=postgresql+psycopg://…/tubeforge_test uv run pytest` (integration tests wipe that DB) · unit only: `uv run pytest -m "not integration"` |
+| Web tests | `pnpm -C apps/web test` · e2e (API running with built web): `pnpm -C apps/web e2e` |
+| Docs checks | `uv run python tools/check_traceability.py` |
+| Security | `uv run pre-commit run --all-files` (gitleaks, ruff, traceability) · `uv run pip-audit --skip-editable` · `pnpm -C apps/web audit --audit-level high` · licences: `tools/check_licenses.py` |
+| Local Postgres for dev (Linux) | `docker compose -f infra/compose/docker-compose.dev.yml up -d` |
+| Windows (owner PC) | `tubeforge.ps1 doctor` · `setup` · `start` · `stop` · `status` (in `infra/windows/`) |
 
 ## Coding standards
 - **Python 3.12:** ruff (lint + format), mypy `--strict`, pytest (+ hypothesis). Pydantic v2 for all I/O. SQLAlchemy 2.0 typed ORM. Alembic migrations with downgrades. Async for I/O; heavy work only in workers.

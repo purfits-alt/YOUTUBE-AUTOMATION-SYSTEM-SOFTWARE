@@ -1,0 +1,40 @@
+# Install once: uv run pre-commit install
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: detect-private-key
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.2
+    hooks:
+      - id: gitleaks
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff (lint)
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: ruff (format)
+        entry: uv run ruff format
+        language: system
+        types: [python]
+      - id: traceability
+        name: traceability check (docs)
+        entry: uv run python tools/check_traceability.py
+        language: system
+        files: ^(docs/|CLAUDE\.md)
+        pass_filenames: false
+      - id: web-lint
+        name: web lint (eslint + prettier)
+        entry: pnpm -C apps/web lint
+        language: system
+        files: ^apps/web/
+        pass_filenames: false

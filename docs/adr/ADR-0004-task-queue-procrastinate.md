@@ -28,3 +28,8 @@ MIT (verified: procrastinate LICENSE.md, 2026-11-08).
 ## References
 - `docs/TECH_STACK_EVALUATION.md`
 - `docs/FREE_TIER_PROVIDER_MATRIX.md`
+
+## Phase 1 spike result (2026-11-08)
+- **Linux:** Procrastinate 3.10 works: schema applied through Alembic (0001), jobs enqueued and executed by both worker profiles (`light`, `heavy`), and the queueing lock blocks a duplicate waiting job. Tests: `tests/integration/test_db_and_queue.py`.
+- Implementation notes: a Procrastinate `Blueprint` is modified when it is attached to an app, so tasks come from a `make_blueprint()` factory. The schema SQL is executed with `%` escaped for psycopg.
+- **Windows:** the same tests run on `windows-latest` in CI with `WindowsSelectorEventLoopPolicy`. The fallback SKIP LOCKED queue is only needed if that job fails (see PROJECT_PROGRESS Phase 1 report).
