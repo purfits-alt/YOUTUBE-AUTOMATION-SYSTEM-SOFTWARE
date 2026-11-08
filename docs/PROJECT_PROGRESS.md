@@ -248,7 +248,7 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
    | gitleaks (tree + branch commits), pip-audit, pnpm audit, licence gate | clean |
 
    Real defects the tests found and fixed this phase: non-IP client addresses broke `inet` columns; sign-out left the app open; the app did not render when service workers are blocked; the contract documented `application/json` errors instead of problem+json, dropped the 405 `Allow` header for multi-method paths, used a regex that differs between Python and JSON Schema, and documented times as JSON-Schema `time` (needs an offset) — settings times are now `HH:MM`; cursors now have a documented pattern.
-7. **Free-tier services used:** none. New dependencies (all free): argon2-cffi, pyotp, cryptography, keyring, segno, zxcvbn; dev: schemathesis. **This phase introduces no paid dependency: ✔**
+7. **Free-tier services used:** none. New dependencies (all free): argon2-cffi, pyotp, cryptography (≥ 50.0.2: four advisories fixed in 48–50), keyring, segno, zxcvbn; dev: schemathesis. **This phase introduces no paid dependency: ✔**
 8. **Resource consumption:** unchanged process count; Argon2 uses 64 MiB for ≈ 0.1–0.3 s per sign-in.
 9. **Known limitations:**
    - Emergency Stop / kill switches are recorded, audited and broadcast, but nothing runs yet to stop (enforcement in Phase 5).
