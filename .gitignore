@@ -32,3 +32,4 @@ config/tubeforge.toml
 *.p12
 .cache/
 .python/
+.e2e-home/

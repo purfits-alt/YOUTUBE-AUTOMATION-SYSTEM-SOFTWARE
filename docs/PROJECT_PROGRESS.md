@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 1 — Foundation & repository
-**Current step:** Phase 0 complete (C6 approved). Phase 1 in progress.
+**Current step:** Phase 1 built — waiting for owner approval ("approved") after the demo and the Windows CI job.
 **Last updated:** 2026-11-08
 
 ---
@@ -98,7 +98,63 @@ P1 Foundation ─┬─ P2 Frontend shell
 
 ## Phase reports
 
-_None yet — no build phase has started._
+### Phase 1 — Foundation & repository · report 2026-11-08 · branch `phase-1-foundation` · ⏳ awaiting owner approval
+
+**Plan (from IMPLEMENTATION_ROADMAP Phase 1):** monorepo, uv + FastAPI health/readiness, Vite+React placeholder, PostgreSQL + Alembic + Procrastinate (with Windows spike), light/heavy workers, tooling and CI (Linux + Windows path with spaces), `tubeforge.ps1`, RAM measurement.
+
+1. **Modules implemented**
+   - `tubeforge.config`: settings from env → TOML → defaults. **Loopback-only host enforced.** Windows default home `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE`.
+   - `tubeforge.logging`: structlog JSON with secret redaction (keys + Google/Groq/Telegram/Bearer/DSN-password patterns).
+   - `tubeforge.main`: `/healthz`, `/readyz` (DB, queue schema, data dir) as problem+json; Host-header guard (DNS-rebinding defence); serves the built SPA or a placeholder.
+   - `tubeforge.db.session`, `tubeforge.queue`: Procrastinate behind a `JobQueue` interface; queues per SYSTEM_ARCHITECTURE §4-E; light (4) and heavy (1) profiles.
+   - `tubeforge_workers`: worker CLI (`--queues light|heavy`, `--once`) and smoke tasks.
+   - `apps/web`: React 19 + Vite 8 + TS strict placeholder showing backend status.
+   - `tools/check_traceability.py`, `tools/check_licenses.py`.
+   - `infra/windows/tubeforge.ps1` (doctor / setup / start / stop / status, PowerShell 5.1) and `get-tubeforge.ps1` (download to D:).
+2. **Files created/modified:**
+   - `pyproject.toml`, `uv.lock`, `apps/api/{alembic.ini, migrations/*, tubeforge/*}`, `workers/tubeforge_workers/*`
+   - `apps/web/*` (package.json, pnpm-lock.yaml, src, tests/e2e, configs), `packages/shared/enums.json`
+   - `tools/*`, `tests/{conftest.py, unit/*, integration/*}`, `infra/windows/*`, `infra/compose/*`
+   - `.github/workflows/ci.yml`, `.pre-commit-config.yaml`, `.gitleaks.toml`, `.gitignore`, `.env.example`, `site/index.html`
+   - Updated: `CLAUDE.md` (verified commands), `README.md` (Windows/D: quick start), ADR-0004 (spike result).
+3. **Database changes:** Alembic revision `0001` = Procrastinate queue schema (upgrade and downgrade, both tested). No application tables yet (Phase 3).
+4. **APIs implemented:** `GET /healthz`, `GET /readyz`, `GET /` (dashboard), `GET /api/docs` and `/api/openapi.json` (dev only; hidden in prod).
+5. **Agents created:** none (Phase 5+). Smoke tasks `tf:mnt.ping` (light) and `tf:heavy.ping` (heavy) prove both worker profiles.
+6. **Tests executed (Linux, this session):**
+
+   | Suite | Result |
+   |---|---|
+   | Python (unit + integration, real PostgreSQL 16) | **43 passed** |
+   | ruff lint + format | pass |
+   | mypy --strict | pass (12 files) |
+   | Web: vitest | **2 passed** |
+   | Web: eslint + prettier | pass |
+   | Web: tsc strict | pass |
+   | Web: build | pass (220 kB JS, 69 kB gzipped) |
+   | Playwright e2e (desktop + mobile, real API + DB + built web) | **4 passed** |
+   | Traceability check | pass |
+   | pip-audit | 0 known vulnerabilities |
+   | pnpm audit | 0 (a moderate dev-only `minimatch` advisory was fixed via a pnpm override to 11.0.1) |
+   | Licence gate (Python + web) | pass |
+
+   The licence-gate test caught a real gap ("GNU Affero …" was not matched) and it was fixed.
+   **Not run here:** gitleaks (running an external binary was not permitted in this session; it runs in CI) and the Windows CI job (runs on GitHub after push; see the Actions tab).
+7. **Free-tier services used:** none at runtime. Tooling: PostgreSQL, Python/uv, Node/pnpm, Procrastinate (MIT), GitHub Actions (free for public repo). **This phase introduces no paid dependency: ✔**
+8. **Resource consumption (idle, Linux container):** API ≈ 94 MB · light worker ≈ 54 MB · heavy worker ≈ 54 MB · PostgreSQL (all backends) ≈ 350 MB RSS (shared memory counted per process, so this overstates it) → **≈ 550 MB total**. Target ≤ 1.5 GB ✔. To be re-measured on the owner's Windows PC (`tubeforge.ps1 status` shows per-process MB).
+9. **Known limitations:**
+   - `tubeforge.ps1` has not been executed on a real Windows machine yet; it is validated by the Windows CI job (PSScriptAnalyzer, doctor on PS 5.1, full pytest including queue round-trip, start/status/stop in `C:\Tube Forge Test\`).
+   - `setup` does not yet install PostgreSQL, Python or FFmpeg automatically. It checks for them and prints install hints (automated installers: Phase 15).
+   - The idempotency key currently maps to Procrastinate's queueing lock (blocks duplicate *waiting* jobs). Durable exactly-once via `job_meta` comes in Phase 5.
+   - Opening a PR from this session is blocked (GitHub CLI not authorised). Pushing works.
+   - No LICENSE file: choosing a licence for a public repo is the owner's decision (open question).
+10. **Remaining tasks for Phase 1 acceptance:**
+    - Windows CI job green.
+    - Owner runs the demo on their PC: download to D: → `doctor` → install PostgreSQL 16 → `setup` → `start` → dashboard at http://127.0.0.1:8765.
+
+**Demo script (owner):** see README "Get it onto your PC" → `tubeforge.ps1 doctor` → (install PostgreSQL 16 if missing) → `tubeforge.ps1 setup` → `tubeforge.ps1 start` → browser shows "TubeForge is running · Backend: ok" → `tubeforge.ps1 status` → `tubeforge.ps1 stop`.
+
+**Open questions for the owner:** (1) Licence for the public repo (e.g. "All rights reserved" / MIT / other)? (2) Remote Control folder sharing for D: (lets Claude work directly on the PC).
+
 
 ## Resource consumption
 
@@ -106,4 +162,5 @@ _None yet — no build phase has started._
 |---|---|
 | Paid services | None |
 | Free-tier APIs | None called yet (research used public web pages only) |
+| Idle RAM (Phase 1, Linux) | ≈ 550 MB total (API + 2 workers + PostgreSQL) |
 | YouTube API quota | 0 units |

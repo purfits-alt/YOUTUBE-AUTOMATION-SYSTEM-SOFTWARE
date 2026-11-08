@@ -7,6 +7,10 @@ from pathlib import Path
 import pytest
 
 from tubeforge.config import Settings, get_settings
+from tubeforge.queue import ensure_windows_event_loop_policy
+
+# psycopg's async mode needs the selector event loop on Windows (same as the worker CLI).
+ensure_windows_event_loop_policy()
 
 TEST_DB_ENV = "TUBEFORGE_TEST_DATABASE_URL"
 

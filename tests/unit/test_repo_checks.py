@@ -1,0 +1,68 @@
+"""Repository-level checks: planning traceability, shared enums, no forbidden patterns."""
+
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+
+from tools.check_licenses import check_python, check_web
+from tools.check_traceability import ROOT, check
+
+
+def test_traceability_matrix_is_consistent() -> None:
+    assert check() == []
+
+
+def test_traceability_detects_missing_document(tmp_path: Path) -> None:
+    (tmp_path / "docs").mkdir()
+    problems = check(tmp_path)
+    assert any("PRODUCT_REQUIREMENTS" in p for p in problems)
+    assert any("CLAUDE.md" in p for p in problems)
+
+
+def test_shared_enums_match_database_schema_doc() -> None:
+    doc = (ROOT / "docs" / "DATABASE_SCHEMA.md").read_text(encoding="utf-8")
+    section = doc[doc.index("## 14. Enum value sets") : doc.index("## 15.")]
+    from_doc = {
+        m.group(1): [v.strip() for v in m.group(2).split(",")]
+        for m in re.finditer(r"^\| ([a-z_]+) \| ([A-Z_0-9, ]+) \|$", section, re.M)
+    }
+    shared = json.loads((ROOT / "packages" / "shared" / "enums.json").read_text(encoding="utf-8"))["enums"]
+    assert shared == from_doc
+    assert "EXTERNAL_EDITING" in shared["project_state"]  # ADR-0021 state present
+
+
+def test_licence_gate_blocks_agpl_and_unknown() -> None:
+    problems = check_python(
+        [
+            {"Name": "fastapi", "License": "MIT"},
+            {"Name": "psycopg", "License": "GNU Lesser General Public License v3 (LGPLv3)"},
+            {"Name": "bad-a", "License": "GNU Affero General Public License v3"},
+            {"Name": "bad-b", "License": "UNKNOWN"},
+        ]
+    )
+    assert len(problems) == 2
+    assert check_web({"MIT": [{"name": "react"}], "SSPL-1.0": [{"name": "x"}]}) == [
+        "web: disallowed/unknown licence 'SSPL-1.0': x"
+    ]
+
+
+def test_no_youtube_html_scraping_targets_in_code() -> None:
+    """DP-8: application code must never target YouTube HTML pages (only the official API hosts)."""
+    pattern = re.compile(r"https?://(www\.|m\.)?youtube\.com/(watch|results|channel|c/|@|feed)")
+    offenders = []
+    for folder in ("apps/api/tubeforge", "workers"):
+        for path in (ROOT / folder).rglob("*.py"):
+            if pattern.search(path.read_text(encoding="utf-8")):
+                offenders.append(str(path.relative_to(ROOT)))
+    assert offenders == []
+
+
+def test_no_billing_or_payment_clients() -> None:
+    """COST_CONTROL G2/G4: no billing/payment SDKs in dependencies."""
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8").lower()
+    web = (ROOT / "apps" / "web" / "package.json").read_text(encoding="utf-8").lower()
+    for forbidden in ("google-cloud-billing", "stripe", "paypal", "braintree"):
+        assert forbidden not in pyproject
+        assert forbidden not in web
