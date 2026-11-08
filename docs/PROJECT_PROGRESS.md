@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 4 — Channel onboarding, OAuth & quota ledger
-**Current step:** P4-A (YouTube core) built; next P4-B (OAuth PKCE). Phase 3 merged to `main` (PR #7).
+**Current step:** P4-A (YouTube core) and P4-B (OAuth) built; next P4-C (channels API + test upload). Phase 3 merged to `main` (PR #7).
 **Last updated:** 2026-11-08
 
 ---
@@ -267,7 +267,7 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 
 **Plan (from IMPLEMENTATION_ROADMAP Phase 4), in four steps:**
 - **P4-A YouTube core** ✅ — `youtube/errors.py` (classification §7), `youtube/quota.py` (buckets, PT day + PKT reset time, reservations under an advisory lock, ledger, research share, forecast), migration 0004 seeding `quota_config` with the costs verified 2026-11-08, `youtube/client.py` `SafeYouTubeClient` preflight I-1…I-12 (I-4 refuses non-test uploads until Phase 9; I-12 refuses auto-publish until Phase 14) and an httpx REST client (ADR-0026). ORM models for the Phase 4 tables. 5-second private test clip (`youtube/assets/test_clip.mp4`, own artwork). `tzdata` added so time zones work on Windows.
-- **P4-B OAuth** — OAuth client registration (secret encrypted), PKCE loopback flow (`/oauth/callback` on 127.0.0.1:8765), identity confirmation via `channels.list mine=true`, token refresh → NEEDS_REAUTH, revoke + 7-day data deletion, token-health job with Testing-mode 7-day warnings. Mocked Google in tests.
+- **P4-B OAuth** ✅ — OAuth client registration (secret encrypted), PKCE loopback flow (`/oauth/callback` on 127.0.0.1:8765), identity confirmation via `channels.list mine=true`, token refresh → NEEDS_REAUTH, revoke + 7-day data deletion, token-health job with Testing-mode 7-day warnings. Mocked Google in tests (a fake that verifies PKCE). Added `GET /channels/{id}/oauth/identity` so the owner sees the signed-in channel before confirming; `tubeforge.notifications.notify_owners` (dedup window) shared by preflight and OAuth.
 - **P4-C Channels & test upload** — Channels API (CRUD, start-onboarding/pause/resume/disconnect/reconnect, publishing rules, private-only/mode with step-up), 10 onboarding steps, resumable private test upload job (8 MiB chunks, persisted offset, resume, idempotent) with a fault-injection test, retention jobs (cache purge, deletion tasks, 30-day re-auth check), minimal notifications + bell count.
 - **P4-D Web, site & docs** — Channel Manager + Onboarding pages on the real API, bell, `site/privacy.html` + `site/terms.html` (DP-5), owner guide for the Google Cloud project (no billing), OAuth Desktop client and test channel, e2e + CI, phase report. Then the one **manual** real OAuth + private upload on the owner PC.
 

@@ -298,7 +298,7 @@ def test_refusal_is_audited_logged_and_notified(db: Session, intent: UploadInten
         select(func.count()).select_from(SecurityEvent).where(SecurityEvent.severity == "WARNING")
     )
     note = db.scalars(select(Notification)).one()
-    assert note.event_type == "UPLOAD_REFUSED" and note.channel_id == intent.channel_id
+    assert note.event_type == "upload.refused" and note.channel_id == intent.channel_id
 
 
 # ------------------------------------------------------------------------------------------ quota

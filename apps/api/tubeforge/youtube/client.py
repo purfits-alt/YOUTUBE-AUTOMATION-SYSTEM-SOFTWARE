@@ -27,15 +27,13 @@ from tubeforge.db.models import (
     Channel,
     ChannelPublishingRules,
     KillSwitch,
-    Notification,
     OAuthConnection,
     QuotaReservation,
-    Role,
     SystemSettings,
     UploadJob,
-    UserRole,
     VideoProject,
 )
+from tubeforge.notifications import notify_owners
 from tubeforge.youtube import quota
 from tubeforge.youtube.errors import ErrorClass, YouTubeApiError, from_response
 
@@ -96,25 +94,18 @@ def _refuse(db: Session, intent: UploadIntent, code: str, message: str, actor: A
     security_event(
         db, "YOUTUBE_PREFLIGHT_REFUSED", "WARNING", channel_id=intent.channel_id, details={"code": code}
     )
-    owners = db.scalars(
-        select(UserRole.user_id).join(Role, Role.id == UserRole.role_id).where(Role.name == "OWNER")
-    ).all()
-    for user_id in set(owners):
-        db.add(
-            Notification(
-                user_id=user_id,
-                channel_id=intent.channel_id,
-                event_type="UPLOAD_REFUSED",
-                severity="WARNING",
-                title="Upload stopped by a safety check",
-                body=message,
-                link=f"/channels/{intent.channel_id}",
-                entity_type="video_project",
-                entity_id=intent.project_id,
-                dedup_key=f"preflight:{intent.project_id}:{code}",
-            )
-        )
-    db.flush()
+    notify_owners(
+        db,
+        event_type="upload.refused",
+        severity="WARNING",
+        title="Upload stopped by a safety check",
+        body=message,
+        dedup_key=f"preflight:{intent.project_id}:{code}",
+        channel_id=intent.channel_id,
+        link=f"/channels/{intent.channel_id}",
+        entity_type="video_project",
+        entity_id=intent.project_id,
+    )
     return PreflightRefused(code, message)
 
 

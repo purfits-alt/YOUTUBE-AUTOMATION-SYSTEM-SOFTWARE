@@ -1,4 +1,4 @@
-"""Phase 1 tasks: smoke-test tasks that prove each worker profile can run jobs.
+"""Worker tasks: Phase 1 smoke tasks and the maintenance jobs (Phase 4: token health).
 
 Real agent and media tasks arrive in Phases 5–9 (BACKEND_SPECIFICATION §5).
 
@@ -11,6 +11,7 @@ from __future__ import annotations
 import procrastinate
 
 from tubeforge.queue import QUEUE_HEAVY, QUEUE_MAINTENANCE
+from tubeforge_workers import maintenance
 
 
 def ping(message: str) -> str:
@@ -27,4 +28,9 @@ def make_blueprint() -> procrastinate.Blueprint:
     bp = procrastinate.Blueprint()
     bp.task(name="mnt.ping", queue=QUEUE_MAINTENANCE)(ping)
     bp.task(name="heavy.ping", queue=QUEUE_HEAVY)(heavy_ping)
+    bp.periodic(cron=maintenance.OAUTH_HEALTH_CRON)(
+        bp.task(name="mnt.token_health", queue=QUEUE_MAINTENANCE, pass_context=False)(
+            maintenance.token_health
+        )
+    )
     return bp

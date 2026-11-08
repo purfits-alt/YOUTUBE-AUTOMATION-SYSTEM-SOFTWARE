@@ -60,4 +60,4 @@ def test_only_login_is_public(settings: Settings) -> None:
     public_routes = [
         p for p, r, inh in api_routes(create_app(settings)) if "public" in _access_rules(r.dependant) + inh
     ]
-    assert public_routes == ["/api/v1/auth/login"]
+    assert public_routes == ["/api/v1/auth/login", "/oauth/callback"]

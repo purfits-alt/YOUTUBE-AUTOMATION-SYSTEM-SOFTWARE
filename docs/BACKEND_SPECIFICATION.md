@@ -123,12 +123,13 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 | POST | `/channels/{id}/publishing-rules/accept-auto-rules` 🔁🔐 | `{rules_sha256}` → records DP-6 consent | `channel.mode` |
 | GET | `/channels/{id}/onboarding` | `steps[]` | `channel.view` |
 | PATCH | `/channels/{id}/onboarding/{step_code}` | `{status, notes}` | `channel.manage` |
-| GET/POST/DELETE | `/oauth/clients` | register the owner's OAuth client `{label, client_id, client_secret?}` (secret write-only) | `oauth.manage` |
-| POST | `/oauth/youtube/start` 🔁 | `{channel_id, features[]}` → `{authorization_url}` (scopes computed) | `oauth.manage` |
+| GET/POST/DELETE | `/oauth/clients` | register the owner's OAuth client `{label, client_id, client_secret?, gcp_project_id?, publishing_status}` (secret write-only, stored encrypted); DELETE → 409 `CLIENT_IN_USE` while a channel uses it | `oauth.manage` |
+| POST | `/oauth/youtube/start` 🔁 | `{channel_id, features[]}` → `{authorization_url, expires_at}` (scopes computed; `features` ⊆ upload, readonly, captions, playlists, metadata, comments, analytics) | `oauth.manage` |
 | GET | `/oauth/callback` | browser redirect from Google → HTML page "Connected — return to TubeForge" | public (state-checked) |
+| GET | `/channels/{id}/oauth/identity` | `{youtube_channel_id, title, handle}` of the signed-in account (`channels.list mine=true`, 1 unit) — shown before the owner confirms | `oauth.manage` |
 | POST | `/channels/{id}/oauth/confirm-identity` 🔁 | `{youtube_channel_id}` must equal the fetched ID → state CONNECTED | `oauth.manage` |
 | POST | `/channels/{id}/oauth/incremental` 🔁 | `{features[]}` → `{authorization_url}` | `oauth.manage` |
-| GET | `/channels/{id}/oauth/health` | `{status, scopes, expires_hint, last_refresh_at}` | `channel.view` |
+| GET | `/channels/{id}/oauth/health` | `{status, scopes, expires_hint, expiring_soon, last_refresh_at, last_error, publishing_status}` | `channel.view` |
 | POST | `/channels/{id}/test-upload` 🔁⚙ | uploads the generated 5-s test clip, private, `is_test` | `upload.execute` |
 | POST | `/channels/{id}/delete-api-data` 🔁🔐 | creates a `data_deletion_tasks` row (OWNER_REQUEST, due ≤ 7 days) | `channel.manage` |
 
