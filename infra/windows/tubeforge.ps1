@@ -195,25 +195,46 @@ function Initialize-Database {
         return
     }
 
+    # -w = never let psql prompt by itself: a failed login must stop here with a clear
+    # message, not fall through to a second prompt or write a pgpass entry for a role
+    # that was never created.
+    $psqlSuper = @('-w', '-h', '127.0.0.1', '-p', '5432', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1')
+    $superPassword = $null
     if ($NonInteractive) {
         $superPassword = $env:TUBEFORGE_PG_SUPERUSER_PASSWORD
         if (-not $superPassword) { throw 'TUBEFORGE_PG_SUPERUSER_PASSWORD is required with -NonInteractive' }
+        $env:PGPASSWORD = $superPassword
+        & $psql @psqlSuper -tA -c 'SELECT 1' | Out-Null
+        if ($LASTEXITCODE -ne 0) { Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue; throw 'PostgreSQL login as "postgres" failed.' }
     } else {
-        $secure = Read-Host 'PostgreSQL "postgres" superuser password (used once to create the TubeForge database)' -AsSecureString
-        $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
-        try { $superPassword = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) }
-        finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+        for ($attempt = 1; $attempt -le 3; $attempt++) {
+            $secure = Read-Host 'PostgreSQL "postgres" superuser password (the one you chose in the PostgreSQL installer; typing is hidden)' -AsSecureString
+            $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+            try { $candidate = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) }
+            finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+            if (-not $candidate) { Write-Check 'Database login' 'WARN' 'empty password - type it, then press Enter'; continue }
+            $env:PGPASSWORD = $candidate
+            & $psql @psqlSuper -tA -c 'SELECT 1' | Out-Null
+            if ($LASTEXITCODE -eq 0) { $superPassword = $candidate; break }
+            Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue
+            Write-Check 'Database login' 'WARN' "password not accepted (attempt $attempt of 3)"
+        }
+        $candidate = $null
+        if (-not $superPassword) { throw 'Could not log in to PostgreSQL as "postgres". Nothing was changed. Check the password and run setup again.' }
     }
 
     $rolePassword = New-RandomSecret
-    $env:PGPASSWORD = $superPassword
     try {
         $sqlRole = "DO `$`$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'tubeforge') THEN CREATE ROLE tubeforge LOGIN; END IF; END `$`$;"
-        & $psql -h 127.0.0.1 -p 5432 -U postgres -v ON_ERROR_STOP=1 -q -c $sqlRole | Out-Null
-        & $psql -h 127.0.0.1 -p 5432 -U postgres -v ON_ERROR_STOP=1 -q -c ("ALTER ROLE tubeforge PASSWORD '{0}'" -f $rolePassword) | Out-Null
-        $exists = & $psql -h 127.0.0.1 -p 5432 -U postgres -tA -c "SELECT 1 FROM pg_database WHERE datname = 'tubeforge'"
+        & $psql @psqlSuper -q -c $sqlRole | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw 'creating the tubeforge role failed' }
+        & $psql @psqlSuper -q -c ("ALTER ROLE tubeforge PASSWORD '{0}'" -f $rolePassword) | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw 'setting the tubeforge role password failed' }
+        $exists = & $psql @psqlSuper -tA -c "SELECT 1 FROM pg_database WHERE datname = 'tubeforge'"
+        if ($LASTEXITCODE -ne 0) { throw 'checking for the tubeforge database failed' }
         if (-not $exists) {
-            & $psql -h 127.0.0.1 -p 5432 -U postgres -v ON_ERROR_STOP=1 -q -c 'CREATE DATABASE tubeforge OWNER tubeforge' | Out-Null
+            & $psql @psqlSuper -q -c 'CREATE DATABASE tubeforge OWNER tubeforge' | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw 'creating the tubeforge database failed' }
         }
     } finally {
         Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue
@@ -233,6 +254,9 @@ function Invoke-Setup {
 
     Push-Location -LiteralPath $AppDir
     try {
+        # Keep uv's cache on the same drive as the venv (D:), as DEPLOYMENT_GUIDE §2.4 says.
+        # This also lets uv hardlink instead of copying (no 'Failed to hardlink' warning).
+        $env:UV_CACHE_DIR = Join-Path $AppDir '.cache\uv'
         & uv sync --frozen --no-dev
         if ($LASTEXITCODE -ne 0) { throw 'uv sync failed' }
         Write-Check 'Python environment' 'OK' (Join-Path $AppDir '.venv')
@@ -277,6 +301,30 @@ function Get-RunningProcess([string]$Name) {
     return Get-Process -Id $procId -ErrorAction SilentlyContinue
 }
 
+# The .exe files in .venv\Scripts are small launchers that start the real Python
+# process as a child (and that may start another). Memory and stop must cover the
+# whole tree, not just the launcher pid we recorded.
+function Get-ProcessTreeIds([int]$RootId) {
+    $all = @(Get-CimInstance Win32_Process -Property ProcessId, ParentProcessId)
+    $ids = New-Object System.Collections.Generic.List[int]
+    $ids.Add($RootId)
+    for ($i = 0; $i -lt $ids.Count; $i++) {
+        foreach ($child in $all) {
+            if ($child.ParentProcessId -eq $ids[$i] -and -not $ids.Contains([int]$child.ProcessId)) { $ids.Add([int]$child.ProcessId) }
+        }
+    }
+    return , $ids.ToArray()
+}
+
+function Get-ProcessTreeMemoryMB([int]$RootId) {
+    $total = 0
+    foreach ($id in (Get-ProcessTreeIds $RootId)) {
+        $proc = Get-Process -Id $id -ErrorAction SilentlyContinue
+        if ($proc) { $total += $proc.WorkingSet64 }
+    }
+    return [math]::Round($total / 1MB)
+}
+
 function Invoke-Start {
     New-Item -ItemType Directory -Force -Path $Paths.Run, $Paths.Logs | Out-Null
     Set-TubeForgeEnvironment
@@ -309,7 +357,10 @@ function Invoke-Stop {
     foreach ($p in $Processes) {
         $proc = Get-RunningProcess $p.Name
         if ($proc) {
-            Stop-Process -Id $proc.Id -Force
+            # Children first, then the launcher, so nothing is left orphaned.
+            $treeIds = Get-ProcessTreeIds $proc.Id
+            [array]::Reverse($treeIds)
+            foreach ($id in $treeIds) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue }
             Write-Check $p.Name 'OK' "stopped (pid $($proc.Id))"
         } else {
             Write-Check $p.Name 'INFO' 'not running'
@@ -320,13 +371,16 @@ function Invoke-Stop {
 
 function Invoke-Status {
     $allUp = $true
+    $totalMb = 0
     foreach ($p in $Processes) {
         $proc = Get-RunningProcess $p.Name
         if ($proc) {
-            $mb = [math]::Round($proc.WorkingSet64 / 1MB)
-            Write-Check $p.Name 'OK' "running (pid $($proc.Id), $mb MB)"
+            $mb = Get-ProcessTreeMemoryMB $proc.Id
+            $totalMb += $mb
+            Write-Check $p.Name 'OK' "running (pid $($proc.Id), $mb MB incl. child processes)"
         } else { Write-Check $p.Name 'WARN' 'not running'; $allUp = $false }
     }
+    if ($totalMb -gt 0) { Write-Check 'TubeForge memory' 'INFO' "$totalMb MB total (PostgreSQL not included; target <= 1.5 GB with it)" }
     try {
         $ready = Invoke-RestMethod -Uri "http://127.0.0.1:$Port/readyz" -TimeoutSec 3
         Write-Check 'Readiness' 'OK' $ready.status

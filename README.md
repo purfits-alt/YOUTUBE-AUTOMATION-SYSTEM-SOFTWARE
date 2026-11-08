@@ -17,6 +17,11 @@ Invoke-WebRequest "https://github.com/purfits-alt/YOUTUBE-AUTOMATION-SYSTEM-SOFT
 Expand-Archive "$env:TEMP\tubeforge.zip" "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE"
 Rename-Item "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\YOUTUBE-AUTOMATION-SYSTEM-SOFTWARE-phase-1-foundation" "app"
 ```
+Windows blocks scripts by default. Allow your own local scripts once (no admin needed), and unblock the downloaded files:
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+Get-ChildItem -LiteralPath "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app" -Recurse -File | Unblock-File
+```
 Then check your PC: `& "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app\infra\windows\tubeforge.ps1" doctor`.
 The plan is in `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app\docs\` (start with `PROJECT_PROGRESS.md`). See `docs/PROJECT_PROGRESS.md`.
 
@@ -32,5 +37,7 @@ The plan is in `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app\docs\` (start with `PR
 - Traceability (requirement → spec → phase → test): `docs/TRACEABILITY_MATRIX.md`
 
 TubeForge has no connection to SEMRS OS or any other product.
+
+Licence: [MIT](LICENSE) (ADR-0022). Third-party dependencies, models and media keep their own licences.
 
 > This repository is **public**. Never commit secrets, OAuth tokens, `.env` files or API keys.

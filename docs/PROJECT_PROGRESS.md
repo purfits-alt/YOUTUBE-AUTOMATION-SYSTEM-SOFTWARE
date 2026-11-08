@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 1 — Foundation & repository
-**Current step:** Phase 1 built — waiting for owner approval ("approved") after the demo and the Windows CI job.
+**Current step:** Phase 1 built; owner demo passed on Windows (2026-11-08). Windows memory recorded (231 MB). Waiting for the Windows CI job and owner approval ("approved").
 **Last updated:** 2026-11-08
 
 ---
@@ -140,20 +140,23 @@ P1 Foundation ─┬─ P2 Frontend shell
    The licence-gate test caught a real gap ("GNU Affero …" was not matched) and it was fixed.
    **Not run here:** gitleaks (running an external binary was not permitted in this session; it runs in CI) and the Windows CI job (runs on GitHub after push; see the Actions tab).
 7. **Free-tier services used:** none at runtime. Tooling: PostgreSQL, Python/uv, Node/pnpm, Procrastinate (MIT), GitHub Actions (free for public repo). **This phase introduces no paid dependency: ✔**
-8. **Resource consumption (idle, Linux container):** API ≈ 94 MB · light worker ≈ 54 MB · heavy worker ≈ 54 MB · PostgreSQL (all backends) ≈ 350 MB RSS (shared memory counted per process, so this overstates it) → **≈ 550 MB total**. Target ≤ 1.5 GB ✔. To be re-measured on the owner's Windows PC (`tubeforge.ps1 status` shows per-process MB).
+8. **Resource consumption (idle, Linux container):** API ≈ 94 MB · light worker ≈ 54 MB · heavy worker ≈ 54 MB · PostgreSQL (all backends) ≈ 350 MB RSS (shared memory counted per process, so this overstates it) → **≈ 550 MB total**. Target ≤ 1.5 GB ✔. Owner's Windows PC (2026-11-08): the first `status` showed 4 MB per process because it measured only the `.venv\Scripts` launcher, not its Python child; fixed (now sums the process tree and prints a total). **Windows (owner PC, idle, after fix): API 97 MB · light worker 67 MB · heavy worker 67 MB → 231 MB for TubeForge** (PostgreSQL not included; even with the Linux PostgreSQL figure the total stays well under 1.5 GB ✔).
 9. **Known limitations:**
-   - `tubeforge.ps1` has not been executed on a real Windows machine yet; it is validated by the Windows CI job (PSScriptAnalyzer, doctor on PS 5.1, full pytest including queue round-trip, start/status/stop in `C:\Tube Forge Test\`).
+   - **Owner demo, 2026-11-08 (Windows 10 Pro 19045, 7.9 GB RAM, PS 5.1):** `doctor` → PostgreSQL 16 installed (data on D:) → `setup` → `start` (api + both workers, readiness `ready`) → dashboard placeholder opened at http://127.0.0.1:8765 → `stop`. ✔
+   - Fixes from the owner run (branch `claude/vigilant-tesla-lkhgme`): README execution-policy/Unblock-File step; uv cache moved to `app\.cache\uv` (hardlink warning); `setup` now verifies the postgres password (psql `-w`, 3 attempts, exit codes checked, pgpass written only on success; previously a failed login could leave a pgpass entry for a role that didn't exist); `status`/`stop` cover the launcher's child processes. These script changes still need the Windows CI job or an owner re-run to confirm.
+   - The hidden password prompt is awkward to use (no echo, paste unreliable). Workaround used: `setup -NonInteractive` with `TUBEFORGE_PG_SUPERUSER_PASSWORD`. Better UX deferred to Phase 15 installer.
    - `setup` does not yet install PostgreSQL, Python or FFmpeg automatically. It checks for them and prints install hints (automated installers: Phase 15).
    - The idempotency key currently maps to Procrastinate's queueing lock (blocks duplicate *waiting* jobs). Durable exactly-once via `job_meta` comes in Phase 5.
    - Opening a PR from this session is blocked (GitHub CLI not authorised). Pushing works.
-   - No LICENSE file: choosing a licence for a public repo is the owner's decision (open question).
+   - ~~No LICENSE file~~ resolved 2026-11-08: owner chose **MIT** (ADR-0022, `LICENSE`).
 10. **Remaining tasks for Phase 1 acceptance:**
     - Windows CI job green.
-    - Owner runs the demo on their PC: download to D: → `doctor` → install PostgreSQL 16 → `setup` → `start` → dashboard at http://127.0.0.1:8765.
+    - ~~Owner runs the demo on their PC~~ done 2026-11-08 ✔.
+    - ~~Record the Windows memory figure~~ done: 231 MB (fixed `status` confirmed working on Windows) ✔.
 
 **Demo script (owner):** see README "Get it onto your PC" → `tubeforge.ps1 doctor` → (install PostgreSQL 16 if missing) → `tubeforge.ps1 setup` → `tubeforge.ps1 start` → browser shows "TubeForge is running · Backend: ok" → `tubeforge.ps1 status` → `tubeforge.ps1 stop`.
 
-**Open questions for the owner:** (1) Licence for the public repo (e.g. "All rights reserved" / MIT / other)? (2) Remote Control folder sharing for D: (lets Claude work directly on the PC).
+**Open questions for the owner:** (1) ~~Licence~~ MIT, decided 2026-11-08 (ADR-0022). (2) Remote Control folder sharing for D: (lets Claude work directly on the PC).
 
 
 ## Resource consumption
