@@ -207,7 +207,8 @@ jobs:
           Pop-Location
           New-Item -ItemType Directory -Force -Path "$env:INSTALL_ROOT\config" | Out-Null
           & $script start -InstallRoot "$env:INSTALL_ROOT" -NonInteractive -NoBrowser
-          $statusOut = & $script status -InstallRoot "$env:INSTALL_ROOT" | Out-String
+          # 6>&1: status writes with Write-Host (information stream), which a pipe does not capture otherwise.
+          $statusOut = & $script status -InstallRoot "$env:INSTALL_ROOT" 6>&1 | Out-String
           $status = $LASTEXITCODE
           Write-Host $statusOut
           Get-ChildItem "$env:INSTALL_ROOT\data\logs" | ForEach-Object { Write-Host "== $($_.Name)"; Get-Content $_.FullName -Tail 20 }
