@@ -1,6 +1,6 @@
 # Deployment Guide (Windows, native install)
 
-**Version:** 0.1 (Step 0.7, for Checkpoint C6) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C6, 2026-11-08) · **Date:** 2026-11-08
 **Status:** Plan. The exact commands are finalised and **verified on a clean machine in Phase 15**. Steps marked 🛠 are created during the build phases.
 **Target:** Windows 10 (22H2) / 11, 8 GB RAM, no GPU · **Install root:** `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE` (changeable) · **Cost:** €0
 

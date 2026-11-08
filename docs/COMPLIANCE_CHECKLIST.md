@@ -1,6 +1,6 @@
 # Compliance Checklist
 
-**Version:** 0.1 (Step 0.7, for Checkpoint C6) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C6, 2026-11-08) · **Date:** 2026-11-08
 Each item lists its source, how TubeForge complies, the phase that implements it, and how it is verified. Re-check sources every 90 days (A32 reminder) and before launch (Phase 16).
 
 ## A. YouTube API Services Terms & Developer Policies

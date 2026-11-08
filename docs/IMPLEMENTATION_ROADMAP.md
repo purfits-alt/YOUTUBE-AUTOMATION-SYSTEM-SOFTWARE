@@ -1,6 +1,6 @@
 # Implementation Roadmap
 
-**Version:** 0.1 (Step 0.7, for Checkpoint C6) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C6, 2026-11-08) · **Date:** 2026-11-08
 **Rule:** do not start phase N+1 until phase N's acceptance tests pass **and the owner says "approved"** (master prompt §20). Each phase ends with a report (modules, files, DB changes, APIs, agents, tests + results, free-tier services, resource use, limitations, remaining tasks) appended to `PROJECT_PROGRESS.md`.
 
 ## Overview

@@ -1,5 +1,7 @@
 # Phase 0 — Validation Report (Step 2)
 
+> **Historical note (C6):** Sections 1–9 record what was known at C0. Several items were later superseded by official verification. See **§11** (e.g. F1 reversed on 2 Nov 2026; uploads now have their own quota bucket) and `FREE_TIER_PROVIDER_MATRIX.md`. Current decisions live in the ADRs and specs.
+
 **Status:** Draft for Owner Checkpoint C0 · **Date:** 2026-11-08 · **Author:** Claude Code (planning mode)
 
 This report reviews `docs/00_MASTER_PROMPT.md` and the owner's initial instructions. It covers gaps, conflicts, limits and risks to resolve during Phase 0. Items marked **[VERIFY 0.3]** will be checked against official sources in Step 0.3, with the URL and date recorded. Until then they are treated as `UNVERIFIED`.

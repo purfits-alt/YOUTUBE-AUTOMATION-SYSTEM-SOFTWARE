@@ -1,6 +1,6 @@
 # Technology Stack Evaluation
 
-**Version:** 0.1 (Step 0.3, for Checkpoint C2) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C2, 2026-11-08) · **Date:** 2026-11-08
 **Target machine:** H-LITE (Windows 10, 8 GB RAM, no GPU). The design must also scale up to H0–H2 without code changes.
 **Rules:** free and open source only · native Windows first · lowest resident RAM wins ties · official APIs only.
 

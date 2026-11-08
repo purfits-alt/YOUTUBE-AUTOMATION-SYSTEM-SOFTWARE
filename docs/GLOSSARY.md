@@ -11,8 +11,12 @@
 | **Tier L / F / P** | Local / permanent Free-tier cloud / Paid, trial or promotional credit (disabled by default). |
 | **H-LITE / H0 / H1 / H2** | Hardware profiles. H-LITE = 8 GB RAM, no GPU (the owner's current PC). |
 | **Quota ledger** | Record of YouTube API units spent per call, per Pacific-Time day. |
-| **Private-only mode** | All uploads are private. The owner makes videos public manually. Required until the YouTube API compliance audit passes. |
-| **Compliance audit** | Google's review of an API project. Needed to upload public videos via the API from projects created after 28 Jul 2020. |
+| **Private-only mode** | Owner safety switch: all uploads are private and the owner makes videos public manually. ON by default for a new channel until 3 successful test uploads. (YouTube no longer forces unverified API projects to private since 2 Nov 2026 — ADR-0016.) |
+| **Compliance audit** | Google's review of an API project. Since 2 Nov 2026 it is **not** needed for public uploads; it is only needed to request a quota extension. |
+| **Packaging promise** | The title + thumbnail-text promise of a video; the script must deliver it in the first 15 s (Shorts 3 s) and pay it off (US-4.5). |
+| **Re-hook** | A mid-video moment (≈25/50/75 % of runtime) that renews curiosity: open loop, twist, progress marker, pattern interrupt. |
+| **Open loop** | A question or tease the script raises and must close later. |
+| **Hand-off folder** | Folder on D: used to round-trip a video/thumbnail through an optional external editor (ADR-0021). |
 | **YPP** | YouTube Partner Program (monetisation). |
 | **Inauthentic content** | YPP term for mass-produced or repetitive content that is not eligible for monetisation. |
 | **Owner value-add** | Recorded contributions by the owner (opinion, experience, data, voice, footage) that make a video original. |

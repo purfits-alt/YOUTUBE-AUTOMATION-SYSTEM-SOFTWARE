@@ -1,6 +1,6 @@
 # Free-Tier Provider Matrix & Platform Fact Verification
 
-**Version:** 0.1 (Step 0.3, for Checkpoint C2) · **Verification date for all entries:** 2026-11-08 unless stated otherwise
+**Version:** 1.0 (approved at C2; updated through C5, 2026-11-08) · **Verification date for all entries:** 2026-11-08 unless stated otherwise
 **Method:** official pages were fetched directly. Sources marked *(secondary)* are reputable news or third-party pages, used only where the official page could not be reached from this environment.
 
 > **Status legend:**

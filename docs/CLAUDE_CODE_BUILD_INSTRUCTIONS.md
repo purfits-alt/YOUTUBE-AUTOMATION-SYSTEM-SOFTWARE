@@ -1,6 +1,6 @@
 # Claude Code Build Instructions
 
-**Version:** 0.1 (Step 0.7, for Checkpoint C6) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C6, 2026-11-08) · **Date:** 2026-11-08
 How Claude Code (or any developer) builds TubeForge, phase by phase, after C6 approval.
 
 ## 1. Starting a phase

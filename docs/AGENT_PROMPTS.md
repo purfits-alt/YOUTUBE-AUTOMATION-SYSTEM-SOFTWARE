@@ -10,6 +10,25 @@
 - Output: the Gateway requests JSON mode or structured output where the provider supports it, then always validates against `schema.json`. On failure it makes **one repair call** ("Your previous output failed validation: <errors>. Return corrected JSON only.") and otherwise fails.
 - Temperature defaults: 0.2 for extraction and audit agents, 0.7 for creative agents (A07, A08, A11, A18). Fixed `seed` where the provider supports it (golden tests).
 
+## 0a. Agents without a text prompt (rules defined elsewhere)
+| Agent | Kind | Rules live in |
+|---|---|---|
+| A01 Orchestrator | Deterministic | WORKFLOW_STATE_MACHINE |
+| A04 Competitor Research | Deterministic | CHANNEL_DISCOVERY_SPEC §7, YOUTUBE_API_INTEGRATION §10 |
+| A14 AI Image Generation | Adapter (procedural; generative disabled) | VIDEO_PRODUCTION_SPEC §5, ADR-0010 |
+| A15 Voiceover | Hybrid (TTS / voice models, no text prompt) | VIDEO_PRODUCTION_SPEC §6, ADR-0019 |
+| A16 Video Production | Deterministic | VIDEO_PRODUCTION_SPEC §3–4 |
+| A20 Captions | Deterministic | VIDEO_PRODUCTION_SPEC §4, THUMBNAIL_SEO_SPEC |
+| A21 Copyright Auditor | Deterministic | AUDIT_AND_POLICY_SPEC §2.2 |
+| A23 Video Quality Auditor | Deterministic | VIDEO_PRODUCTION_SPEC §8, AUDIT_AND_POLICY_SPEC §2.4 |
+| A24 Upload | Deterministic | YOUTUBE_API_INTEGRATION §5–7 |
+| A25 Publishing & Scheduling | Deterministic | YOUTUBE_API_INTEGRATION §5 (I-8, I-9) |
+| A26 Analytics | Deterministic | YOUTUBE_API_INTEGRATION §9 |
+| A29 Notification | Deterministic | NOTIFICATION_SPEC |
+| A30 Security Auditor | Deterministic | AUDIT_AND_POLICY_SPEC §3 |
+| A31 System Auditor | Deterministic | AUDIT_AND_POLICY_SPEC §3 |
+| A32 Cost & Usage Monitor | Deterministic | COST_CONTROL_SPEC |
+
 ## 1. Shared system preamble (prepended to every prompt)
 
 ```text

@@ -1,6 +1,6 @@
 # Testing & QA Strategy
 
-**Version:** 0.1 (Step 0.7, for Checkpoint C6) · **Date:** 2026-11-08 · **ADR:** 0017
+**Version:** 1.0 (approved at C6, 2026-11-08) · **Date:** 2026-11-08 · **ADR:** 0017
 
 ## 1. Test pyramid & tools
 | Level | Tools | Runs where | Target |

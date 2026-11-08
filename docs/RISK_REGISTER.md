@@ -1,6 +1,6 @@
 # Risk Register
 
-**Version:** 0.1 (Step 0.7, for Checkpoint C6) · **Date:** 2026-11-08 · Reviewed at every phase report and the 30-day launch review.
+**Version:** 1.0 (approved at C6, 2026-11-08) · **Date:** 2026-11-08 · Reviewed at every phase report and the 30-day launch review.
 Scale: Likelihood (L) and Impact (I) 1–5 · Score = L × I · Owner: **O** = owner, **C** = Claude Code / developer
 
 | ID | Risk | L | I | Score | Mitigation | Owner | Status |

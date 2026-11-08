@@ -2,8 +2,8 @@
 
 > Living document. Updated at every checkpoint and at the end of every phase.
 
-**Current phase:** Phase 0 — Research & Architecture (planning only, no application code)
-**Current step:** 0.7 complete → waiting at **OWNER CHECKPOINT C6 — SPECIFICATION APPROVAL** (no application code before this)
+**Current phase:** Phase 1 — Foundation & repository
+**Current step:** Phase 0 complete (C6 approved). Phase 1 in progress.
 **Last updated:** 2026-11-08
 
 ---
@@ -18,7 +18,7 @@
 | C3 | System architecture, state machine | ✅ Approved | 2026-11-08 | Defaults A-1…A-3 accepted; install root `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE` |
 | C4 | Frontend, backend, DB, OAuth, YouTube API specs | ✅ Approved | 2026-11-08 | Defaults: TOTP optional (recommended), backup 03:00 PKT, digests daily 09:00 / weekly Mon 09:00, no external editors enabled yet |
 | C5 | Agents, prompts, discovery, production, SEO, notifications, audit, cost specs | ✅ Approved | 2026-11-08 | Defaults accepted (2 long + 4 Shorts/week start, originality ≥ 70, provider limits entered in Phase 5, 07:00/06:00/03:00 PKT jobs) + owner added script craft: packaging promise in intro, 10–15 s hook, mid-video re-hooks, honest curiosity/suspense, human voice (US-4.5) |
-| C6 | Roadmap, QA, deployment, build instructions, risks, compliance, CLAUDE.md — **SPEC APPROVAL** | ⏳ Waiting for owner | 2026-11-08 | |
+| C6 | Roadmap, QA, deployment, build instructions, risks, compliance, CLAUDE.md — **SPEC APPROVAL** | ✅ Approved | 2026-11-08 | Full specification approved. Owner asked for a completeness re-check → TRACEABILITY_MATRIX.md added; stale glossary/version items fixed. Defaults: merge planning to `main` via PR; one branch per build phase. |
 
 ---
 
@@ -35,7 +35,7 @@
 | P0-07 | System architecture + state machine (Step 0.4) | P0-06 | `SYSTEM_ARCHITECTURE.md`, `WORKFLOW_STATE_MACHINE.md` | ✅ Approved at C3 (16 Mermaid diagrams, all parse-checked). 7 required Mermaid diagrams. Components A–N with interfaces and failure modes. All 6 state machines with guards and owners. Owner approves at C3 |
 | P0-08 | Interface specs (Step 0.5) | P0-07 | Frontend, backend, DB, OAuth security, YouTube API docs | ✅ Approved at C4. All 31 pages fully specified (4 states each). Every endpoint typed. Every table with constraints and indexes. Owner approves at C4 |
 | P0-09 | Domain specs (Step 0.6) | P0-07 | Agent architecture, prompts, discovery, production, SEO, notifications, audit, cost docs | ✅ Approved at C5. All 32 agents follow the template in §7.2. Prompts versioned with JSON schemas. Audit blocking rules defined. Owner approves at C5 |
-| P0-10 | Roadmap + ops docs (Step 0.7) | P0-08, P0-09 | Roadmap, testing, deployment, build instructions, risk register, compliance checklist, `CLAUDE.md` | ✅ Drafted, awaiting C6. Each build phase lists tasks, files, acceptance tests, demo script and free-tier check ✔. **C6 spec approval** |
+| P0-10 | Roadmap + ops docs (Step 0.7) | P0-08, P0-09 | Roadmap, testing, deployment, build instructions, risk register, compliance checklist, `CLAUDE.md` | ✅ Approved at C6. Each build phase lists tasks, files, acceptance tests, demo script and free-tier check ✔. **C6 spec approval** |
 
 ### Build-phase dependency outline (preliminary; finalised in P0-10)
 
