@@ -57,3 +57,19 @@ def test_serves_built_web_app(settings: Settings, tmp_path: Path) -> None:
 def test_api_docs_hidden_in_prod(settings: Settings) -> None:
     prod = settings.model_copy(update={"env": "prod"})
     assert client(prod).get("/api/docs").status_code == 404
+
+
+def test_spa_deep_links_fall_back_to_index(settings: Settings, tmp_path: Path) -> None:
+    dist = tmp_path / "dist"
+    (dist / "assets").mkdir(parents=True)
+    (dist / "index.html").write_text("<html><body>TubeForge SPA</body></html>", encoding="utf-8")
+    (dist / "assets" / "app.js").write_text("console.log(1)", encoding="utf-8")
+    c = client(settings.model_copy(update={"web_dist_dir": dist}))
+    for route in ("/approvals", "/projects/p-101/script", "/channels/ch-1/onboarding"):
+        r = c.get(route)
+        assert r.status_code == 200, route
+        assert "TubeForge SPA" in r.text
+    assert c.get("/assets/app.js").status_code == 200
+    # Missing files and API paths stay 404 (no HTML served in their place).
+    assert c.get("/assets/missing.js").status_code == 404
+    assert c.get("/api/v1/unknown").status_code == 404

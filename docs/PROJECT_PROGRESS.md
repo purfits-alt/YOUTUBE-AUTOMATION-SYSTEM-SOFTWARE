@@ -2,8 +2,8 @@
 
 > Living document. Updated at every checkpoint and at the end of every phase.
 
-**Current phase:** Phase 1 — Foundation & repository
-**Current step:** Phase 1 built; owner demo passed on Windows (2026-11-08). Windows memory recorded (231 MB). Waiting for the Windows CI job and owner approval ("approved").
+**Current phase:** Phase 2 — Frontend shell
+**Current step:** Phase 2 built (incl. owner's premium design + Lottie request). Waiting for CI and owner approval ("approved").
 **Last updated:** 2026-11-08
 
 ---
@@ -98,7 +98,7 @@ P1 Foundation ─┬─ P2 Frontend shell
 
 ## Phase reports
 
-### Phase 1 — Foundation & repository · report 2026-11-08 · branch `phase-1-foundation` · ⏳ awaiting owner approval
+### Phase 1 — Foundation & repository · report 2026-11-08 · branch `phase-1-foundation` · ✅ accepted 2026-11-08 (PR #4 merged; owner: "go ahead")
 
 **Plan (from IMPLEMENTATION_ROADMAP Phase 1):** monorepo, uv + FastAPI health/readiness, Vite+React placeholder, PostgreSQL + Alembic + Procrastinate (with Windows spike), light/heavy workers, tooling and CI (Linux + Windows path with spaces), `tubeforge.ps1`, RAM measurement.
 
@@ -150,7 +150,7 @@ P1 Foundation ─┬─ P2 Frontend shell
    - Opening a PR from this session is blocked (GitHub CLI not authorised). Pushing works.
    - ~~No LICENSE file~~ resolved 2026-11-08: owner chose **MIT** (ADR-0022, `LICENSE`).
 10. **Remaining tasks for Phase 1 acceptance:**
-    - Windows CI job green.
+    - ~~Windows CI job green~~ ✔ (PR #4). The web job's post-step `uv cache prune` timed out because the e2e API ran under `uv run`; fixed in CI after the merge.
     - ~~Owner runs the demo on their PC~~ done 2026-11-08 ✔.
     - ~~Record the Windows memory figure~~ done: 231 MB (fixed `status` confirmed working on Windows) ✔.
 
@@ -158,6 +158,61 @@ P1 Foundation ─┬─ P2 Frontend shell
 
 **Open questions for the owner:** (1) ~~Licence~~ MIT, decided 2026-11-08 (ADR-0022). (2) Remote Control folder sharing for D: (lets Claude work directly on the PC).
 
+
+### Phase 2 — Frontend shell · report 2026-11-08 · branch `claude/vigilant-tesla-lkhgme` · ⏳ awaiting owner approval
+
+**Plan (IMPLEMENTATION_ROADMAP Phase 2, FRONTEND_SPECIFICATION §0–§32):**
+1. Shell: grouped sidebar (desktop), icon rail (tablet), bottom tab bar + drawer (mobile); top bar; light/dark/system theme via CSS tokens; `i18n/en.json`.
+2. Global elements (mocked): Emergency Stop (confirm + reason; clearing needs re-auth), channel switcher with mode badge and Private-only badge, quota/usage meter, notification bell, `Ctrl+K` search, global banners.
+3. All 31 routes from a single page registry; data comes through the API client from **MSW** mock handlers. A dev scenario switcher forces empty / loading / error / success on any page.
+4. Shared components: DataTable (TanStack Table), StatTile, StateCard, ProblemDisplay (problem+json), ConfirmDialog, ReauthModal, Toasts, SSE client stub.
+5. OpenAPI pipeline: stub spec in `packages/shared/openapi.stub.json` → `openapi-typescript` → typed `openapi-fetch` client; CI fails if the generated file is stale. Replaced by the FastAPI spec in Phase 3.
+6. Tests: Vitest component tests; Playwright 31 routes × 4 states (124), axe per route (0 serious/critical), mobile 390×844 for pages 1/22/27, visual snapshots of key pages.
+
+Page-specific editors, forms and charts (e.g. weight sliders, script editor, analytics charts) arrive with their feature phases; Phase 2 gives each page its layout frame, mocked table/tiles and actions.
+
+**Owner additions during the phase:** "a premium dashboard", "icons, animation and Lottie" → ADR-0023 (own design tokens, inline icons, SVG charts, CSS motion, our own Lottie animations; all respect "reduce motion").
+
+1. **Modules implemented**
+   - Shell (`apps/web/src/app`, `components/Navigation.tsx`, `TopBar.tsx`, `Banners.tsx`): dark "studio" sidebar with logo and group icons (≥1024 px), icon rail (640–1023 px), bottom tab bar + drawer (<640 px); top bar with Emergency Stop, `Ctrl+K` search, channel switcher with mode and Private-only badges, quota meter, notification bell, theme (light/dark/system).
+   - Global elements (mock): Emergency Stop (2 clicks, optional reason, pulsing when active; clearing asks for the password via step-up), banners (Emergency Stop, kill switch, Private-only, token expiring, backend offline).
+   - 31 routes from one registry (`pages/registry.ts`), texts in `i18n/en.json`. Pages 2–31 share `PageView` (hero, actions, KPI tiles, sortable table, four states); page 1 Overview has its own layout (live Lottie orb, KPI tiles with count-up + sparklines, 14-day views chart, quota rings, pipeline funnel, approvals, alerts, schedule, activity). Project pages 11–18 show the Project header (state stepper, blocking guards).
+   - Shared components: DataTable (TanStack Table), StatTile, StateCard (with Lottie), ProblemDisplay (problem+json, code + request id), Dialog/ConfirmDialog (native `<dialog>`), ReauthModal (react-hook-form + zod; retries the request after step-up), Toasts (ARIA live), SSE event-bus stub, icons, charts, Lottie player (lazy).
+   - Mock backend: MSW handlers (`mocks/`) for all page endpoints, `/shell`, Emergency Stop, step-up and search. Scenario switcher (`?scenario=` or dev toolbar) forces empty/loading/error/success.
+   - OpenAPI pipeline: `packages/shared/openapi.stub.json` → `openapi-typescript` → typed `openapi-fetch` client; `api:check` in CI fails on drift.
+   - API: deep links (`/approvals`, `/projects/p-101/script`, …) now serve the SPA; API paths and missing files stay 404.
+   - `tools/gen_lottie.py`: generates the three Lottie animations (original artwork).
+2. **Files created/modified:** `apps/web/{src/**, tests/e2e/*, public/mockServiceWorker.js, package.json, pnpm-lock.yaml, vite.config.ts, tsconfig.json, playwright.config.ts, .prettierignore}`, `packages/shared/openapi.stub.json`, `apps/api/tubeforge/main.py`, `tests/unit/test_api_system.py`, `tools/gen_lottie.py`, `.github/workflows/ci.yml`, `CLAUDE.md`, ADR-0023 (+ ADR-0006 amended, ADR index), `FRONTEND_SPECIFICATION.md` stack line.
+3. **Database changes:** none.
+4. **APIs implemented:** none real (mocked in the browser). Backend change: SPA deep-link fallback.
+5. **Agents created:** none.
+6. **Tests executed (Linux, this session):**
+
+   | Suite | Result |
+   |---|---|
+   | Vitest (registry, app shell incl. Emergency Stop + step-up, search, states, DataTable, tones) | **17 passed** |
+   | Playwright routes × states (31 × 4) | **124 passed** |
+   | axe WCAG 2.2 AA, 31 routes × light/dark | **62 passed** (0 serious/critical) |
+   | Mobile 390×844 (pages 1, 22, 27 + tab bar/drawer) | **4 passed** |
+   | Shell (Emergency Stop flow, theme, Ctrl+K, scenario switcher, all 31 sidebar links), smoke | **9 passed** |
+   | Visual snapshots (4 key pages × light/dark) | **8 passed** |
+   | Python unit (incl. new SPA fallback test), ruff, mypy --strict, traceability | pass |
+   | eslint + prettier, tsc strict, `api:check`, build | pass |
+   | Web licence gate (prod deps), pnpm audit (high) | pass / 0 vulnerabilities |
+
+   Two axe findings were real and fixed: low contrast of the page number on the active menu item, and the scrollable KPI row not being keyboard-focusable. Axe and visual tests run with reduced motion, so they measure the final page and not a card halfway through its fade-in.
+   **Not run here:** Python integration tests (need PostgreSQL; they run in CI).
+7. **Free-tier services used:** none. New dependencies, all free: react-router, TanStack Query/Table, msw, openapi-fetch/openapi-typescript, react-hook-form, zod, Tailwind, lottie-web (MIT), Inter font (OFL-1.1), axe-core/playwright (MPL-2.0, dev only). **This phase introduces no paid dependency: ✔**
+8. **Resource consumption:** build JS ≈ 585 kB (180 kB gzip) main + 437 kB MSW (Phase 2 only) + 169 kB Lottie player (lazy, 47 kB gzip). No new server processes.
+9. **Known limitations:**
+   - All data is mocked; buttons show a "queued (mock)" toast. Real data, auth and permissions arrive in Phase 3.
+   - Page-specific editors, forms and charts (script editor, weight sliders, timeline, analytics charts) arrive with their feature phases; Phase 2 gives each page its frame, KPIs, table and actions.
+   - The step-up mock accepts any password except "wrong".
+   - Visual snapshots: the first baselines (rendered in this session) differed from GitHub's runner by ~2 % of pixels (font anti-aliasing), so baselines are now rendered by CI itself: a commit message containing `[update-snapshots]` makes the web job run the full suite, rewrite the screenshots and commit only that folder.
+   - **Fixed after the first CI run (Windows job):** `status`/`stop` walked process trees by parent ID only; with Windows PID reuse, unrelated processes were counted (3.4 GB) and `stop` killed the CI shell. Now a child must start after its parent and be one of TubeForge's own executables, and a stale pid file pointing at another program is ignored. CI now fails if the memory total is implausible or a TubeForge process survives `stop`.
+10. **Remaining tasks for Phase 2 acceptance:** CI green on the PR; owner demo below; owner replies "approved".
+
+**Demo script (owner):** `git pull` in `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app` → install Node.js 22 LTS from nodejs.org and then `npm install -g pnpm@10.28.0` (one time, free) → `tubeforge.ps1 setup` (now builds the dashboard) → `tubeforge.ps1 start` → open http://127.0.0.1:8765 → click through every sidebar item → use "Scenario (dev)" bottom-right to show empty / loading / error → press Emergency Stop (add a reason) → clear it (any password) → `Ctrl+K` and search "thumb" → switch Theme to Dark → make the window phone-sized.
 
 ## Resource consumption
 

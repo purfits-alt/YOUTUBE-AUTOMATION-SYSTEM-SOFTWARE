@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-test("dashboard placeholder loads and reaches the backend", async ({ page }) => {
+test("dashboard loads with the shell and mocked data", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "TubeForge is running" })).toBeVisible();
-  await expect(page.getByTestId("backend-ok")).toContainText("ok");
+  await expect(page.getByRole("heading", { level: 1, name: "Overview Dashboard" })).toBeVisible();
+  await expect(page.getByTestId("emergency-stop")).toBeVisible();
+  await expect(page.getByTestId("state-success")).toBeVisible();
 });
 
 test("healthz responds", async ({ request }) => {

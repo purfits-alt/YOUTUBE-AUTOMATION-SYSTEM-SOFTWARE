@@ -3,3 +3,5 @@ node_modules
 test-results
 playwright-report
 pnpm-lock.yaml
+src/lib/api/schema.d.ts
+public/mockServiceWorker.js

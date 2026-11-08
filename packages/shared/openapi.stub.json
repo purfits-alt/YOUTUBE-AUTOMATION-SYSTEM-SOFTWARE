@@ -1,0 +1,1698 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "TubeForge API (Phase 2 stub)",
+    "version": "0.0.0-stub",
+    "description": "Hand-maintained stub used by the web app until Phase 3 generates the real spec from FastAPI. Paths are relative to /api/v1."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "paths": {
+    "/dashboard/overview": {
+      "get": {
+        "operationId": "get_overview",
+        "tags": [
+          "home"
+        ],
+        "summary": "Page 1 data (overview)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Overview"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/niches/reports": {
+      "get": {
+        "operationId": "get_discovery",
+        "tags": [
+          "discover"
+        ],
+        "summary": "Page 2 data (discovery)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/channels": {
+      "get": {
+        "operationId": "get_channels",
+        "tags": [
+          "channels"
+        ],
+        "summary": "Page 3 data (channels)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/channels/{id}/onboarding": {
+      "get": {
+        "operationId": "get_onboarding",
+        "tags": [
+          "channels"
+        ],
+        "summary": "Page 4 data (onboarding)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/niches/candidates/{id}": {
+      "get": {
+        "operationId": "get_niche",
+        "tags": [
+          "discover"
+        ],
+        "summary": "Page 5 data (niche)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/trends": {
+      "get": {
+        "operationId": "get_trends",
+        "tags": [
+          "discover"
+        ],
+        "summary": "Page 6 data (trends)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lookups/youtube": {
+      "get": {
+        "operationId": "get_lookup",
+        "tags": [
+          "discover"
+        ],
+        "summary": "Page 7 data (lookup)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/strategies/{id}": {
+      "get": {
+        "operationId": "get_branding",
+        "tags": [
+          "channels"
+        ],
+        "summary": "Page 8 data (branding)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/channels/{id}/ideas": {
+      "get": {
+        "operationId": "get_ideas",
+        "tags": [
+          "create"
+        ],
+        "summary": "Page 9 data (ideas)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/calendar": {
+      "get": {
+        "operationId": "get_calendar",
+        "tags": [
+          "create"
+        ],
+        "summary": "Page 10 data (calendar)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{id}/script": {
+      "get": {
+        "operationId": "get_script",
+        "tags": [
+          "create"
+        ],
+        "summary": "Page 11 data (script)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/projects/{id}/storyboard": {
+      "get": {
+        "operationId": "get_storyboard",
+        "tags": [
+          "create"
+        ],
+        "summary": "Page 12 data (storyboard)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/projects/{id}/timeline": {
+      "get": {
+        "operationId": "get_studio",
+        "tags": [
+          "create"
+        ],
+        "summary": "Page 13 data (studio)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/projects/{id}/visuals": {
+      "get": {
+        "operationId": "get_visuals",
+        "tags": [
+          "create"
+        ],
+        "summary": "Page 14 data (visuals)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/projects/{id}/narration": {
+      "get": {
+        "operationId": "get_voice",
+        "tags": [
+          "create"
+        ],
+        "summary": "Page 15 data (voice)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/projects/{id}/thumbnails": {
+      "get": {
+        "operationId": "get_thumbnails",
+        "tags": [
+          "create"
+        ],
+        "summary": "Page 16 data (thumbnails)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/projects/{id}/seo": {
+      "get": {
+        "operationId": "get_seo",
+        "tags": [
+          "create"
+        ],
+        "summary": "Page 17 data (seo)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/projects/{id}/captions": {
+      "get": {
+        "operationId": "get_captions",
+        "tags": [
+          "create"
+        ],
+        "summary": "Page 18 data (captions)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/renders": {
+      "get": {
+        "operationId": "get_renders",
+        "tags": [
+          "publish"
+        ],
+        "summary": "Page 19 data (renders)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads": {
+      "get": {
+        "operationId": "get_uploads",
+        "tags": [
+          "publish"
+        ],
+        "summary": "Page 20 data (uploads)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule": {
+      "get": {
+        "operationId": "get_schedule",
+        "tags": [
+          "publish"
+        ],
+        "summary": "Page 21 data (schedule)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/approvals": {
+      "get": {
+        "operationId": "get_approvals",
+        "tags": [
+          "publish"
+        ],
+        "summary": "Page 22 data (approvals)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/channels/{id}": {
+      "get": {
+        "operationId": "get_analytics",
+        "tags": [
+          "grow"
+        ],
+        "summary": "Page 23 data (analytics)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/growth/suggestions": {
+      "get": {
+        "operationId": "get_growth",
+        "tags": [
+          "grow"
+        ],
+        "summary": "Page 24 data (growth)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assets": {
+      "get": {
+        "operationId": "get_assets",
+        "tags": [
+          "library"
+        ],
+        "summary": "Page 25 data (assets)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/usage": {
+      "get": {
+        "operationId": "get_usage",
+        "tags": [
+          "control"
+        ],
+        "summary": "Page 26 data (usage)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "operationId": "get_notifications",
+        "tags": [
+          "control"
+        ],
+        "summary": "Page 27 data (notifications)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent-runs": {
+      "get": {
+        "operationId": "get_agents",
+        "tags": [
+          "control"
+        ],
+        "summary": "Page 28 data (agents)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/audits": {
+      "get": {
+        "operationId": "get_policy",
+        "tags": [
+          "control"
+        ],
+        "summary": "Page 29 data (policy)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/audit-log": {
+      "get": {
+        "operationId": "get_security",
+        "tags": [
+          "control"
+        ],
+        "summary": "Page 30 data (security)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "operationId": "get_settings",
+        "tags": [
+          "control"
+        ],
+        "summary": "Page 31 data (settings)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageData"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shell": {
+      "get": {
+        "operationId": "get_shell",
+        "tags": [
+          "system"
+        ],
+        "summary": "Top bar and banner state",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Shell"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/emergency-stop": {
+      "post": {
+        "operationId": "emergency_stop",
+        "tags": [
+          "system"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmergencyStopRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Controls"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "clear_emergency_stop",
+        "tags": [
+          "system"
+        ],
+        "summary": "Needs step-up (403 REAUTH_REQUIRED otherwise)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Controls"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/step-up": {
+      "post": {
+        "operationId": "step_up",
+        "tags": [
+          "auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StepUpRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Re-authenticated"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search": {
+      "get": {
+        "operationId": "search",
+        "tags": [
+          "system"
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SearchHit"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem+json)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Problem": {
+        "type": "object",
+        "required": [
+          "title",
+          "status",
+          "code"
+        ],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "guards": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "code",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "fix_href": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Stat": {
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "value"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "hint": {
+            "type": "string"
+          },
+          "delta": {
+            "type": "string",
+            "description": "Change vs previous period, e.g. +12%"
+          },
+          "delta_good": {
+            "type": "boolean",
+            "description": "Whether the change is good news"
+          },
+          "trend": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Sparkline values, oldest first"
+          }
+        }
+      },
+      "Row": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "ProjectSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "channel",
+          "format",
+          "state",
+          "states",
+          "guards"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "states": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "guards": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PageData": {
+        "type": "object",
+        "required": [
+          "stats",
+          "rows",
+          "next_cursor"
+        ],
+        "properties": {
+          "stats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Stat"
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Row"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "project": {
+            "$ref": "#/components/schemas/ProjectSummary"
+          }
+        }
+      },
+      "Overview": {
+        "type": "object",
+        "required": [
+          "kpis",
+          "pipeline",
+          "approvals",
+          "alerts",
+          "schedule",
+          "activity",
+          "views_14d"
+        ],
+        "properties": {
+          "kpis": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Stat"
+            }
+          },
+          "pipeline": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "state",
+                "count"
+              ],
+              "properties": {
+                "state": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "approvals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Row"
+            }
+          },
+          "alerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Row"
+            }
+          },
+          "schedule": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Row"
+            }
+          },
+          "activity": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Row"
+            }
+          },
+          "views_14d": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "date",
+                "views"
+              ],
+              "properties": {
+                "date": {
+                  "type": "string"
+                },
+                "views": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Channel": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "mode",
+          "private_only"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "SEMI",
+              "AUTO"
+            ]
+          },
+          "private_only": {
+            "type": "boolean"
+          },
+          "token_expiring": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Controls": {
+        "type": "object",
+        "required": [
+          "emergency_stop",
+          "publishing_kill_switch"
+        ],
+        "properties": {
+          "emergency_stop": {
+            "type": "object",
+            "required": [
+              "active"
+            ],
+            "properties": {
+              "active": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "since": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "publishing_kill_switch": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Shell": {
+        "type": "object",
+        "required": [
+          "channels",
+          "quota",
+          "unread_notifications",
+          "controls"
+        ],
+        "properties": {
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Channel"
+            }
+          },
+          "quota": {
+            "type": "object",
+            "required": [
+              "youtube_default_pct",
+              "free_tier_peak_pct"
+            ],
+            "properties": {
+              "youtube_default_pct": {
+                "type": "integer"
+              },
+              "free_tier_peak_pct": {
+                "type": "integer"
+              }
+            }
+          },
+          "unread_notifications": {
+            "type": "integer"
+          },
+          "controls": {
+            "$ref": "#/components/schemas/Controls"
+          }
+        }
+      },
+      "EmergencyStopRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      },
+      "StepUpRequest": {
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "properties": {
+          "password": {
+            "type": "string"
+          },
+          "totp": {
+            "type": "string"
+          }
+        }
+      },
+      "SearchHit": {
+        "type": "object",
+        "required": [
+          "kind",
+          "label",
+          "href"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "href": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
