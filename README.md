@@ -2,7 +2,23 @@
 
 An independent, local-first, free-to-run, AI-assisted YouTube production and channel-management platform. The owner directs the work and stays in control.
 
-**Status:** Phase 0 (planning) approved at C6. Phase 1 (foundation) in progress. See `docs/PROJECT_PROGRESS.md`.
+**Status:** Phase 0 (planning) approved at C6. Phase 1 (foundation) built — awaiting owner approval.
+
+## Get it onto your PC (Windows, D: drive)
+Open **PowerShell** and run one of these:
+
+```powershell
+# With git installed (recommended — easy updates):
+git clone --branch phase-1-foundation https://github.com/purfits-alt/YOUTUBE-AUTOMATION-SYSTEM-SOFTWARE.git "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app"
+```
+```powershell
+# Without git: download the ZIP and unpack it into the app folder
+Invoke-WebRequest "https://github.com/purfits-alt/YOUTUBE-AUTOMATION-SYSTEM-SOFTWARE/archive/refs/heads/phase-1-foundation.zip" -OutFile "$env:TEMP\tubeforge.zip"
+Expand-Archive "$env:TEMP\tubeforge.zip" "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE"
+Rename-Item "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\YOUTUBE-AUTOMATION-SYSTEM-SOFTWARE-phase-1-foundation" "app"
+```
+Then check your PC: `& "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app\infra\windows\tubeforge.ps1" doctor`.
+The plan is in `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app\docs\` (start with `PROJECT_PROGRESS.md`). See `docs/PROJECT_PROGRESS.md`.
 
 - Master brief: `docs/00_MASTER_PROMPT.md`
 - Validation report: `docs/PHASE0_VALIDATION_REPORT.md`

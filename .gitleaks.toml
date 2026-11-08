@@ -1,0 +1,18 @@
+# gitleaks configuration (secret scanning in pre-commit and CI).
+# Only deliberate, non-secret values are allowlisted here — each entry has a reason.
+title = "TubeForge gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake token-shaped strings used to test log redaction, and throwaway CI/dev database passwords"
+paths = [
+  '''tests/unit/test_logging_redaction\.py''',
+  '''tests/unit/test_config\.py''',
+]
+regexes = [
+  '''ci-only-password''',
+  '''dev-only-password''',
+  '''tubeforge-test''',
+]
