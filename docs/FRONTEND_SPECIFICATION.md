@@ -376,7 +376,7 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 | **Layout — mobile** | Swipe carousel. |
 | **Components** | ThumbnailGrid, CheckList (dimensions, size ≤50 MB, contrast, small-size readability), CompareView, OverlayEditor |
 | **Forms & validation** | Overlay text (≤40 chars recommended, warn >6 words), font (licensed), colours (contrast ≥4.5:1 check), aspect (16:9; 9:16 for Shorts). |
-| **Buttons & actions** | Generate (⚙) · Upload own · Edit overlay · Select final (gate input for approval) · **Edit with… ▾** (picker, ADR-0021): *Built-in overlay editor (default)* plus enabled external editors (Canva, CapCut, InShot, Filmora, Photopea, GIMP, Krita, Adobe Express, Photoshop, Other…). Hand-off pack = base image + overlay text + brand colours/fonts + required size (1280×720 / 1080×1920). The returned image becomes a new variant and must pass checks and the rights declaration. |
+| **Buttons & actions** | Generate (⚙) · Upload own · Edit overlay · Select final (gate input for approval) · **Edit with… ▾** (picker, ADR-0021): *Built-in overlay editor (default)* plus enabled external editors (Canva, CapCut, InShot, Filmora, Photopea, GIMP, Krita, Adobe Express, Photoshop, Other…). Hand-off pack = base image + overlay text + brand colours/fonts + required size (recommended 3840×2160 for videos / 2160×3840 for Shorts; minimum 640 px on the short side). The returned image becomes a new variant and must pass checks and the rights declaration. |
 | **Tables** | None. |
 | **API calls** | POST thumbnails/generate, POST thumbnails, GET thumbnails, POST /thumbnails/{id}/select |
 | **Real-time events** | job.finished |
@@ -394,8 +394,8 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 | **Purpose** | Titles, description, tags, hashtags, chapters, playlists, language, made-for-kids (owner), AI disclosure. |
 | **Layout — desktop** | Form sections + live preview of how title/description appear; chapter editor synced to render duration; disclosure card with reasons. |
 | **Layout — mobile** | Sections accordion. |
-| **Components** | TitleOptions (char counters), DescriptionEditor (≤5000), TagInput, ChapterEditor (validates first at 0:00, ≥3 chapters, ≥10 s each), PlaylistPicker, MadeForKidsDecision (explicit yes/no, no default), DisclosureCard |
-| **Forms & validation** | Title ≤100 (warn >70), description ≤5000, tags total ≤500 chars, hashtags ≤15, chapters valid vs final duration, category, default language, audio language, made_for_kids (required explicit), containsSyntheticMedia confirm (required explicit). |
+| **Components** | TitleOptions (char counters), DescriptionEditor (≤ 5000 **bytes** — byte counter, important for Urdu), TagInput, ChapterEditor (validates first at 0:00, ≥3 chapters, ≥10 s each), PlaylistPicker, MadeForKidsDecision (explicit yes/no, no default), DisclosureCard |
+| **Forms & validation** | Title ≤100 chars, no `<` `>` (warn >70), description ≤5000 bytes, tags total ≤500 chars (commas and quotes around multi-word tags count), hashtags ≤15, chapters valid vs final duration, category, default language, audio language, made_for_kids (required explicit), containsSyntheticMedia confirm (required explicit). |
 | **Buttons & actions** | Generate (⚙) · Save version · Decide made-for-kids · Confirm disclosure value. |
 | **Tables** | Chapters: start, title. |
 | **API calls** | POST seo/generate, GET/PUT /projects/{id}/seo, POST seo/made-for-kids, GET/POST disclosure |

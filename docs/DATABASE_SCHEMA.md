@@ -462,8 +462,8 @@ CREATE UNIQUE INDEX ON thumbnails (project_id) WHERE selected;
 CREATE TABLE seo_packages (
   id uuid PRIMARY KEY, project_id uuid NOT NULL REFERENCES video_projects, channel_id uuid NOT NULL,
   version int NOT NULL,
-  title_options jsonb NOT NULL, selected_title text NULL CHECK (char_length(selected_title) <= 100),
-  description text NOT NULL CHECK (char_length(description) <= 5000),
+  title_options jsonb NOT NULL, selected_title text NULL CHECK (char_length(selected_title) <= 100 AND selected_title !~ '[<>]'),
+  description text NOT NULL CHECK (octet_length(description) <= 5000),   -- 5000 BYTES (Urdu ≈ 2–3 bytes/char); no '<' or '>'
   tags text[] NOT NULL DEFAULT '{}', hashtags text[] NOT NULL DEFAULT '{}',
   chapters jsonb NOT NULL DEFAULT '[]',               -- [{start_s,title}] validated vs final render
   playlist_suggestions jsonb NOT NULL DEFAULT '[]',

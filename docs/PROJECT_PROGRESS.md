@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 0 — Research & Architecture (planning only, no application code)
-**Current step:** 0.6 Agents & domain specs → working toward **C5**
+**Current step:** 0.6 Agents & domain specs → waiting at **OWNER CHECKPOINT C5**
 **Last updated:** 2026-11-08
 
 ---
@@ -17,7 +17,7 @@
 | C2 | Tech stack, provider matrix, ADRs, fact verification | ✅ Approved | 2026-11-08 | All 18 ADRs accepted + owner added: own-voice cloning (ADR-0019) and optional stock media incl. paid (ADR-0020) |
 | C3 | System architecture, state machine | ✅ Approved | 2026-11-08 | Defaults A-1…A-3 accepted; install root `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE` |
 | C4 | Frontend, backend, DB, OAuth, YouTube API specs | ✅ Approved | 2026-11-08 | Defaults: TOTP optional (recommended), backup 03:00 PKT, digests daily 09:00 / weekly Mon 09:00, no external editors enabled yet |
-| C5 | Agents, prompts, discovery, production, SEO, notifications, audit, cost specs | 🔄 In progress | 2026-11-08 | |
+| C5 | Agents, prompts, discovery, production, SEO, notifications, audit, cost specs | ⏳ Waiting for owner | 2026-11-08 | |
 | C6 | Roadmap, QA, deployment, build instructions, risks, compliance, CLAUDE.md — **SPEC APPROVAL** | Not started | | |
 
 ---
@@ -34,7 +34,7 @@
 | P0-06 | Tech-stack evaluation + ADRs (Step 0.3) | P0-03, P0-05 | `TECH_STACK_EVALUATION.md`, `adr/ADR-0001…` | ✅ Approved at C2 (20 ADRs). ≥2 options per area of Section 4, compared on free status, licence, OS support, hardware, maintenance, testability. One ADR per decision. Owner approves at C2 |
 | P0-07 | System architecture + state machine (Step 0.4) | P0-06 | `SYSTEM_ARCHITECTURE.md`, `WORKFLOW_STATE_MACHINE.md` | ✅ Approved at C3 (16 Mermaid diagrams, all parse-checked). 7 required Mermaid diagrams. Components A–N with interfaces and failure modes. All 6 state machines with guards and owners. Owner approves at C3 |
 | P0-08 | Interface specs (Step 0.5) | P0-07 | Frontend, backend, DB, OAuth security, YouTube API docs | ✅ Approved at C4. All 31 pages fully specified (4 states each). Every endpoint typed. Every table with constraints and indexes. Owner approves at C4 |
-| P0-09 | Domain specs (Step 0.6) | P0-07 | Agent architecture, prompts, discovery, production, SEO, notifications, audit, cost docs | All 32 agents follow the template in §7.2. Prompts versioned with JSON schemas. Audit blocking rules defined. Owner approves at C5 |
+| P0-09 | Domain specs (Step 0.6) | P0-07 | Agent architecture, prompts, discovery, production, SEO, notifications, audit, cost docs | ✅ Drafted, awaiting C5. All 32 agents follow the template in §7.2. Prompts versioned with JSON schemas. Audit blocking rules defined. Owner approves at C5 |
 | P0-10 | Roadmap + ops docs (Step 0.7) | P0-08, P0-09 | Roadmap, testing, deployment, build instructions, risk register, compliance checklist, `CLAUDE.md` | Each build phase lists tasks, files, acceptance tests, demo script and free-tier check ✔. **C6 spec approval** |
 
 ### Build-phase dependency outline (preliminary; finalised in P0-10)
