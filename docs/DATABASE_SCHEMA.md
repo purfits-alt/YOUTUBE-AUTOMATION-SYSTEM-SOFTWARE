@@ -765,6 +765,15 @@ CREATE TABLE backups (id uuid PK, kind text NOT NULL CHECK (kind IN ('DB','SECRE
   size_bytes bigint, sha256 char(64), started_at timestamptz, finished_at timestamptz, status text NOT NULL, error text NULL, restore_tested_at timestamptz NULL);
 CREATE TABLE provider_reverify_reminders (provider_code text PRIMARY KEY REFERENCES provider_registry, due_at date NOT NULL);
 CREATE TABLE adr_references (adr_id text PRIMARY KEY, title text NOT NULL, status text NOT NULL, path text NOT NULL);
+
+CREATE TABLE idempotency_keys (                       -- BACKEND_SPECIFICATION §1: replay the first response for 24 h (added in Phase 3)
+  user_id uuid NOT NULL REFERENCES users, key uuid NOT NULL,
+  method text NOT NULL, path text NOT NULL, request_sha256 char(64) NOT NULL,
+  status_code int NULL, response_body jsonb NULL,     -- NULL while the first request is still running
+  created_at, expires_at timestamptz NOT NULL,
+  PRIMARY KEY (user_id, key)
+);
+CREATE INDEX ON idempotency_keys (expires_at);
 ```
 
 ## 13. Relationships (summary)

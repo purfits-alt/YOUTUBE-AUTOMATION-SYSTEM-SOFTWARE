@@ -1106,6 +1106,19 @@ CREATE TABLE adr_references (
   path text NOT NULL
 );
 
+CREATE TABLE idempotency_keys (
+  user_id uuid NOT NULL,
+  key uuid NOT NULL,
+  method text NOT NULL,
+  path text NOT NULL,
+  request_sha256 char(64) NOT NULL,
+  status_code int NULL,
+  response_body jsonb NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  PRIMARY KEY (user_id, key)
+);
+
 CREATE UNIQUE INDEX user_roles_unique ON user_roles (user_id, role_id, COALESCE(channel_id,'00000000-0000-0000-0000-000000000000'::uuid));
 CREATE INDEX ON sessions (user_id) WHERE revoked_at IS NULL;
 CREATE INDEX ON audit_log (entity_type, entity_id, occurred_at DESC);
@@ -1132,6 +1145,7 @@ CREATE INDEX ON workflow_transitions (entity_type, entity_id, occurred_at);
 CREATE INDEX ON usage_records (provider_code, period_key, metric);
 CREATE INDEX ON notifications (user_id, read_at, created_at DESC);
 CREATE INDEX ON notifications (dedup_key, created_at DESC);
+CREATE INDEX ON idempotency_keys (expires_at);
 
 ALTER TABLE role_permissions ADD FOREIGN KEY (role_id) REFERENCES roles;
 ALTER TABLE role_permissions ADD FOREIGN KEY (permission_id) REFERENCES permissions;
@@ -1213,3 +1227,4 @@ ALTER TABLE notification_targets ADD FOREIGN KEY (user_id) REFERENCES users;
 ALTER TABLE notifications ADD FOREIGN KEY (user_id) REFERENCES users;
 ALTER TABLE notification_deliveries ADD FOREIGN KEY (notification_id) REFERENCES notifications;
 ALTER TABLE provider_reverify_reminders ADD FOREIGN KEY (provider_code) REFERENCES provider_registry;
+ALTER TABLE idempotency_keys ADD FOREIGN KEY (user_id) REFERENCES users;
