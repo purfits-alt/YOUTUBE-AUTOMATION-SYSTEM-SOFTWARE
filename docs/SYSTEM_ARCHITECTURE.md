@@ -1,6 +1,6 @@
 # System Architecture
 
-**Version:** 0.1 (Step 0.4, for Checkpoint C3) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C3, 2026-11-08) · **Date:** 2026-11-08
 **Inputs:** PRD v1.2, TECH_STACK_EVALUATION, ADR-0001…0020, FREE_TIER_PROVIDER_MATRIX
 **Target:** H-LITE (Windows 10, 8 GB RAM, no GPU). It scales up to H0–H2 through configuration only.
 
@@ -394,12 +394,29 @@ Defaults: `max_attempts` = 5 (network), 3 (agent LLM), 2 (render). Backoff = 2^n
 
 ## 11. Deployment view (H-LITE)
 
+**Install location (owner decision at C3):** everything TubeForge owns lives on drive **D:**, under `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE`.
+
 ```
-%TUBEFORGE_HOME%            (program: venv, built SPA, ffmpeg.exe, models\)
-%TUBEFORGE_DATA%            (data: media\, work\, backups\, logs\)
-PostgreSQL 16               (Windows service, localhost:5432, DB "tubeforge")
-tubeforge.ps1 start|stop|status|backup|doctor
+D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\          = %TUBEFORGE_HOME%
+├── app\              program: Python venv, built dashboard (SPA), scripts
+├── tools\            ffmpeg.exe, ffprobe.exe (pinned build)
+├── models\           TTS / voice-clone / STT / local-LLM model files (hash-pinned)
+├── data\             = %TUBEFORGE_DATA%
+│   ├── media\blobs\  content-addressed media store
+│   ├── work\         per-job temp folders (auto-cleaned)
+│   ├── backups\      DB + encrypted-secrets backups (owner may also copy to an external drive)
+│   └── logs\         JSON logs (rotated, redacted)
+├── pgdata\           PostgreSQL data directory (cluster created by the installer here, not on C:)
+├── config\           tubeforge.toml (non-secret settings only)
+├── TubeForge.lnk     desktop-shortcut target: starts services and opens http://127.0.0.1:8765
+└── tubeforge.ps1     start | stop | status | backup | restore | doctor | update
 ```
+
+- PostgreSQL 16 runs as a Windows service. Its data directory is `pgdata\` on D:, bound to localhost:5432, database `tubeforge`.
+- Ollama (optional) is pointed at `models\ollama\` through the `OLLAMA_MODELS` env var, so models don't fill C:.
+- Python and uv caches are redirected to `D:\…\app\.cache`.
+- **Path has spaces:** every script quotes paths, FFmpeg arguments are passed as argv lists (never shell strings), and the **Windows CI job installs into a path containing spaces** (`C:\Tube Forge Test\`) to catch quoting bugs.
+- `doctor` checks free space **on D:** (≥ 60 GB). C: needs only room for the PostgreSQL program files (~300 MB).
 
 `doctor` checks:
 - disk ≥ 60 GB free
@@ -423,10 +440,11 @@ Full detail in `OAUTH_SECURITY.md` (Step 0.5).
 - An outbound host allowlist per adapter.
 - Safetensors/ONNX-only model loading with pinned hashes.
 
-## 13. Open questions for C3
+## 13. Decisions at C3
 
 | ID | Question | Proposal |
 |---|---|---|
-| A-1 | Run TubeForge automatically at Windows login? | No. The owner starts it (`tubeforge start` or a desktop shortcut). Optional later. |
-| A-2 | Render at night automatically (e.g. 01:00–07:00 Karachi) when the PC is on? | Yes, a "night render window" setting, default ON for final long-form renders. Proxies run any time. |
-| A-3 | Port 8765 for the dashboard? | Yes (configurable). |
+| A-1 | Run TubeForge automatically at Windows login? | ✅ Decided at C3: No. The owner starts it from the desktop shortcut. Optional later. |
+| A-2 | Night render window | ✅ Decided at C3: 01:00–07:00 Asia/Karachi, default ON for final long-form renders. Proxies any time. |
+| A-3 | Dashboard address | ✅ Decided at C3: `http://127.0.0.1:8765` (configurable). |
+| A-4 | Install location | ✅ Decided at C3 (owner): `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE` — program, data, models, DB data and backups all on D:. |

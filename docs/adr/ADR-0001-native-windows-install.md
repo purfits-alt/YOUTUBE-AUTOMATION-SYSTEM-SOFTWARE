@@ -27,3 +27,6 @@ PostgreSQL licence, PSF/MIT (Python, uv), LGPL/GPL (FFmpeg build, used unmodifie
 ## References
 - `docs/TECH_STACK_EVALUATION.md`
 - `docs/FREE_TIER_PROVIDER_MATRIX.md`
+
+## Amendment (C3, 2026-11-08)
+The owner chose the install root **`D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE`**. Program, data, models, PostgreSQL data directory and backups all live there (layout in SYSTEM_ARCHITECTURE §11). Because the path contains spaces, scripts must quote every path and subprocesses use argv lists. The Windows CI job installs into a path with spaces.

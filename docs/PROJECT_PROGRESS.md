@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 0 — Research & Architecture (planning only, no application code)
-**Current step:** 0.4 System architecture & workflow state machine → waiting at **OWNER CHECKPOINT C3**
+**Current step:** 0.5 Interface specs (frontend, backend, DB, OAuth security, YouTube API) → working toward **C4**
 **Last updated:** 2026-11-08
 
 ---
@@ -15,8 +15,8 @@
 | C0 | Discovery questions | ✅ Closed | 2026-11-08 | Answers + defaults recorded below |
 | C1 | PRODUCT_REQUIREMENTS.md | ✅ Approved | 2026-11-08 | All proposed defaults OQ-1…OQ-6 accepted |
 | C2 | Tech stack, provider matrix, ADRs, fact verification | ✅ Approved | 2026-11-08 | All 18 ADRs accepted + owner added: own-voice cloning (ADR-0019) and optional stock media incl. paid (ADR-0020) |
-| C3 | System architecture, state machine | ⏳ Waiting for owner | 2026-11-08 | |
-| C4 | Frontend, backend, DB, OAuth, YouTube API specs | Not started | | |
+| C3 | System architecture, state machine | ✅ Approved | 2026-11-08 | Defaults A-1…A-3 accepted; install root `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE` |
+| C4 | Frontend, backend, DB, OAuth, YouTube API specs | 🔄 In progress | 2026-11-08 | |
 | C5 | Agents, prompts, discovery, production, SEO, notifications, audit, cost specs | Not started | | |
 | C6 | Roadmap, QA, deployment, build instructions, risks, compliance, CLAUDE.md — **SPEC APPROVAL** | Not started | | |
 
@@ -32,7 +32,7 @@
 | P0-04 | Product requirements (Step 0.2) | P0-03 | `PRODUCT_REQUIREMENTS.md`, `GLOSSARY.md` | ✅ Approved at C1. Personas, user stories with testable acceptance criteria for all 25 workflow steps, non-goals, success metrics (no revenue promises). Owner approves at C1 |
 | P0-05 | Verify platform facts F1–F9 from official sources | P0-03 | Records in `FREE_TIER_PROVIDER_MATRIX.md`, `YOUTUBE_API_INTEGRATION.md` | ✅ Done (F7 not needed — adapter disabled). Each fact has URL + verification date, or is marked `UNVERIFIED` with a design workaround |
 | P0-06 | Tech-stack evaluation + ADRs (Step 0.3) | P0-03, P0-05 | `TECH_STACK_EVALUATION.md`, `adr/ADR-0001…` | ✅ Approved at C2 (20 ADRs). ≥2 options per area of Section 4, compared on free status, licence, OS support, hardware, maintenance, testability. One ADR per decision. Owner approves at C2 |
-| P0-07 | System architecture + state machine (Step 0.4) | P0-06 | `SYSTEM_ARCHITECTURE.md`, `WORKFLOW_STATE_MACHINE.md` | ✅ Drafted, awaiting C3 (16 Mermaid diagrams, all parse-checked). 7 required Mermaid diagrams. Components A–N with interfaces and failure modes. All 6 state machines with guards and owners. Owner approves at C3 |
+| P0-07 | System architecture + state machine (Step 0.4) | P0-06 | `SYSTEM_ARCHITECTURE.md`, `WORKFLOW_STATE_MACHINE.md` | ✅ Approved at C3 (16 Mermaid diagrams, all parse-checked). 7 required Mermaid diagrams. Components A–N with interfaces and failure modes. All 6 state machines with guards and owners. Owner approves at C3 |
 | P0-08 | Interface specs (Step 0.5) | P0-07 | Frontend, backend, DB, OAuth security, YouTube API docs | All 31 pages fully specified (4 states each). Every endpoint typed. Every table with constraints and indexes. Owner approves at C4 |
 | P0-09 | Domain specs (Step 0.6) | P0-07 | Agent architecture, prompts, discovery, production, SEO, notifications, audit, cost docs | All 32 agents follow the template in §7.2. Prompts versioned with JSON schemas. Audit blocking rules defined. Owner approves at C5 |
 | P0-10 | Roadmap + ops docs (Step 0.7) | P0-08, P0-09 | Roadmap, testing, deployment, build instructions, risk register, compliance checklist, `CLAUDE.md` | Each build phase lists tasks, files, acceptance tests, demo script and free-tier check ✔. **C6 spec approval** |
@@ -85,6 +85,7 @@ P1 Foundation ─┬─ P2 Frontend shell
 | D-11 | Research data policy under YouTube Data Aggregation rule — **decided: conservative (ADR-0015)** | ✅ C2 |
 | D-12 | Publishing safety after F1 reversal — **decided: explicit privacy, private by default (ADR-0016)** | ✅ C2 |
 | D-13 | Owner voice cloning — **decided: OpenVoice V2 converter (default) + Chatterbox zero-shot (optional), owner-only with consent (ADR-0019)** | ✅ C2 |
+| D-15 | Install location — **decided: `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE`** (all program/data/DB/models on D:) | ✅ C3 |
 | D-14 | Stock media — **decided: manual import always; Pexels/Pixabay optional; paid APIs disabled, budget 0 (ADR-0020)** | ✅ C2 |
 
 ---

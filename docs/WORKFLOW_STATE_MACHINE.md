@@ -1,6 +1,6 @@
 # Workflow State Machines
 
-**Version:** 0.1 (Step 0.4, for Checkpoint C3) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C3, 2026-11-08) · **Date:** 2026-11-08
 **Owner of all transitions:** Master Orchestrator (`SYSTEM_ARCHITECTURE.md` §4-C).
 
 ## 0. Rules that apply to every state machine

@@ -308,7 +308,7 @@ As the owner, I want warnings when my channel looks templated or mass-produced s
 - AC: Disk usage per channel and project. Warnings at 80 % and 90 % of a configured budget. Cleanup removes intermediate files only, never final masters, and only after owner confirmation.
 
 **US-13.3 Install on Windows** (Phase 1/15)
-- AC: A documented native install (PostgreSQL, Python, FFmpeg) with a start script. The installer checks for at least 60 GB of free disk and 8 GB of RAM and warns if either is missing. Verified on a clean Windows 10 machine (or VM).
+- AC: A documented native install (PostgreSQL, Python, FFmpeg) with a start script, into **`D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE`** (owner choice at C3; the installer lets the path be changed). A desktop shortcut starts TubeForge and opens the dashboard. The installer checks for at least 60 GB of free disk on the install drive (D:) and 8 GB of RAM and warns if either is missing. Verified on a clean Windows 10 machine (or VM).
 
 ---
 
