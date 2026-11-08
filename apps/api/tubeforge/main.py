@@ -16,7 +16,9 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.types import Scope
 
 from tubeforge.config import Settings, get_settings
 from tubeforge.db.session import check_database, table_exists
@@ -54,6 +56,24 @@ class HostGuardMiddleware(BaseHTTPMiddleware):
         if host not in self._allowed:
             return problem(400, "Bad host", "Requests must target this computer (127.0.0.1).", "BAD_HOST")
         return await call_next(request)
+
+
+# Paths that must never fall back to the SPA's index.html (they belong to the API).
+API_PREFIXES = ("/api/", "/healthz", "/readyz")
+
+
+class SPAStaticFiles(StaticFiles):
+    """Serve the built web app; unknown non-file paths (client-side routes) get index.html."""
+
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        try:
+            return await super().get_response(path, scope)
+        except StarletteHTTPException as exc:
+            request_path: str = scope.get("path", "")
+            last_segment = request_path.rsplit("/", 1)[-1]
+            if exc.status_code != 404 or request_path.startswith(API_PREFIXES) or "." in last_segment:
+                raise
+            return await super().get_response("index.html", scope)
 
 
 def data_dir_writable(path: Path) -> tuple[bool, str]:
@@ -104,7 +124,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     index = settings.web_dist_dir / "index.html"
     if index.is_file():
-        app.mount("/", StaticFiles(directory=settings.web_dist_dir, html=True), name="web")
+        app.mount("/", SPAStaticFiles(directory=settings.web_dist_dir, html=True), name="web")
     else:
 
         @app.get("/", include_in_schema=False)
