@@ -1,6 +1,6 @@
 # TubeForge — Product Requirements Document (PRD)
 
-**Version:** 0.1 (draft for Owner Checkpoint C1) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C1 — 2026-11-08; open questions OQ-1…OQ-6 resolved with proposed defaults) · **Date:** 2026-11-08
 **Sources:** `00_MASTER_PROMPT.md`, `PHASE0_VALIDATION_REPORT.md`, C0 answers in `PROJECT_PROGRESS.md`
 **Requirement IDs** (`FR-…`, `NFR-…`, `US-…`) are stable. Later specs, tests and roadmap tasks refer back to them.
 

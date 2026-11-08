@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 0 — Research & Architecture (planning only, no application code)
-**Current step:** 0.2 Product requirements → waiting at **OWNER CHECKPOINT C1**
+**Current step:** 0.3 Research, tech stack & provider matrix → working toward **C2**
 **Last updated:** 2026-11-08
 
 ---
@@ -13,8 +13,8 @@
 | Checkpoint | Scope | Status | Date | Owner decision |
 |---|---|---|---|---|
 | C0 | Discovery questions | ✅ Closed | 2026-11-08 | Answers + defaults recorded below |
-| C1 | PRODUCT_REQUIREMENTS.md | ⏳ Waiting for owner | 2026-11-08 | |
-| C2 | Tech stack, provider matrix, ADRs, fact verification | Not started | | |
+| C1 | PRODUCT_REQUIREMENTS.md | ✅ Approved | 2026-11-08 | All proposed defaults OQ-1…OQ-6 accepted |
+| C2 | Tech stack, provider matrix, ADRs, fact verification | 🔄 In progress | 2026-11-08 | |
 | C3 | System architecture, state machine | Not started | | |
 | C4 | Frontend, backend, DB, OAuth, YouTube API specs | Not started | | |
 | C5 | Agents, prompts, discovery, production, SEO, notifications, audit, cost specs | Not started | | |
@@ -29,7 +29,7 @@
 | P0-01 | Inspect repo and planning docs; create repo skeleton | — | `docs/`, git repo | ✅ Done. Master prompt saved; repo initialised |
 | P0-02 | Validation of the brief | P0-01 | `PHASE0_VALIDATION_REPORT.md` | ✅ Done (draft). Conflicts, gaps, limits, risks listed |
 | P0-03 | Discovery questions (Step 0.1) | P0-01 | Owner answers | ✅ Done. Answers/defaults recorded |
-| P0-04 | Product requirements (Step 0.2) | P0-03 | `PRODUCT_REQUIREMENTS.md`, `GLOSSARY.md` | ✅ Drafted, awaiting C1. Personas, user stories with testable acceptance criteria for all 25 workflow steps, non-goals, success metrics (no revenue promises). Owner approves at C1 |
+| P0-04 | Product requirements (Step 0.2) | P0-03 | `PRODUCT_REQUIREMENTS.md`, `GLOSSARY.md` | ✅ Approved at C1. Personas, user stories with testable acceptance criteria for all 25 workflow steps, non-goals, success metrics (no revenue promises). Owner approves at C1 |
 | P0-05 | Verify platform facts F1–F9 from official sources | P0-03 | Records in `FREE_TIER_PROVIDER_MATRIX.md`, `YOUTUBE_API_INTEGRATION.md` | Each fact has URL + verification date, or is marked `UNVERIFIED` with a design workaround |
 | P0-06 | Tech-stack evaluation + ADRs (Step 0.3) | P0-03, P0-05 | `TECH_STACK_EVALUATION.md`, `adr/ADR-0001…` | ≥2 options per area of Section 4, compared on free status, licence, OS support, hardware, maintenance, testability. One ADR per decision. Owner approves at C2 |
 | P0-07 | System architecture + state machine (Step 0.4) | P0-06 | `SYSTEM_ARCHITECTURE.md`, `WORKFLOW_STATE_MACHINE.md` | 7 required Mermaid diagrams. Components A–N with interfaces and failure modes. All 6 state machines with guards and owners. Owner approves at C3 |
@@ -80,7 +80,7 @@ P1 Foundation ─┬─ P2 Frontend shell
 | D-6 | Hosting of public privacy-policy/terms page (domain question) | C2 |
 | D-7 | Dashboard network exposure — **decided: localhost only** | ✅ C0 |
 | D-8 | Monetary Analytics scope — **decided: not now** | ✅ C0 |
-| D-9 | Media retention & backup policy | C1 |
+| D-9 | Media retention & backup — **decided: 30-day intermediates, daily DB+secrets backup** | ✅ C1 |
 | D-10 | Windows 10 EOL — **decided: accept risk with mitigations** | ✅ C0 |
 
 ---
