@@ -56,6 +56,9 @@ jobs:
   web:
     name: Web — lint, types, unit, build, e2e
     runs-on: ubuntu-latest
+    # Write access is used only to commit refreshed visual snapshots (see "Refresh visual snapshots").
+    permissions:
+      contents: write
     services:
       postgres:
         image: postgres:16
@@ -107,7 +110,22 @@ jobs:
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8765/healthz && break; sleep 1; done
           curl -sf http://127.0.0.1:8765/readyz
       - run: pnpm -C apps/web exec playwright install --with-deps chromium
-      - run: pnpm -C apps/web e2e
+      - name: E2E (routes x states, axe, mobile, shell, visual)
+        if: ${{ !(github.event_name == 'push' && github.ref != 'refs/heads/main' && contains(github.event.head_commit.message, '[update-snapshots]')) }}
+        run: pnpm -C apps/web e2e
+      # Visual baselines must be rendered on the CI runner itself (fonts/AA differ between machines).
+      # A push to a non-main branch whose commit message contains [update-snapshots] runs the full
+      # suite (everything must still pass), rewrites the screenshots and commits only that folder.
+      - name: Refresh visual snapshots (commit message contains [update-snapshots])
+        if: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' && contains(github.event.head_commit.message, '[update-snapshots]') }}
+        run: |
+          pnpm -C apps/web e2e --update-snapshots
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/tests/e2e/visual.spec.ts-snapshots
+          if git diff --cached --quiet; then echo "snapshots unchanged"; exit 0; fi
+          git commit -m "test(web): refresh visual snapshots rendered on the CI runner"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
       - if: failure()
         run: cat api.log
       - name: Keep Playwright results (snapshot diffs) when e2e fails
@@ -189,8 +207,18 @@ jobs:
           Pop-Location
           New-Item -ItemType Directory -Force -Path "$env:INSTALL_ROOT\config" | Out-Null
           & $script start -InstallRoot "$env:INSTALL_ROOT" -NonInteractive -NoBrowser
-          & $script status -InstallRoot "$env:INSTALL_ROOT"
+          $statusOut = & $script status -InstallRoot "$env:INSTALL_ROOT" | Out-String
           $status = $LASTEXITCODE
+          Write-Host $statusOut
           Get-ChildItem "$env:INSTALL_ROOT\data\logs" | ForEach-Object { Write-Host "== $($_.Name)"; Get-Content $_.FullName -Tail 20 }
+          # Regression guard: the memory figure must only count TubeForge's own processes
+          # (a PID-reuse bug once counted 3.4 GB of unrelated processes).
+          if ($statusOut -match 'TubeForge memory\s+(\d+) MB') {
+            if ([int]$Matches[1] -gt 1500) { Write-Error "TubeForge memory $($Matches[1]) MB is implausible"; exit 1 }
+          } else { Write-Error 'status printed no memory total'; exit 1 }
           & $script stop -InstallRoot "$env:INSTALL_ROOT"
+          # stop must end TubeForge's processes and nothing else (this shell is still alive to check).
+          Start-Sleep -Seconds 2
+          $left = @(Get-Process -Name 'tubeforge-api', 'tubeforge-worker' -ErrorAction SilentlyContinue)
+          if ($left.Count -gt 0) { Write-Error "processes left after stop: $($left.Id -join ', ')"; exit 1 }
           exit $status

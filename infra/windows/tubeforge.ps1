@@ -298,19 +298,44 @@ function Get-RunningProcess([string]$Name) {
     $pidFile = Get-PidFile $Name
     if (-not (Test-Path -LiteralPath $pidFile)) { return $null }
     $procId = [int](Get-Content -LiteralPath $pidFile -Raw)
-    return Get-Process -Id $procId -ErrorAction SilentlyContinue
+    $proc = Get-Process -Id $procId -ErrorAction SilentlyContinue
+    if (-not $proc) { return $null }
+    # A stale pid file can point at an unrelated program that got the same ID later: only
+    # accept the TubeForge launcher we started.
+    $expected = [IO.Path]::GetFileNameWithoutExtension(($Processes | Where-Object { $_.Name -eq $Name }).Exe)
+    if ($proc.ProcessName -ne $expected) {
+        Remove-Item -LiteralPath $pidFile -ErrorAction SilentlyContinue
+        return $null
+    }
+    return $proc
 }
 
 # The .exe files in .venv\Scripts are small launchers that start the real Python
 # process as a child (and that may start another). Memory and stop must cover the
 # whole tree, not just the launcher pid we recorded.
+# Only processes TubeForge itself starts (venv launchers, Python, uv). Anything else is never
+# counted or stopped, even if Windows reused a process ID.
+$TreeProcessNames = @('python.exe', 'pythonw.exe', 'uv.exe', 'tubeforge-api.exe', 'tubeforge-worker.exe', 'tubeforge-db.exe')
+
 function Get-ProcessTreeIds([int]$RootId) {
-    $all = @(Get-CimInstance Win32_Process -Property ProcessId, ParentProcessId)
+    $all = @(Get-CimInstance Win32_Process -Property ProcessId, ParentProcessId, CreationDate, Name)
+    $byId = @{}
+    foreach ($p in $all) { $byId[[int]$p.ProcessId] = $p }
     $ids = New-Object System.Collections.Generic.List[int]
+    if (-not $byId.ContainsKey($RootId)) { return , $ids.ToArray() }
     $ids.Add($RootId)
     for ($i = 0; $i -lt $ids.Count; $i++) {
+        $parent = $byId[$ids[$i]]
         foreach ($child in $all) {
-            if ($child.ParentProcessId -eq $ids[$i] -and -not $ids.Contains([int]$child.ProcessId)) { $ids.Add([int]$child.ProcessId) }
+            $childId = [int]$child.ProcessId
+            # Windows reuses process IDs: a process whose original parent has exited can carry a
+            # ParentProcessId that now belongs to one of ours. A real child starts after its parent.
+            if ($child.ParentProcessId -eq $ids[$i] -and
+                -not $ids.Contains($childId) -and
+                $child.CreationDate -ge $parent.CreationDate -and
+                $TreeProcessNames -contains $child.Name.ToLowerInvariant()) {
+                $ids.Add($childId)
+            }
         }
     }
     return , $ids.ToArray()
