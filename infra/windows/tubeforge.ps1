@@ -195,25 +195,46 @@ function Initialize-Database {
         return
     }
 
+    # -w = never let psql prompt by itself: a failed login must stop here with a clear
+    # message, not fall through to a second prompt or write a pgpass entry for a role
+    # that was never created.
+    $psqlSuper = @('-w', '-h', '127.0.0.1', '-p', '5432', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1')
+    $superPassword = $null
     if ($NonInteractive) {
         $superPassword = $env:TUBEFORGE_PG_SUPERUSER_PASSWORD
         if (-not $superPassword) { throw 'TUBEFORGE_PG_SUPERUSER_PASSWORD is required with -NonInteractive' }
+        $env:PGPASSWORD = $superPassword
+        & $psql @psqlSuper -tA -c 'SELECT 1' | Out-Null
+        if ($LASTEXITCODE -ne 0) { Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue; throw 'PostgreSQL login as "postgres" failed.' }
     } else {
-        $secure = Read-Host 'PostgreSQL "postgres" superuser password (used once to create the TubeForge database)' -AsSecureString
-        $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
-        try { $superPassword = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) }
-        finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+        for ($attempt = 1; $attempt -le 3; $attempt++) {
+            $secure = Read-Host 'PostgreSQL "postgres" superuser password (the one you chose in the PostgreSQL installer; typing is hidden)' -AsSecureString
+            $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+            try { $candidate = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) }
+            finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+            if (-not $candidate) { Write-Check 'Database login' 'WARN' 'empty password - type it, then press Enter'; continue }
+            $env:PGPASSWORD = $candidate
+            & $psql @psqlSuper -tA -c 'SELECT 1' | Out-Null
+            if ($LASTEXITCODE -eq 0) { $superPassword = $candidate; break }
+            Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue
+            Write-Check 'Database login' 'WARN' "password not accepted (attempt $attempt of 3)"
+        }
+        $candidate = $null
+        if (-not $superPassword) { throw 'Could not log in to PostgreSQL as "postgres". Nothing was changed. Check the password and run setup again.' }
     }
 
     $rolePassword = New-RandomSecret
-    $env:PGPASSWORD = $superPassword
     try {
         $sqlRole = "DO `$`$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'tubeforge') THEN CREATE ROLE tubeforge LOGIN; END IF; END `$`$;"
-        & $psql -h 127.0.0.1 -p 5432 -U postgres -v ON_ERROR_STOP=1 -q -c $sqlRole | Out-Null
-        & $psql -h 127.0.0.1 -p 5432 -U postgres -v ON_ERROR_STOP=1 -q -c ("ALTER ROLE tubeforge PASSWORD '{0}'" -f $rolePassword) | Out-Null
-        $exists = & $psql -h 127.0.0.1 -p 5432 -U postgres -tA -c "SELECT 1 FROM pg_database WHERE datname = 'tubeforge'"
+        & $psql @psqlSuper -q -c $sqlRole | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw 'creating the tubeforge role failed' }
+        & $psql @psqlSuper -q -c ("ALTER ROLE tubeforge PASSWORD '{0}'" -f $rolePassword) | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw 'setting the tubeforge role password failed' }
+        $exists = & $psql @psqlSuper -tA -c "SELECT 1 FROM pg_database WHERE datname = 'tubeforge'"
+        if ($LASTEXITCODE -ne 0) { throw 'checking for the tubeforge database failed' }
         if (-not $exists) {
-            & $psql -h 127.0.0.1 -p 5432 -U postgres -v ON_ERROR_STOP=1 -q -c 'CREATE DATABASE tubeforge OWNER tubeforge' | Out-Null
+            & $psql @psqlSuper -q -c 'CREATE DATABASE tubeforge OWNER tubeforge' | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw 'creating the tubeforge database failed' }
         }
     } finally {
         Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue
