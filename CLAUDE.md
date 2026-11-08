@@ -28,7 +28,10 @@ Owner install root: `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE` (the path has spaces
 | Build web | `pnpm -C apps/web build` (the API serves `apps/web/dist`) |
 | Lint & types | `uv run ruff check . && uv run ruff format --check . && uv run mypy` · `pnpm -C apps/web lint && pnpm -C apps/web typecheck` |
 | Python tests | `TUBEFORGE_TEST_DATABASE_URL=postgresql+psycopg://…/tubeforge_test uv run pytest` (integration tests wipe that DB) · unit only: `uv run pytest -m "not integration"` |
-| Web tests | `pnpm -C apps/web test` · e2e (API running with built web): `pnpm -C apps/web e2e` |
+| Web tests | `pnpm -C apps/web test` · e2e (API running with built web): `pnpm -C apps/web e2e` (routes×states, axe, mobile, visual) · new snapshots: `pnpm -C apps/web e2e --update-snapshots` |
+| API client (stub until Phase 3) | `pnpm -C apps/web api:gen` (from `packages/shared/openapi.stub.json`) · CI: `pnpm -C apps/web api:check` |
+| Lottie animations | `uv run python tools/gen_lottie.py` (own artwork → `apps/web/src/assets/lottie/`) |
+| Mock data / states | Phase 2 data comes from MSW (`apps/web/src/mocks`); `?scenario=empty\|loading\|error\|success` or the dev switcher |
 | Docs checks | `uv run python tools/check_traceability.py` |
 | Security | `uv run pre-commit run --all-files` (gitleaks, ruff, traceability) · `uv run pip-audit --skip-editable` · `pnpm -C apps/web audit --audit-level high` · licences: `tools/check_licenses.py` |
 | Local Postgres for dev (Linux) | `docker compose -f infra/compose/docker-compose.dev.yml up -d` |
