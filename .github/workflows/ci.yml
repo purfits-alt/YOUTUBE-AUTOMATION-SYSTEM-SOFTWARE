@@ -10,7 +10,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # Snapshot-refresh runs ([update-snapshots] in the commit message) get their own group, so a
+  # later push to the same branch cannot cancel them half-way.
+  group: ci-${{ github.ref }}${{ contains(github.event.head_commit.message, '[update-snapshots]') && '-snapshots' || '' }}
   cancel-in-progress: true
 
 env:
