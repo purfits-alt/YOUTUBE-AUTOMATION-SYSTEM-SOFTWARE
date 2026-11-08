@@ -1,7 +1,7 @@
 # Database Schema
 
 **Version:** 1.0 (approved at C4, 2026-11-08) · **Date:** 2026-11-08 · **Engine:** PostgreSQL 16+
-**Migrations:** Alembic. The SQLAlchemy 2.0 models in `apps/api/tubeforge/db/models/` must match this document exactly. A CI check compares `alembic upgrade head` + `pg_dump --schema-only` against a committed snapshot.
+**Migrations:** Alembic. The DDL is **generated from this document** by `tools/gen_schema_sql.py` into `apps/api/tubeforge/db/schema_v1.sql` (migration 0002); a unit test fails if the committed SQL differs from what this document produces. SQLAlchemy 2.0 models in `apps/api/tubeforge/db/models/` are added per phase for the tables that phase uses and must match this document (Phase 3 decision, recorded in PROJECT_PROGRESS).
 
 ---
 
