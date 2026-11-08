@@ -1,6 +1,6 @@
 # Cost Control Specification (Zero-Cost Guarantee)
 
-**Version:** 0.1 (Step 0.6, for Checkpoint C5) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C5, 2026-11-08) · **Date:** 2026-11-08
 **Agent:** A32 · **Components:** AI Provider Gateway, Quota ledger, Stock Purchase Gate, Provider Registry · **ADRs:** 0007, 0017, 0020
 
 ## 1. Guarantees (enforced in code)

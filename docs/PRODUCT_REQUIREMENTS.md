@@ -1,6 +1,6 @@
 # TubeForge — Product Requirements Document (PRD)
 
-**Version:** 1.3 (v1.0 approved at C1; v1.1 approved at C2; v1.2 adds owner-requested voice cloning and stock media at C2 — all 2026-11-08; see §11; v1.3 adds optional external editors, ADR-0021) · **Date:** 2026-11-08
+**Version:** 1.3 (v1.0 approved at C1; v1.1 approved at C2; v1.2 adds owner-requested voice cloning and stock media at C2 — all 2026-11-08; see §11; v1.3 adds optional external editors, ADR-0021; v1.4 adds script craft US-4.5 at C5) · **Date:** 2026-11-08
 **Sources:** `00_MASTER_PROMPT.md`, `PHASE0_VALIDATION_REPORT.md`, C0 answers in `PROJECT_PROGRESS.md`
 **Requirement IDs** (`FR-…`, `NFR-…`, `US-…`) are stable. Later specs, tests and roadmap tasks refer back to them.
 
@@ -179,6 +179,15 @@ As the owner, I want AI-drafted scripts that I can edit, with version history, s
 - AC3: **Owner value-add fields** (own opinion, own experience, own data, own examples) are shown in the editor. The amount filled in feeds the originality score.
 
 ### E5 — Storyboard, visuals and voice
+
+**US-4.5 Engaging, human-sounding scripts** (Phase 7) — *owner request at C5*
+As the owner, I want scripts that hook viewers and keep them watching honestly, so that my videos feel made by a real creator.
+- AC1: Each idea carries a **packaging promise** (title idea, thumbnail text idea, promise statement). The script addresses it within the first **15 s** (Shorts: 3 s) and pays it off in the body.
+- AC2: The opening hook is **10–15 s** (long-form) or 1–3 s (Shorts), and uses at least one listed technique.
+- AC3: Long-form scripts include **mid-video re-hooks** at about 25 %, 50 % and 75 % (and every 60–120 s in videos over 8 min). Scenes with re-hooks get a visual pattern interrupt.
+- AC4: Curiosity and suspense are used where appropriate. **Every open loop is closed.** Fake suspense is flagged by the Policy Auditor.
+- AC5: Scripts follow a story structure, use a conversational voice with no AI-filler phrases, and contain owner story slots.
+- AC6: Automated validators check AC1–AC4. In a Phase 7 blind review, the owner rates ≥ 4/5 for "sounds human" on 10 sample scripts.
 
 **US-5.1 Storyboard** (Phase 8)
 - AC: The script is split into scenes with narration text, visual instruction, on-screen text, and duration. Scenes can be edited, reordered and regenerated one at a time.
@@ -398,5 +407,6 @@ As the owner, I want warnings when my channel looks templated or mass-produced s
 | 1.1 | 2026-11-08 | Windows 10 ESU note | Consumer ESU reportedly extended to Oct 2027 |
 | 1.1 | 2026-11-08 | Approved at C2 | — |
 | 1.2 | 2026-11-08 | US-5.3: owner voice cloning (converter + zero-shot), consent and anti-misuse controls | Owner request at C2, ADR-0019 |
+| 1.4 | 2026-11-08 | US-4.5: packaging promise in intro, 10–15 s hook, mid-video re-hooks, honest curiosity/suspense, human voice | Owner request at C5 |
 | 1.3 | 2026-11-08 | US-6.4: optional external editors (Canva, CapCut, InShot, Filmora, any other) via hand-off/re-import | Owner request in Step 0.5, ADR-0021 |
 | 1.2 | 2026-11-08 | US-5.2: optional stock media — manual import, free API adapters, paid API adapters (disabled, budget cap 0) | Owner request at C2, ADR-0020 |

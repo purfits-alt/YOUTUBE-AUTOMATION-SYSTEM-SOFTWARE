@@ -1,6 +1,6 @@
 # Thumbnail & SEO Specification
 
-**Version:** 0.1 (Step 0.6, for Checkpoint C5) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C5, 2026-11-08) · **Date:** 2026-11-08
 **Agents:** A18 Thumbnail Design, A19 YouTube SEO (+ disclosure assessment), A22 Policy Auditor (misleading checks)
 **Verified sources (2026-11-08):** [Custom thumbnails help](https://support.google.com/youtube/answer/72431) · [thumbnails.set](https://developers.google.com/youtube/v3/docs/thumbnails/set) · [videos resource](https://developers.google.com/youtube/v3/docs/videos) · [Altered/synthetic disclosure help](https://support.google.com/youtube/answer/14328491)
 
@@ -17,6 +17,7 @@
 | Channel requirement | Channel must be verified for custom thumbnails | same | Help 72431 |
 
 ### 1.2 Generation (A18 + composer)
+0. **Promise consistency:** overlay text and title express the approved **packaging promise**, which the script delivers in its first 15 s (Shorts 3 s). If the owner picks a thumbnail or title with a different promise, the orchestrator asks whether A11 should update the intro. Approval is blocked until the promise and intro match (A22 PROMISE_NOT_DELIVERED).
 1. A18 proposes 3–5 concepts (AGENT_PROMPTS A18) with an honesty check.
 2. The composer renders each concept:
    - **Base:** a frame from the owner's own render (frame-sharpness score ≥ threshold), an owner photo, or a procedural background.

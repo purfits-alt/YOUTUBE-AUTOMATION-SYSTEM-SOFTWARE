@@ -1,6 +1,6 @@
 # AI Agent Architecture
 
-**Version:** 0.1 (Step 0.6, for Checkpoint C5) · **Date:** 2026-11-08
+**Version:** 1.1 (approved at C5 2026-11-08; v1.1 adds owner-requested hook/promise/re-hook/storytelling craft) · **Date:** 2026-11-08
 **Related:** SYSTEM_ARCHITECTURE §4-D/H, WORKFLOW_STATE_MACHINE, AGENT_PROMPTS.md, ADR-0005/0007
 
 ## 1. Design
@@ -211,9 +211,9 @@ flowchart LR
 |---|---|
 | **ID / Name / Version** | `A08` / Idea Generation / 1.0.0 · Group: Create · Kind: **LLM** |
 | **Purpose** | Generate original, varied video ideas aligned to pillars; flag similarity to channel catalogue. |
-| **Responsibilities** | Generate ideas; compute embedding similarity (local) vs existing ideas/videos; suggest angle for originality and owner value-add. |
+| **Responsibilities** | Generate ideas; compute embedding similarity (local) vs existing ideas/videos; suggest angle for originality and owner value-add; draft a **packaging promise** (title idea + thumbnail text idea + one-sentence promise the video must keep) so the script can deliver it in the intro. |
 | **Inputs (schema)** | `IdeaRequest{channel_id, count, format?, pillar?, recent_titles[], trend_items[]}` |
-| **Outputs (schema, JSON-validated)** | `Ideas{items:[{title, angle, target_viewer, format, pillar, originality_notes, owner_value_add_prompt}]} + similarity per idea` |
+| **Outputs (schema, JSON-validated)** | `Ideas{items:[{title, angle, target_viewer, format, pillar, originality_notes, owner_value_add_prompt, packaging_promise{title_idea, thumbnail_text_idea, promise_statement}}]} + similarity per idea` |
 | **Allowed tools** | Gateway.text, local embedding model (L) |
 | **Disallowed actions** | Common list + Copying competitor titles |
 | **Permissions** | W: video_ideas (SUGGESTED) |
@@ -273,10 +273,10 @@ flowchart LR
 | Field | Specification |
 |---|---|
 | **ID / Name / Version** | `A11` / Scriptwriting / 1.0.0 · Group: Create · Kind: **LLM** |
-| **Purpose** | Write the script (hook, sections, CTA) in the channel language and style, leaving explicit slots for the owner's value-add. |
-| **Responsibilities** | Draft/regenerate sections; respect duration target; insert [OWNER INSIGHT] placeholders; avoid templated phrasing used in channel's last 20 scripts. |
+| **Purpose** | Write a human-sounding, engaging script in the channel language: deliver the title/thumbnail promise in the intro, a 10–15 s opening hook, mid-video re-hooks, honest curiosity and suspense where they fit, storytelling, and explicit slots for the owner's own insight — every open loop paid off. |
+| **Responsibilities** | (1) **Promise delivery:** restate/address the approved packaging promise (thumbnail text + title) within the first 15 s (Shorts: first 3 s) and pay it off fully in the body; (2) **Opening hook 10–15 s** (≈25–40 words; Shorts 1–3 s visual+verbal hook): question, surprising fact, stakes, or story cold-open — no overpromise; (3) **Mid-video re-hooks** at ≈25 %, 50 %, 75 % of runtime (long-form; every 60–120 s) using open loops, pattern interrupts, 'but here's the twist', previews of what is coming; (4) **Curiosity & suspense** only where honest (mystery, reveal, countdown, before/after), every open loop tracked and closed; (5) **Human craft:** conversational tone, contractions, varied sentence length, rhetorical questions, concrete examples, emotional beats, light humour if channel tone allows, callbacks, smooth transitions, a satisfying payoff and soft CTA; (6) [[OWNER: …]] slots for personal stories/data; (7) respect duration; avoid phrases used in the channel's last 20 scripts; (8) fact-bound (claims only from brief). |
 | **Inputs (schema)** | `ScriptRequest{brief, format, target_duration_s, language, style_guide, value_add, recent_script_phrases[]}` |
-| **Outputs (schema, JSON-validated)** | `ScriptDraft{hook, sections:[{heading, text}], cta, est_duration_s, owner_slots[]}` |
+| **Outputs (schema, JSON-validated)** | `ScriptDraft{promise_delivery{promise_statement, delivered_at_s, text}, hook{text, est_s (10–15), technique}, sections:[{heading, text, fact_refs[]}], re_hooks:[{at_pct, technique, text}], open_loops:[{id, opened_in_section, closed_in_section, text}], payoff, cta, est_duration_s, owner_slots[], craft_notes}` |
 | **Allowed tools** | Gateway.text |
 | **Disallowed actions** | Common list + Fabricating facts not in brief; impersonation; misleading claims |
 | **Permissions** | W: script_versions (AGENT) |
@@ -288,14 +288,14 @@ flowchart LR
 | **Performance metrics** | Common metrics |
 | **Cost & usage limits** | 30 calls/day (owner-adjustable in Agent Control Center; Gateway-enforced) |
 | **Human approval gates** | SCRIPT_REVIEW (owner) |
-| **Testing requirements** | Golden tests; duration estimation test; repetition-phrase test |
+| **Testing requirements** | Golden tests; duration estimation test; repetition-phrase test; hook 10–15 s (25–40 words) test; promise-in-intro test; every open loop closed test; re-hook positions test |
 
 ### A12 — Storyboard
 | Field | Specification |
 |---|---|
 | **ID / Name / Version** | `A12` / Storyboard / 1.0.0 · Group: Create · Kind: **LLM** |
 | **Purpose** | Split the locked script into scenes with narration, visual instructions, on-screen text and durations. |
-| **Responsibilities** | Scene segmentation; visual instructions achievable with ADR-0010 styles; durations sum to target ±10 %. |
+| **Responsibilities** | Scene segmentation; scene 1 = hook (10–15 s) with the strongest visual and the thumbnail promise on screen/in narration; mark re-hook scenes for a visual pattern interrupt (zoom, cut, graphic, sound sting); visual instructions achievable with ADR-0010 styles; durations sum to target ±10 %. |
 | **Inputs (schema)** | `StoryboardRequest{script_version, format, render_profile, available_styles[]}` |
 | **Outputs (schema, JSON-validated)** | `Storyboard{scenes:[{narration, visual_instruction, on_screen_text, duration_s, style}]}` |
 | **Allowed tools** | Gateway.text |
@@ -421,7 +421,7 @@ flowchart LR
 |---|---|
 | **ID / Name / Version** | `A18` / Thumbnail Design / 1.0.0 · Group: Create · Kind: **HYBRID** |
 | **Purpose** | Create ≥3 thumbnail concepts and render them (procedural composition, owner photo, frame grab from own render). |
-| **Responsibilities** | Concepts from title/hook; compose with brand kit; run checks (size, contrast, small-size readability). |
+| **Responsibilities** | Concepts from the **approved packaging promise** and hook; overlay text must be a promise the intro actually delivers (A22 checks); compose with brand kit; run checks (size, contrast, small-size readability). |
 | **Inputs (schema)** | `ThumbnailRequest{project_id, title_options[], frames[], brand_kit, aspect}` |
 | **Outputs (schema, JSON-validated)** | `Thumbnails{items:[{concept, overlay_text, asset_id, checks}]}` |
 | **Allowed tools** | Gateway.text, image composer, OCR-free readability scorer |
@@ -442,7 +442,7 @@ flowchart LR
 |---|---|
 | **ID / Name / Version** | `A19` / YouTube SEO / 1.0.0 · Group: Publish · Kind: **LLM** |
 | **Purpose** | Produce titles, description, tags, hashtags, chapters, playlists and the AI-disclosure assessment. |
-| **Responsibilities** | Write honest metadata matching content; chapters from scene timings; disclosure per YouTube A/S definition (own-voice clone ≠ disclosure). |
+| **Responsibilities** | Write honest metadata matching content and the delivered promise (title must match what the intro and body pay off); chapters from scene timings; disclosure per YouTube A/S definition (own-voice clone ≠ disclosure). |
 | **Inputs (schema)** | `SEORequest{project_id, script, scenes_timing[], final_duration_s, language, assets_origin_summary}` |
 | **Outputs (schema, JSON-validated)** | `SEOPackage + DisclosureAssessment{recommended_value, reasons[]}` |
 | **Allowed tools** | Gateway.text |
@@ -505,7 +505,7 @@ flowchart LR
 |---|---|
 | **ID / Name / Version** | `A22` / YouTube Policy Auditor / 1.0.0 · Group: Audit · Kind: **HYBRID** |
 | **Purpose** | Assess Community Guidelines, advertiser-friendliness, YPP inauthentic/reused risk, misleading metadata, synthetic disclosure, made-for-kids presence. |
-| **Responsibilities** | Rule checks (deterministic) + LLM classifier on script/metadata; originality/repetition score vs channel catalogue. |
+| **Responsibilities** | Rule checks (deterministic) + LLM classifier on script/metadata; originality/repetition score vs channel catalogue; **promise check** (thumbnail/title promise delivered in the first 15 s and paid off; no unclosed open loops; no fake suspense). |
 | **Inputs (schema)** | `AuditRequest + catalogue features` |
 | **Outputs (schema, JSON-validated)** | `AuditReport{type:POLICY, score, findings}` |
 | **Allowed tools** | Gateway.text (classifier), embedding similarity |

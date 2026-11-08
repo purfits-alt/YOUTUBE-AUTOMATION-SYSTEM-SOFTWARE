@@ -1,6 +1,6 @@
 # Audit & Policy Specification
 
-**Version:** 0.1 (Step 0.6, for Checkpoint C5) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C5, 2026-11-08) · **Date:** 2026-11-08
 **Auditor agents:** A21 Copyright · A22 YouTube Policy · A23 Video Quality · A30 Security · A31 System · A32 Free-Tier Cost & Usage
 **Policy sources (verified 2026-11-08):** [YouTube channel monetization policies](https://support.google.com/youtube/answer/1311392) · [Disclosure of altered/synthetic content](https://support.google.com/youtube/answer/14328491) · [YouTube API Developer Policies](https://developers.google.com/youtube/terms/developer-policies)
 
@@ -48,6 +48,9 @@
 | INAUTHENTIC_TEMPLATE | Template-like video per YPP examples: slideshow/scrolling text with minimal narrative; generic AI template without owner insight; channel template reuse > 70 % | WARNING; CRITICAL if `block_high_inauthentic_risk` applies (always in SEMI/FULLY-AUTO; owner choice in MANUAL — OQ-4) |
 | REUSED_CONTENT | Third-party material without significant commentary (stock share > 60 % runtime with no owner narration or commentary) | WARNING |
 | MISLEADING_METADATA | Title/thumbnail claims not supported by content; deceptive patterns | CRITICAL |
+| PROMISE_NOT_DELIVERED | Thumbnail/title promise not addressed in the first 15 s (Shorts 3 s) or never paid off in the body (checked against script `promise_delivery` + transcript of the final render) | CRITICAL (fix script/packaging) |
+| OPEN_LOOP_UNCLOSED | A curiosity loop opened in the script is never closed | WARNING |
+| FAKE_SUSPENSE | Suspense or cliffhanger with no real payoff, or withholding the core answer only to inflate watch time | WARNING |
 | DISCLOSURE_MISSING | Realistic synthetic content present and `containsSyntheticMedia=false` | CRITICAL (override with reason) |
 | IMPERSONATION | Content presents a real person saying or doing things they didn't | CRITICAL (no override) |
 | CG_RISK | Community Guidelines red flags (harassment, hate, dangerous acts, medical misinformation, spam, scams) | CRITICAL for severe categories, else WARNING |

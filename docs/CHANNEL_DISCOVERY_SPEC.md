@@ -1,6 +1,6 @@
 # Channel Discovery & Niche Intelligence Specification
 
-**Version:** 0.1 (Step 0.6, for Checkpoint C5) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C5, 2026-11-08) · **Date:** 2026-11-08
 **Agents:** A02 Niche Discovery, A03 Trend Intelligence, A04 Competitor Research (lookup only), A05 Keyword Research, A06 Channel Strategy, A07 Channel Branding
 **Policy basis:** ADR-0015 (no aggregation of YouTube API data across channels), DP-1, DP-2, F9
 

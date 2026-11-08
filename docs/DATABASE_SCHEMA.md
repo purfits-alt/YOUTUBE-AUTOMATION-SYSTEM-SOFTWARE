@@ -286,6 +286,7 @@ CREATE TABLE video_projects (                         -- (SD)
   state text NOT NULL,                                -- enum project_state
   resume_to_state text NULL,
   working_title text NOT NULL,
+  packaging_promise jsonb NULL,                       -- {title, thumbnail_text, promise_statement, approved_at} — contract for intro/thumbnail/title
   target_duration_s int NOT NULL,
   render_profile jsonb NOT NULL,                      -- resolution, fps, codec, loudness_lufs
   locked_script_version_id uuid NULL, approved_timeline_version_id uuid NULL, final_render_job_id uuid NULL,

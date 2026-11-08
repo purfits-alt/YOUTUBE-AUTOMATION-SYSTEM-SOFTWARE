@@ -1,6 +1,6 @@
 # Notification Specification
 
-**Version:** 0.1 (Step 0.6, for Checkpoint C5) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C5, 2026-11-08) · **Date:** 2026-11-08
 **Agent:** A29 · **ADR:** 0014 · **State machine:** WORKFLOW_STATE_MACHINE §6 · **Tables:** notifications, notification_deliveries, notification_preferences, notification_targets
 
 ## 1. Channels

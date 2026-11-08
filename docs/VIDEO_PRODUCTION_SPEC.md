@@ -1,6 +1,6 @@
 # Video Production Specification
 
-**Version:** 0.1 (Step 0.6, for Checkpoint C5) · **Date:** 2026-11-08
+**Version:** 1.0 (approved at C5, 2026-11-08) · **Date:** 2026-11-08
 **Agents:** A11–A18, A20 · **ADRs:** 0010 (visuals), 0011 (FFmpeg), 0019 (voice clone), 0020 (stock), 0021 (external editors)
 
 ## 1. Project contents (every video project)
@@ -20,6 +20,18 @@
 | SEO package + disclosure | `seo_packages`, `disclosure_assessments` |
 | Audit reports | `audit_reports` |
 | External edit sessions (optional) | `external_edit_sessions` |
+
+## 1a. Script & retention craft (owner requirement at C5)
+| Element | Rule | Agent | Checked by |
+|---|---|---|---|
+| Packaging promise | Title idea + thumbnail text + one-sentence promise drafted with the idea; the contract for intro, thumbnail and title | A08 (draft), owner (approve) | A22 PROMISE_NOT_DELIVERED |
+| Promise in intro | Addressed within the first 15 s (Shorts 3 s) and paid off in the body | A11 | Validator + A22 (on the final render transcript) |
+| Opening hook | 10–15 s (≈ 25–40 words) long-form; 1–3 s Shorts; techniques: surprising fact, question, stakes, cold-open story, bold true claim, before/after, visual reveal | A11, A12 (hook scene with the strongest visual) | Validator |
+| Mid-video re-hooks | At ≈ 25/50/75 % and every 60–120 s in videos > 8 min; open loop, pattern interrupt, twist, progress marker, mini-cliffhanger, preview | A11 (words), A12/A13 (visual pattern interrupt) | Validator |
+| Curiosity & suspense | Only where honest and appropriate; every open loop closed | A11 | Validator + A22 OPEN_LOOP_UNCLOSED / FAKE_SUSPENSE |
+| Story structure | Setup → tension → exploration → reveal → payoff → next step | A11 | Owner review |
+| Human voice | Conversational, varied sentences, rhetorical questions, emotional beats, callbacks, no AI filler phrases, owner stories in `[[OWNER: …]]` slots | A11 + owner | Banned-phrase scan; owner rating |
+| Retention data loop | After publish, A27 compares audience-retention dips (Analytics, own channel) to hook/re-hook positions and suggests improvements | A27 | Owner accepts |
 
 ## 2. Render profiles (defaults; per project in `render_profile`)
 
