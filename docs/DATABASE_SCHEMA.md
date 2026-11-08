@@ -55,10 +55,17 @@ CREATE TABLE sessions (
   user_id uuid NOT NULL REFERENCES users,
   csrf_token_hash char(64) NOT NULL,
   mfa_passed boolean NOT NULL DEFAULT false,
+  reauth_at timestamptz NULL,                         -- last step-up re-auth; sensitive actions need it within 5 min (added in Phase 3)
   created_at, last_seen_at timestamptz NOT NULL, expires_at timestamptz NOT NULL,
   revoked_at timestamptz NULL, user_agent text, ip inet
 );
 CREATE INDEX ON sessions (user_id) WHERE revoked_at IS NULL;
+
+CREATE TABLE user_recovery_codes (                    -- 10 one-time TOTP recovery codes, Argon2-hashed (added in Phase 3)
+  id uuid PRIMARY KEY, user_id uuid NOT NULL REFERENCES users,
+  code_hash text NOT NULL, used_at timestamptz NULL, created_at
+);
+CREATE INDEX ON user_recovery_codes (user_id) WHERE used_at IS NULL;
 
 CREATE TABLE system_settings (                        -- single row, id = 1
   id smallint PRIMARY KEY CHECK (id = 1),

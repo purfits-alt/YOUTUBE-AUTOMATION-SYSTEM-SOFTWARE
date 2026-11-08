@@ -58,12 +58,21 @@ CREATE TABLE sessions (
   user_id uuid NOT NULL,
   csrf_token_hash char(64) NOT NULL,
   mfa_passed boolean NOT NULL DEFAULT false,
+  reauth_at timestamptz NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   last_seen_at timestamptz NOT NULL,
   expires_at timestamptz NOT NULL,
   revoked_at timestamptz NULL,
   user_agent text,
   ip inet
+);
+
+CREATE TABLE user_recovery_codes (
+  id uuid PRIMARY KEY,
+  user_id uuid NOT NULL,
+  code_hash text NOT NULL,
+  used_at timestamptz NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE system_settings (
@@ -1121,6 +1130,7 @@ CREATE TABLE idempotency_keys (
 
 CREATE UNIQUE INDEX user_roles_unique ON user_roles (user_id, role_id, COALESCE(channel_id,'00000000-0000-0000-0000-000000000000'::uuid));
 CREATE INDEX ON sessions (user_id) WHERE revoked_at IS NULL;
+CREATE INDEX ON user_recovery_codes (user_id) WHERE used_at IS NULL;
 CREATE INDEX ON audit_log (entity_type, entity_id, occurred_at DESC);
 CREATE INDEX ON audit_log (channel_id, occurred_at DESC);
 CREATE INDEX ON audit_log (actor_type, actor_id, occurred_at DESC);
@@ -1153,6 +1163,7 @@ ALTER TABLE user_roles ADD FOREIGN KEY (user_id) REFERENCES users;
 ALTER TABLE user_roles ADD FOREIGN KEY (role_id) REFERENCES roles;
 ALTER TABLE user_roles ADD FOREIGN KEY (channel_id) REFERENCES channels;
 ALTER TABLE sessions ADD FOREIGN KEY (user_id) REFERENCES users;
+ALTER TABLE user_recovery_codes ADD FOREIGN KEY (user_id) REFERENCES users;
 ALTER TABLE system_settings ADD FOREIGN KEY (emergency_stop_by) REFERENCES users;
 ALTER TABLE kill_switches ADD FOREIGN KEY (set_by) REFERENCES users;
 ALTER TABLE channel_publishing_rules ADD FOREIGN KEY (channel_id) REFERENCES channels;

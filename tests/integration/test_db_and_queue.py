@@ -42,7 +42,13 @@ def test_migrations_up_down_up(migrated: str) -> None:
     assert table_exists(migrated, "procrastinate_jobs")
 
 
-def test_readyz_ok_with_real_database(migrated: str, settings: Settings) -> None:
+def test_readyz_ok_with_real_database(
+    migrated: str, settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import base64
+    import os
+
+    monkeypatch.setenv("TUBEFORGE_MASTER_KEY", base64.b64encode(os.urandom(32)).decode())
     app = create_app(settings.model_copy(update={"database_url": migrated}))
     r = TestClient(app, base_url="http://127.0.0.1:8765").get("/readyz")
     assert r.status_code == 200, r.text
@@ -112,7 +118,7 @@ def test_schema_v1_tables_constraints_and_seeds(migrated: str) -> None:
         settings_rows = conn.execute(text("SELECT count(*) FROM system_settings")).scalar_one()
     engine.dispose()
     assert {"users", "sessions", "audit_log", "channels", "upload_jobs", "provider_registry"} <= tables
-    assert len(tables - {"alembic_version"}) == 79
+    assert len(tables - {"alembic_version"}) == 80
     assert roles["OWNER"] > roles["EDITOR"] > roles["REVIEWER"] > roles["VIEWER"] > 0
     assert settings_rows == 1
 

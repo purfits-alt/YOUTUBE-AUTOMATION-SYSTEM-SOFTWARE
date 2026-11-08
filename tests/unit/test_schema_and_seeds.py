@@ -33,7 +33,7 @@ def test_every_documented_table_is_generated() -> None:
     documented = set(re.findall(r"CREATE TABLE (\w+)", doc))
     schema, _ = gen_schema_sql.build()
     assert set(gen_schema_sql.table_names(schema)) == documented
-    assert len(documented) == 79
+    assert len(documented) == 80
 
 
 def test_enum_checks_are_per_table() -> None:

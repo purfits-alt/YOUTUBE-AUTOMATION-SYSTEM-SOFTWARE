@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import tempfile
+import uuid
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
@@ -16,13 +17,18 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.orm import sessionmaker
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.types import Scope
 
+from tubeforge.api.errors import install_error_handlers, problem_response
+from tubeforge.api.v1 import auth as auth_v1
+from tubeforge.api.v1 import security as security_v1
 from tubeforge.config import Settings, get_settings
-from tubeforge.db.session import check_database, table_exists
+from tubeforge.db.session import check_database, get_engine, table_exists
 from tubeforge.logging import configure_logging, get_logger
+from tubeforge.secrets import MasterKeyMissingError, SecretBox, SecretsError, default_store
 
 PLACEHOLDER_HTML = """<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>TubeForge</title></head>
@@ -42,6 +48,30 @@ def problem(status: int, title: str, detail: str, code: str, **extra: Any) -> JS
     """RFC 9457 problem+json (BACKEND_SPECIFICATION §1)."""
     body = {"type": "about:blank", "title": title, "status": status, "detail": detail, "code": code, **extra}
     return JSONResponse(body, status_code=status, media_type="application/problem+json")
+
+
+class RequestContextMiddleware(BaseHTTPMiddleware):
+    """Request id (echoed as X-Request-ID) and Origin check (OAUTH_SECURITY §2: blocks other sites)."""
+
+    def __init__(self, app: Any, allowed_origins: frozenset[str]) -> None:
+        super().__init__(app)
+        self._origins = allowed_origins
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        request.state.request_id = uuid.uuid4()
+        origin = request.headers.get("origin")
+        if origin is not None and origin not in self._origins:
+            response: Response = problem_response(
+                request,
+                403,
+                "ORIGIN_REJECTED",
+                "Request blocked",
+                "Requests must come from TubeForge itself.",
+            )
+        else:
+            response = await call_next(request)
+        response.headers["X-Request-ID"] = str(request.state.request_id)
+        return response
 
 
 class HostGuardMiddleware(BaseHTTPMiddleware):
@@ -99,7 +129,28 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         redoc_url=None,
         openapi_url="/api/openapi.json",
     )
+    origins = frozenset(f"http://{host}" for host in settings.allowed_hosts) | (
+        frozenset({"http://127.0.0.1:5173", "http://localhost:5173"})
+        if settings.env == "dev"
+        else frozenset()
+    )
+    app.add_middleware(RequestContextMiddleware, allowed_origins=origins)
     app.add_middleware(HostGuardMiddleware, allowed_hosts=settings.allowed_hosts)
+    install_error_handlers(app)
+
+    app.state.settings = settings
+    app.state.session_factory = sessionmaker(bind=get_engine(settings.database_url), expire_on_commit=False)
+    box = SecretBox(default_store(settings.env))
+    app.state.secret_box = box
+    try:
+        app.state.cookie_key = box.derive_key("session-cookie")
+    except (MasterKeyMissingError, SecretsError) as exc:
+        # Health endpoints still work; auth answers 503 until 'tubeforge-admin init-keys' has run.
+        app.state.cookie_key = None
+        log.warning("secrets.master_key_unavailable", error=type(exc).__name__)
+
+    app.include_router(auth_v1.router, prefix="/api/v1")
+    app.include_router(security_v1.router, prefix="/api/v1")
 
     @app.get("/healthz", tags=["system"])
     def healthz() -> dict[str, str]:
@@ -110,7 +161,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         db_ok, db_detail = check_database(settings.database_url)
         queue_ok = db_ok and table_exists(settings.database_url, "procrastinate_jobs")
         data_ok, data_detail = data_dir_writable(settings.resolved_data_dir)
+        key_ok = box.keystore_ok()
         checks: dict[str, dict[str, Any]] = {
+            "keyring": {"ok": key_ok, "detail": "ok" if key_ok else "run 'tubeforge-admin init-keys'"},
             "database": {"ok": db_ok, "detail": db_detail},
             "queue_schema": {"ok": queue_ok, "detail": "ok" if queue_ok else "run 'tubeforge-db upgrade'"},
             "data_dir": {"ok": data_ok, "detail": data_detail},

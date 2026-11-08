@@ -49,14 +49,22 @@ class KeyringStore:
 
     def get(self, key_id: str) -> bytes | None:
         import keyring
+        from keyring.errors import KeyringError
 
-        value = keyring.get_password(KEYRING_SERVICE, key_id)
+        try:
+            value = keyring.get_password(KEYRING_SERVICE, key_id)
+        except KeyringError as exc:
+            raise SecretsError("the OS keyring (Credential Manager) is not available") from exc
         return base64.b64decode(value) if value else None
 
     def put(self, key_id: str, key: bytes) -> None:
         import keyring
+        from keyring.errors import KeyringError
 
-        keyring.set_password(KEYRING_SERVICE, key_id, base64.b64encode(key).decode("ascii"))
+        try:
+            keyring.set_password(KEYRING_SERVICE, key_id, base64.b64encode(key).decode("ascii"))
+        except KeyringError as exc:
+            raise SecretsError("the OS keyring (Credential Manager) is not available") from exc
 
 
 class EnvStore:
@@ -121,6 +129,10 @@ class SecretBox:
             raise SecretsError("master key has the wrong length")
         hkdf = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=f"{purpose}:{key_id}".encode())
         return hkdf.derive(master)
+
+    def derive_key(self, purpose: str) -> bytes:
+        """A 256-bit key for a non-encryption purpose (e.g. HMAC signing of session cookies)."""
+        return self._data_key(purpose, self.key_id)
 
     def seal(self, plaintext: bytes, *, purpose: str, associated: bytes) -> Sealed:
         nonce = os.urandom(NONCE_BYTES)
