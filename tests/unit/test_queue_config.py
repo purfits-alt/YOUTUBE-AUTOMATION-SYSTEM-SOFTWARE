@@ -24,3 +24,5 @@ def test_token_health_runs_daily_on_maintenance() -> None:
     assert crons["mnt.retention.oauth_pending_cleanup"] == "*/10 * * * *"
     assert {"mnt.retention.deletion_deadlines", "mnt.retention.purge_api_cache"} <= crons.keys()
     assert app.tasks[task_name("yt.upload")].queue == "youtube"
+    assert crons["orch.reconcile"] == "*/2 * * * *"
+    assert app.tasks[task_name("orch.reconcile")].queue == "orchestrator"

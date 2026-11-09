@@ -493,6 +493,105 @@ class WorkflowTransition(Base):
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
 
 
+# --------------------------------------------------------------- Phase 5: orchestrated entities
+class VideoIdea(Base):
+    __tablename__ = "video_ideas"
+    id: Mapped[uuid.UUID] = _id()
+    channel_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("channels.id"))
+    state: Mapped[str] = mapped_column(Text)
+    title: Mapped[str] = mapped_column(Text)
+    angle: Mapped[str] = mapped_column(Text)
+    target_viewer: Mapped[str | None] = mapped_column(Text)
+    format: Mapped[str] = mapped_column(Text)
+    pillar: Mapped[str | None] = mapped_column(Text)
+    trend_item_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    originality_notes: Mapped[str | None] = mapped_column(Text)
+    similarity_max: Mapped[Decimal | None] = mapped_column(Numeric(4, 3))
+    similar_to_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    calendar_date: Mapped[date | None] = mapped_column(Date)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    source: Mapped[str] = mapped_column(Text)
+    based_on_youtube_video_id: Mapped[str | None] = mapped_column(Text)
+    variation_kind: Mapped[str | None] = mapped_column(Text)
+    similarity_to_source: Mapped[Decimal | None] = mapped_column(Numeric(4, 3))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class RenderJob(Base):
+    __tablename__ = "render_jobs"
+    id: Mapped[uuid.UUID] = _id()
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("video_projects.id"))
+    channel_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    timeline_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    kind: Mapped[str] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(Text)
+    preset: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    segments_total: Mapped[int] = mapped_column(Integer, default=1)
+    segments_done: Mapped[int] = mapped_column(Integer, default=0)
+    attempt: Mapped[int] = mapped_column(Integer, default=0)
+    output_asset_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    qc_report: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    error_class: Mapped[str | None] = mapped_column(Text)
+    error_detail: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    idempotency_key: Mapped[str] = mapped_column(Text, unique=True)
+
+
+class VoiceProfile(Base):
+    __tablename__ = "voice_profiles"
+    id: Mapped[uuid.UUID] = _id()
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    label: Mapped[str] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(Text)
+    engine: Mapped[str] = mapped_column(Text)
+    sample_asset_ids: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), default=list)
+    embedding_enc: Mapped[bytes | None]
+    key_id: Mapped[str | None] = mapped_column(Text)
+    sample_seconds: Mapped[Decimal] = mapped_column(Numeric(8, 2), default=Decimal(0))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class StockPurchase(Base):
+    __tablename__ = "stock_purchases"
+    id: Mapped[uuid.UUID] = _id()
+    channel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    provider_code: Mapped[str] = mapped_column(Text)
+    provider_asset_id: Mapped[str] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(Text)
+    licence_type: Mapped[str] = mapped_column(Text)
+    price_minor: Mapped[int] = mapped_column(BigInteger)
+    currency: Mapped[str] = mapped_column(String(3))
+    quoted_at: Mapped[datetime] = _ts()
+    confirmed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    provider_order_ref: Mapped[str | None] = mapped_column(Text)
+    asset_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    failure_reason: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class NotificationDelivery(Base):
+    __tablename__ = "notification_deliveries"
+    id: Mapped[uuid.UUID] = _id()
+    notification_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("notifications.id"))
+    channel: Mapped[str] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(Text)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    provider_message_id: Mapped[str | None] = mapped_column(Text)
+    last_error: Mapped[str | None] = mapped_column(Text)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 __all__ = [
     "ApprovalRequest",
     "AssetRights",
@@ -505,6 +604,7 @@ __all__ = [
     "KillSwitch",
     "MediaAsset",
     "Notification",
+    "NotificationDelivery",
     "OAuthClient",
     "OAuthConnection",
     "OAuthPendingFlow",
@@ -513,16 +613,20 @@ __all__ = [
     "QuotaConfig",
     "QuotaLedger",
     "QuotaReservation",
+    "RenderJob",
     "Role",
     "RolePermission",
     "SecurityEvent",
     "Session",
+    "StockPurchase",
     "SystemSettings",
     "UploadJob",
     "User",
     "UserRecoveryCode",
     "UserRole",
+    "VideoIdea",
     "VideoProject",
+    "VoiceProfile",
     "WorkflowTransition",
     "YoutubeApiCache",
 ]

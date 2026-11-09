@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from tubeforge.config import get_settings
 from tubeforge.db.session import get_engine
 from tubeforge.logging import get_logger
+from tubeforge.orchestrator import approvals, reconciler
 from tubeforge.secrets import SecretBox, default_store
 from tubeforge.youtube import oauth, retention, uploads
 from tubeforge.youtube.client import SafeYouTubeClient
@@ -25,6 +26,8 @@ REAUTH_CHECK_CRON = "30 2 * * *"
 DELETION_CRON = "15 * * * *"
 CACHE_PURGE_CRON = "45 * * * *"
 PENDING_FLOWS_CRON = "*/10 * * * *"
+RECONCILE_CRON = "*/2 * * * *"
+APPROVALS_CRON = "5 * * * *"
 
 log = get_logger("tubeforge.jobs")
 
@@ -75,6 +78,16 @@ def purge_api_cache(timestamp: int) -> int:
 
 def purge_pending_flows(timestamp: int) -> int:
     return _run("mnt.retention.oauth_pending_cleanup", lambda db, *_: retention.purge_pending_flows(db))
+
+
+def reconcile(timestamp: int) -> dict[str, Any]:
+    """orch.reconcile: re-enqueue lost or stalled jobs exactly once (WORKFLOW_STATE_MACHINE rule 3)."""
+    return asdict(_run("orch.reconcile", lambda db, *_: reconciler.reconcile(db)))
+
+
+def expire_approvals(timestamp: int) -> int:
+    """orch.approvals_expire: PENDING approvals past their deadline (14 days) expire."""
+    return _run("orch.approvals_expire", lambda db, *_: approvals.expire_due(db))
 
 
 def upload(upload_job_id: str) -> str:

@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 5 — Orchestrator & agent infrastructure
-**Current step:** P5-A (orchestrator: state machines as code, guards, approvals, reconciler, Emergency Stop in every layer). Phase 4 merged to `main` (PR #8); the owner's manual real-OAuth test is still open.
+**Current step:** P5-A built (orchestrator); next P5-B (AI Provider Gateway). Phase 4 merged to `main` (PR #8); the owner's manual real-OAuth test is still open.
 **Last updated:** 2026-11-08
 
 ---
@@ -346,7 +346,7 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 ### Phase 5 — Orchestrator & agent infrastructure · in progress · branch `claude/vigilant-tesla-lkhgme`
 
 **Plan (from IMPLEMENTATION_ROADMAP Phase 5), in four steps:**
-- **P5-A Orchestrator**
+- **P5-A Orchestrator** ✅ — built: `orchestrator/{machines,guards,engine,approvals,reconciler,controls}.py`; channel helpers, OAuth, retention and the upload runner now change states only through the engine; jobs `orch.reconcile` (2 min) and `orch.approvals_expire` (hourly). Tests: 191 table-driven edge/guard cases, every unlisted (state, event) pair, Emergency Stop per edge, idempotency, actor rules, mode gates, universal states, approval hash invalidation, reconciler lost/stalled/ES, property tests, upload stopped by Emergency Stop at a chunk boundary and resumed. Implementation notes in WORKFLOW_STATE_MACHINE §9a.
   - The 10 state machines of WORKFLOW_STATE_MACHINE as code tables: Channel, Idea, Video Project (with external editing), Render, Upload, Notification delivery, Approval, Voice Profile, Stock Purchase.
   - One transition engine: row lock, Emergency Stop rule, actor rules, mode gates [S]/[F], guard registry, `workflow_transitions` + audit in the same transaction, idempotent replay.
   - Approval requests bound to a subject hash: decide, invalidate, expire.

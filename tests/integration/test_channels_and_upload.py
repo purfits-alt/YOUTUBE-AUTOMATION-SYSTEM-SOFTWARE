@@ -6,7 +6,7 @@ import hashlib
 import json
 import os
 import uuid
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -54,6 +54,7 @@ class FakeYouTube(FakeGoogle):
     puts: int = 0
     faults: dict[int, str] = field(default_factory=dict)  # PUT number -> "network" | "503" | "half-network"
     existing_videos: set[str] = field(default_factory=lambda: {"vid-1"})
+    after_put: Callable[[int], None] | None = None
 
     def __call__(self, req: httpx.Request) -> httpx.Response:
         if req.url.path == "/upload/youtube/v3/videos" and req.method == "POST":
@@ -92,6 +93,8 @@ class FakeYouTube(FakeGoogle):
         if fault == "503":
             return httpx.Response(503, json={"error": {"code": 503, "errors": [{"reason": "backendError"}]}})
         self.received += req.content
+        if self.after_put is not None:
+            self.after_put(self.puts)
         return self._status()
 
 
@@ -315,6 +318,35 @@ def test_worker_crash_resumes_from_saved_offset(world: World, tmp_path: Path) ->
     done = world.run_job(job_id, file_path=path, chunk_size=256 * 1024)
     assert done.state == "COMPLETED" and world.yt.sessions == 1
     assert bytes(world.yt.received) == path.read_bytes()
+
+
+def test_emergency_stop_halts_at_a_chunk_boundary_then_resumes(world: World, tmp_path: Path) -> None:
+    """Emergency Stop pressed during an upload: it stops before the next chunk; once cleared, the
+    reconciler re-enqueues it and it finishes from the saved offset (SYSTEM_ARCHITECTURE §10)."""
+    from tubeforge.orchestrator import reconciler
+
+    job_id, path = _big_job(world, tmp_path)
+    world.yt.after_put = lambda n: (
+        world.env.sql("UPDATE system_settings SET emergency_stop = true") if n == 1 else None
+    )
+    stopped = world.run_job(job_id, file_path=path, chunk_size=256 * 1024)
+    assert stopped.state == "TRANSFERRING" and stopped.bytes_confirmed == 256 * 1024
+    assert world.yt.puts == 1
+    with world.db() as db:
+        assert reconciler.reconcile(db).skipped_emergency_stop
+    world.env.sql("UPDATE system_settings SET emergency_stop = false")
+    world.yt.after_put = None
+    with world.db() as db:
+        reconciler.reconcile(db)  # the job queued by the API is still waiting, so nothing new is added
+        db.commit()
+    done = world.run_job(job_id, file_path=path, chunk_size=256 * 1024)
+    assert done.state == "COMPLETED" and bytes(world.yt.received) == path.read_bytes()
+    assert world.yt.sessions == 1
+    with world.db() as db:
+        stops = db.execute(
+            text("SELECT count(*) FROM audit_log WHERE action = 'upload.stopped_at_checkpoint'")
+        ).scalar()
+    assert stops == 1
 
 
 def test_gives_up_after_max_resumes(world: World, tmp_path: Path) -> None:
