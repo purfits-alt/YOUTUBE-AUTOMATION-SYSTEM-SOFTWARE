@@ -23,9 +23,17 @@ import httpx
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from tubeforge import channel_lifecycle as lifecycle
 from tubeforge.audit import SYSTEM, Actor, record, security_event
 from tubeforge.db.ids import uuid7
-from tubeforge.db.models import Channel, DataDeletionTask, OAuthClient, OAuthConnection, OAuthPendingFlow
+from tubeforge.db.models import (
+    Channel,
+    DataDeletionTask,
+    OAuthClient,
+    OAuthConnection,
+    OAuthPendingFlow,
+    OnboardingStep,
+)
 from tubeforge.notifications import notify_owners
 from tubeforge.secrets import SecretBox, aad
 from tubeforge.youtube import quota
@@ -187,6 +195,13 @@ def register_client(
         )
         row.client_secret_enc, row.key_id = sealed.ciphertext, sealed.key_id
     db.add(row)
+    # Onboarding step "OAuth client" is done for every channel once a client exists.
+    for step in db.scalars(
+        select(OnboardingStep).where(
+            OnboardingStep.step_code == "OAUTH_CLIENT", OnboardingStep.status == "TODO"
+        )
+    ):
+        step.status, step.completed_at = "DONE", datetime.now(UTC)
     db.flush()
     return row
 
@@ -388,8 +403,13 @@ def complete_flow(
             conn.status = "NEEDS_REAUTH"
             conn.last_error = "re-authorised with a different YouTube channel"
             raise OAuthFlowError("IDENTITY_MISMATCH", "You signed in to a different YouTube channel.")
-        channel.state = channel.resume_to_state or "ACTIVE"
+        back_to = (
+            channel.resume_to_state
+            if channel.resume_to_state in {"CONNECTED", "ACTIVE", "PAUSED"}
+            else "ACTIVE"
+        )
         channel.resume_to_state = None
+        lifecycle.transition(db, channel, back_to, event="reauthorized", actor=SYSTEM)
     record(
         db,
         actor=SYSTEM,
@@ -416,7 +436,7 @@ def mark_needs_reauth(
     channel = db.get(Channel, conn.channel_id)
     if channel is not None and channel.state in {"CONNECTED", "ACTIVE", "PAUSED"}:
         channel.resume_to_state = channel.state
-        channel.state = "NEEDS_REAUTH"
+        lifecycle.transition(db, channel, "NEEDS_REAUTH", event="token_invalid", actor=SYSTEM, reason=reason)
     security_event(
         db, "OAUTH_NEEDS_REAUTH", "CRITICAL", channel_id=conn.channel_id, details={"reason": reason}
     )
@@ -550,7 +570,9 @@ def confirm_identity(
     channel.youtube_channel_id = youtube_channel_id
     channel.youtube_handle = identity["handle"]
     if channel.state == "ONBOARDING":
-        channel.state = "CONNECTED"
+        channel.private_only_mode = True  # every newly connected channel starts private-only
+        lifecycle.transition(db, channel, "CONNECTED", event="identity_confirmed", actor=actor)
+    lifecycle.mark_step(db, channel.id, "CONNECT")
     record(
         db,
         actor=actor,
@@ -678,6 +700,8 @@ def disconnect(
 ) -> DataDeletionTask:
     """Revoke at Google, delete the token rows, schedule API-data deletion within 7 days (DP-4)."""
     now = now or datetime.now(UTC)
+    if not lifecycle.can(channel, "DISCONNECTING"):
+        raise OAuthFlowError("CHANNEL_STATE", f"A channel in state {channel.state} cannot be disconnected.")
     revoked: list[bool] = []
     for conn in db.scalars(select(OAuthConnection).where(OAuthConnection.channel_id == channel.id)).all():
         if conn.refresh_token_enc:
@@ -698,8 +722,8 @@ def disconnect(
     )
     db.add(task)
     before = channel.state
-    channel.state = "DISCONNECTING"
     channel.resume_to_state = None
+    lifecycle.transition(db, channel, "DISCONNECTING", event="disconnect", actor=actor)
     record(
         db,
         actor=actor,

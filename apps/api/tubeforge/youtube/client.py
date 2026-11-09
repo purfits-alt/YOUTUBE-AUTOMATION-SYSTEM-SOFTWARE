@@ -310,6 +310,7 @@ class SafeYouTubeClient:
         content: bytes | None = None,
         headers: dict[str, str] | None = None,
         metered: bool = True,
+        ok_statuses: tuple[int, ...] = (),
     ) -> httpx.Response:
         """Send one request. ``metered=False`` only for resumable-upload chunk PUTs (part of one insert)."""
         host = httpx.URL(url).host
@@ -333,7 +334,8 @@ class SafeYouTubeClient:
                     error_reason=type(exc).__name__,
                 )
             raise YouTubeApiError(ErrorClass.TRANSIENT, None, None, type(exc).__name__) from exc
-        error = from_response(resp.status_code, resp.content) if resp.status_code >= 400 else None
+        failed = resp.status_code >= 300 and resp.status_code not in ok_statuses
+        error = from_response(resp.status_code, resp.content) if failed else None
         if metered:
             quota.record_call(
                 ctx.db,

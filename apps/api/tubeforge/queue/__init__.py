@@ -75,3 +75,41 @@ class ProcrastinateQueue:
         task = self._app.tasks[task_name if ":" in task_name else f"{TASK_NAMESPACE}:{task_name}"]
         job_id: int = await task.configure(queue=queue, queueing_lock=idempotency_key).defer_async(**kwargs)
         return job_id
+
+
+def defer_in_transaction(
+    db: Any,
+    name: str,
+    *,
+    queue: str,
+    args: dict[str, Any],
+    queueing_lock: str | None = None,
+    lock: str | None = None,
+) -> int | None:
+    """Create a Procrastinate job in the caller's SQLAlchemy transaction (transactional outbox).
+
+    The job only becomes visible to workers when the caller commits, so a request that fails after
+    this call leaves no orphan job. Returns None when ``queueing_lock`` already has a waiting job.
+    """
+    import json
+
+    from sqlalchemy import text
+    from sqlalchemy.exc import IntegrityError
+
+    stmt = text(
+        "SELECT unnest(procrastinate_defer_jobs_v1(ARRAY[ROW(:queue, :task, 0, :lock, :qlock,"
+        " CAST(:args AS jsonb), NULL)::procrastinate_job_to_defer_v1])) AS id"
+    )
+    params = {
+        "queue": queue,
+        "task": task_name(name),
+        "lock": lock,
+        "qlock": queueing_lock,
+        "args": json.dumps(args),
+    }
+    try:
+        with db.begin_nested():
+            job_id = db.execute(stmt, params).scalar_one()
+    except IntegrityError:
+        return None
+    return int(job_id)

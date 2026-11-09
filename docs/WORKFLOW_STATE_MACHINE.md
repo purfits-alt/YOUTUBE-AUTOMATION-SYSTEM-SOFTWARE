@@ -59,6 +59,8 @@ stateDiagram-v2
 | DISCONNECTING → DISCONNECTED | Revoke call done (or token already invalid). Retention job purged YouTube API data for the channel. | Deletion deadline monitor closed. |
 | `private_only_mode` OFF | OWNER only. ≥ 3 successful private test uploads. | Audit log + security event. |
 
+Implementation (Phase 4, `channel_lifecycle.py`): every change writes `workflow_transitions` + `audit_log`. Beyond the diagram, the owner may also pause or disconnect a CONNECTED channel and disconnect a PAUSED or ONBOARDING one; a paused channel resumes to the state it was paused from.
+
 ## 2. Idea
 
 ```mermaid
