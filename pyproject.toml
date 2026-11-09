@@ -23,6 +23,7 @@ dependencies = [
     "zxcvbn>=4.5,<5",
     "httpx>=0.28,<0.29",
     "tzdata>=2025.2",
+    "jsonschema-rs>=0.60,<0.61",
 ]
 
 [project.scripts]

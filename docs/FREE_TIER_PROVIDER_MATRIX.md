@@ -63,11 +63,11 @@ Tier: **L** local · **F** permanent free cloud tier · **P** paid / trial (disa
 
 | Provider / model | Tier | Free limits | Licence / terms | Commercial | Data use | Status |
 |---|---|---|---|---|---|---|
-| **Gemini API free tier**: Gemini 3.8 Flash, 3.6 Flash, 3.5 Flash-Lite, 3.1 Flash-Lite, 2.5 Flash, 2.5 Pro, Gemma 4 (hosted) | F | **Per project. Exact RPM/RPD shown only in AI Studio** for the owner's project. RPD resets at midnight PT. | Gemini API terms | Output usable (re-check terms) | ⚠️ **Free tier: "Content used to improve our products"** | ✅ free status / 🟡 limits |
+| **Gemini API free tier**: Gemini 3.8 Flash, 3.6 Flash, 3.5 Flash-Lite, 3.1 Flash-Lite ("Free of charge", Standard tier, re-checked 2026-11-09; 2.5 Flash is deprecated and routes to 3.5 Flash-Lite from 2026-12-01), 2.5 Pro, Gemma 4 (hosted) | F | **Per project. Exact RPM/RPD shown only in AI Studio** for the owner's project. RPD resets at midnight PT. | Gemini API terms | Output usable (re-check terms) | ⚠️ **Free tier: "Content used to improve our products"** | ✅ free status / 🟡 limits |
 | Gemini 4 Argon, 3.1 Pro Preview, Omni Flash | ⛔ P | Not on free tier | — | — | — | ⛔ blocked |
-| **Groq free plan**: gpt-oss-120b, gpt-oss-20b, qwen3.8-27b | F | Docs list 30 RPM / 1K RPD / 8K TPM / 200K TPD per model, but the page says these are "base limits for the Developer plan". **Exact free limits only in the console.** | Groq terms | Check | Unknown | 🟡 |
+| **Groq free plan**: `openai/gpt-oss-120b`, `openai/gpt-oss-20b` (exact IDs re-checked 2026-11-09), qwen3.8-27b | F | Docs list 30 RPM / 1K RPD / 8K TPM / 200K TPD per model, but the page says these are "base limits for the Developer plan". **Exact free limits only in the console.** | Groq terms | Check | Unknown | 🟡 |
 | **Ollama** runtime | L | Hardware only | MIT | Yes | Local, nothing leaves the PC | ✅ |
-| Local small model (≤ 3B, Q4) via Ollama | L | ~1.5–2.5 GB RAM | Per model: Apache-2.0 / MIT preferred | Per model | Local | ❌ model chosen in Phase 5 |
+| **Qwen2.5-1.5B-Instruct** via Ollama (`qwen2.5:1.5b`) | L | ~1 GB RAM (Q4) | **Apache-2.0** ([model card](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct), checked 2026-11-09). Qwen2.5-**3B** is *qwen-research* (not commercial), so it is not used | Yes | Local | ✅ chosen in Phase 5 (ADR-0027) |
 | Mistral free tier, OpenRouter free models | F? | — | — | — | — | ❌ not evaluated (host not allowlisted). Kept as future candidates. |
 
 > ⚠️ **Billing trap (Gemini):** linking a billing account to a Google Cloud project **automatically moves it to a paid tier** (Tier 1), and paid tiers then auto-upgrade with spending. **Rule:** the Gemini API key comes from a dedicated Google Cloud project that **never** has billing linked. The YouTube project also has no billing. The setup guide states this in bold.

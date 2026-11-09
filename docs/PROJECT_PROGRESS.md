@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 5 — Orchestrator & agent infrastructure
-**Current step:** P5-A built (orchestrator); next P5-B (AI Provider Gateway). Phase 4 merged to `main` (PR #8); the owner's manual real-OAuth test is still open.
+**Current step:** P5-A (orchestrator) and P5-B (AI Provider Gateway) built; next P5-C (agent framework, paid activation, A32). Phase 4 merged to `main` (PR #8); the owner's manual real-OAuth test is still open.
 **Last updated:** 2026-11-08
 
 ---
@@ -353,7 +353,12 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
   - Reconciler: every 2 minutes, re-enqueue lost jobs exactly once.
   - Emergency Stop and kill switches also checked inside running jobs (the upload stops at a chunk boundary).
   - Table-driven tests: every allowed transition, each guard violated on its own, every illegal pair, Emergency Stop, idempotency. Property tests. A reconciler crash test.
-- **P5-B AI Provider Gateway**
+- **P5-B AI Provider Gateway** ✅ — built:
+  - `gateway/{core,registry,limits,cache}.py` and adapters for Gemini, Groq and Ollama.
+  - Migrations: 0006 repairs two tables the generator had cut short; 0007 seeds the registry and placeholder limits.
+  - ADR-0027: local model Qwen2.5-1.5B, Apache-2.0.
+  - New dependency `jsonschema-rs` (MIT).
+  - Tests: 12 adapter tests and 15 pipeline tests, plus a check that every table in a real database matches the generated schema.
   - Registry seeded from FREE_TIER_PROVIDER_MATRIX; encrypted credentials.
   - Atomic usage reservation and settlement against limits.
   - Cache; JSON-schema validation with one repair attempt; fallback chains; local-only, data-use and licence rules.
@@ -365,7 +370,9 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
   - Agent Control Center and Cost & Usage Manager on the real API, where the owner enters the real Gemini/Groq free limits.
   - e2e tests, docs, phase report.
 
-**Fix found while starting:** the schema generator put an enum check on the first text column of a line that declares two. `voice_profiles.label` and `notification_deliveries.channel` got the state checks. The generator is fixed, and migration 0005 repairs existing databases.
+**Fixes found while building:**
+- **Truncated tables.** The schema generator ended a table at `);` inside a comment and mis-split column lists. `provider_credentials` had **no columns** in every database since Phase 3, and `seo_packages` lost 13 columns in Phase 4. The generator now reads table bodies properly. Migration 0006 rebuilds both tables (no data existed). A new test compares every table's real columns with the generated schema.
+- **Enum check on the wrong column.** the schema generator put an enum check on the first text column of a line that declares two. `voice_profiles.label` and `notification_deliveries.channel` got the state checks. The generator is fixed, and migration 0005 repairs existing databases.
 
 ## Resource consumption
 

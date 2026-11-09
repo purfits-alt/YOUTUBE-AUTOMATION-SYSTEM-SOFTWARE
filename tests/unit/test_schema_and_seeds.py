@@ -89,3 +89,11 @@ def test_enum_comment_applies_to_the_last_text_column_on_the_line() -> None:
     )
     assert enum_column("  state text NOT NULL,  -- enum idea_state") == ("state", "idea_state")
     assert enum_column("  id uuid PRIMARY KEY,") is None
+
+
+def test_comment_with_parenthesis_and_semicolon_does_not_end_a_table() -> None:
+    from tools.gen_schema_sql import table_bodies
+
+    block = "CREATE TABLE t (   -- keys (owner's own); never returned\n  a text NOT NULL,\n  b int\n);\n"
+    [(name, body, _)] = table_bodies(block)
+    assert name == "t" and "a text NOT NULL" in body and "b int" in body

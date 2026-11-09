@@ -592,6 +592,85 @@ class NotificationDelivery(Base):
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+# --------------------------------------------------------------- Phase 5: AI Provider Gateway
+class ProviderRegistry(Base):
+    __tablename__ = "provider_registry"
+    code: Mapped[str] = mapped_column(Text, primary_key=True)
+    capability: Mapped[str] = mapped_column(Text)
+    tier: Mapped[str] = mapped_column(Text)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    paid_activation_step: Mapped[int] = mapped_column(Integer, default=0)
+    licence: Mapped[str] = mapped_column(Text)
+    licence_url: Mapped[str | None] = mapped_column(Text)
+    lineage: Mapped[str | None] = mapped_column(Text)
+    commercial_use: Mapped[str] = mapped_column(Text)
+    data_use_training: Mapped[bool | None] = mapped_column(Boolean)
+    languages: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
+    limits: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    model_sha256: Mapped[str | None] = mapped_column(String(64))
+    verified_at: Mapped[date] = mapped_column(Date)
+    verified_url: Mapped[str] = mapped_column(Text)
+    notes: Mapped[str | None] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class ProviderCredential(Base):
+    __tablename__ = "provider_credentials"
+    provider_code: Mapped[str] = mapped_column(ForeignKey("provider_registry.code"), primary_key=True)
+    secret_enc: Mapped[bytes]
+    key_id: Mapped[str] = mapped_column(Text)
+    label: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class UsageLimit(Base):
+    __tablename__ = "usage_limits"
+    id: Mapped[uuid.UUID] = _id()
+    provider_code: Mapped[str] = mapped_column(ForeignKey("provider_registry.code"))
+    scope: Mapped[str] = mapped_column(Text)
+    scope_ref: Mapped[str | None] = mapped_column(Text)
+    metric: Mapped[str] = mapped_column(Text)
+    period: Mapped[str] = mapped_column(Text)
+    limit_value: Mapped[int] = mapped_column(BigInteger)
+    reset_tz: Mapped[str] = mapped_column(Text, default="America/Los_Angeles")
+
+
+class UsageRecord(Base):
+    __tablename__ = "usage_records"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    provider_code: Mapped[str] = mapped_column(Text)
+    period_key: Mapped[str] = mapped_column(Text)
+    metric: Mapped[str] = mapped_column(Text)
+    amount: Mapped[int] = mapped_column(BigInteger)
+    kind: Mapped[str] = mapped_column(Text)
+    agent_run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    channel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    task: Mapped[str | None] = mapped_column(Text)
+
+
+class GatewayCache(Base):
+    __tablename__ = "gateway_cache"
+    cache_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    provider_code: Mapped[str] = mapped_column(Text)
+    response: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    expires_at: Mapped[datetime] = _ts()
+    hits: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class CostBudget(Base):
+    __tablename__ = "cost_budgets"
+    id: Mapped[uuid.UUID] = _id()
+    scope: Mapped[str] = mapped_column(Text)
+    provider_code: Mapped[str | None] = mapped_column(Text)
+    month: Mapped[str] = mapped_column(String(7))
+    cap_minor: Mapped[int] = mapped_column(BigInteger, default=0)
+    spent_minor: Mapped[int] = mapped_column(BigInteger, default=0)
+    currency: Mapped[str] = mapped_column(String(3), default="USD")
+
+
 __all__ = [
     "ApprovalRequest",
     "AssetRights",
@@ -599,7 +678,9 @@ __all__ = [
     "Base",
     "Channel",
     "ChannelPublishingRules",
+    "CostBudget",
     "DataDeletionTask",
+    "GatewayCache",
     "IdempotencyKey",
     "KillSwitch",
     "MediaAsset",
@@ -610,6 +691,8 @@ __all__ = [
     "OAuthPendingFlow",
     "OnboardingStep",
     "Permission",
+    "ProviderCredential",
+    "ProviderRegistry",
     "QuotaConfig",
     "QuotaLedger",
     "QuotaReservation",
@@ -621,6 +704,8 @@ __all__ = [
     "StockPurchase",
     "SystemSettings",
     "UploadJob",
+    "UsageLimit",
+    "UsageRecord",
     "User",
     "UserRecoveryCode",
     "UserRole",

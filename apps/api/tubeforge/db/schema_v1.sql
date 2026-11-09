@@ -670,7 +670,21 @@ CREATE TABLE seo_packages (
   version int NOT NULL,
   title_options jsonb NOT NULL,
   selected_title text NULL CHECK (char_length(selected_title) <= 100 AND selected_title !~ '[<>]'),
-  description text NOT NULL CHECK (octet_length(description) <= 5000)
+  description text NOT NULL CHECK (octet_length(description) <= 5000),
+  tags text[] NOT NULL DEFAULT '{}',
+  hashtags text[] NOT NULL DEFAULT '{}',
+  chapters jsonb NOT NULL DEFAULT '[]',
+  playlist_suggestions jsonb NOT NULL DEFAULT '[]',
+  category_id text NULL,
+  default_language text NOT NULL,
+  default_audio_language text NOT NULL,
+  made_for_kids boolean NULL,
+  made_for_kids_decided_by uuid NULL,
+  made_for_kids_decided_at timestamptz NULL,
+  misleading_check jsonb NULL,
+  content_sha256 char(64) NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (project_id, version)
 );
 
 CREATE TABLE disclosure_assessments (
@@ -981,8 +995,14 @@ CREATE TABLE provider_registry (
 CREATE TRIGGER provider_registry_updated_at BEFORE UPDATE ON provider_registry FOR EACH ROW EXECUTE FUNCTION tf_set_updated_at();
 
 CREATE TABLE provider_credentials (
-
+  provider_code text PRIMARY KEY,
+  secret_enc bytea NOT NULL,
+  key_id text NOT NULL,
+  label text NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
+CREATE TRIGGER provider_credentials_updated_at BEFORE UPDATE ON provider_credentials FOR EACH ROW EXECUTE FUNCTION tf_set_updated_at();
 
 CREATE TABLE usage_limits (
   id uuid PRIMARY KEY,
@@ -1232,6 +1252,7 @@ ALTER TABLE analytics_snapshots ADD FOREIGN KEY (channel_id) REFERENCES channels
 ALTER TABLE growth_suggestions ADD FOREIGN KEY (channel_id) REFERENCES channels;
 ALTER TABLE comment_suggestions ADD FOREIGN KEY (channel_id) REFERENCES channels;
 ALTER TABLE agent_runs ADD FOREIGN KEY (agent_code) REFERENCES agent_configurations;
+ALTER TABLE provider_credentials ADD FOREIGN KEY (provider_code) REFERENCES provider_registry;
 ALTER TABLE usage_limits ADD FOREIGN KEY (provider_code) REFERENCES provider_registry;
 ALTER TABLE notification_preferences ADD FOREIGN KEY (user_id) REFERENCES users;
 ALTER TABLE notification_targets ADD FOREIGN KEY (user_id) REFERENCES users;

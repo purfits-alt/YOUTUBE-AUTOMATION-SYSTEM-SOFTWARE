@@ -77,6 +77,49 @@ def test_migration_0005_moves_enum_checks_to_state(migrated: str) -> None:
     assert not names & {"voice_profiles_label_check", "notification_deliveries_channel_check"}
 
 
+def test_database_columns_match_the_generated_schema(migrated: str) -> None:
+    """Every table in the database has exactly the columns of schema_v1.sql (catches generator or
+    migration drift, e.g. a table cut short by a comment)."""
+    from tools.gen_schema_sql import build
+
+    schema, _ = build()
+    constraint_words = {"PRIMARY", "UNIQUE", "CHECK", "FOREIGN", "CONSTRAINT", "EXCLUDE"}
+
+    def is_column(item: str) -> bool:
+        return item.split()[0].split("(")[0].upper() not in constraint_words
+
+    expected = {t.name: {i.split()[0] for i in t.items if is_column(i)} for t in schema.tables}
+    engine = create_engine(migrated)
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                "SELECT table_name, column_name FROM information_schema.columns "
+                "WHERE table_schema = 'public' AND table_name NOT LIKE 'procrastinate%' "
+                "AND table_name <> 'alembic_version'"
+            )
+        ).all()
+    engine.dispose()
+    actual: dict[str, set[str]] = {}
+    for table, column in rows:
+        actual.setdefault(table, set()).add(column)
+    assert all(cols for cols in expected.values()), "a generated table has no columns"
+    assert actual == expected
+
+
+def test_migration_0006_rebuilds_truncated_tables(migrated: str) -> None:
+    """A database built before the generator fix (at 0005) gets both tables rebuilt by 0006."""
+    cfg = alembic_config()
+    command.downgrade(cfg, "0005")
+    engine = create_engine(migrated)
+    with engine.begin() as conn:  # the broken shapes older databases have
+        conn.execute(text("DROP TABLE provider_credentials CASCADE"))
+        conn.execute(text("CREATE TABLE provider_credentials ()"))
+        conn.execute(text("ALTER TABLE seo_packages DROP COLUMN content_sha256, DROP COLUMN tags"))
+    engine.dispose()
+    command.upgrade(cfg, "head")
+    test_database_columns_match_the_generated_schema(migrated)
+
+
 def test_readyz_ok_with_real_database(
     migrated: str, settings: Settings, monkeypatch: pytest.MonkeyPatch
 ) -> None:
