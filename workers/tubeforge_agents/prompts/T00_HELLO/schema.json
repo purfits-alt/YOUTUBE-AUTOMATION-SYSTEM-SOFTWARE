@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "required": ["greeting", "language"],
+  "additionalProperties": false,
+  "properties": {
+    "greeting": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "language": { "type": "string", "pattern": "^[a-z]{2}$" }
+  }
+}

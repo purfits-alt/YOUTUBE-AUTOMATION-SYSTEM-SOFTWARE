@@ -34,7 +34,7 @@ from sqlalchemy.orm import Session
 from tubeforge.audit import SYSTEM, record, security_event
 from tubeforge.db.ids import uuid7
 from tubeforge.db.models import Channel, KillSwitch, ProviderRegistry, SystemSettings
-from tubeforge.gateway import cache, limits, registry
+from tubeforge.gateway import cache, indicators, limits, paid, registry
 from tubeforge.gateway.adapters import AdapterError, Message, TextAdapter, TextRequest, TextResponse
 from tubeforge.gateway.adapters.gemini import GeminiAdapter
 from tubeforge.gateway.adapters.groq import GroqAdapter
@@ -160,6 +160,7 @@ class Gateway:
         channel = db.get(Channel, channel_id) if channel_id else None
         skipped: list[str] = []
         limit_resets: list[datetime] = []
+        est_in = estimate_tokens(system, messages, 0)
         for code in chain or chain_for(db, task):
             provider = db.get(ProviderRegistry, code)
             if provider is None:
@@ -170,7 +171,9 @@ class Gateway:
             ):
                 skipped.append(f"{code}: kill switch")
                 continue
-            blocked = registry.policy_block(provider, channel)
+            blocked = registry.policy_block(provider, channel) or self._paid_block(
+                db, provider, est_in, max_output_tokens, now
+            )
             if blocked:
                 skipped.append(blocked)
                 continue
@@ -238,6 +241,21 @@ class Gateway:
         if limit_resets:
             raise GatewayLimitError(min(limit_resets), skipped)
         raise GatewayUnavailableError(skipped)
+
+    @staticmethod
+    def _paid_block(
+        db: Session, provider: ProviderRegistry, est_in: int, max_output: int, now: datetime
+    ) -> str | None:
+        """Tier P: a known price and enough of this month's budget for the worst case of this call
+        (estimated input + the full output allowance)."""
+        if provider.tier != "P":
+            return None
+        worst = paid.cost_minor(provider, est_in, max_output)
+        if worst is None:
+            return f"{provider.code} has no recorded price, so its cost cannot be capped"
+        if paid.remaining_minor(db, provider.code, now) < worst:
+            return f"{provider.code}: this month's budget is used up"
+        return None
 
     # ------------------------------------------------------------------------------------- call
     def _call(
@@ -337,7 +355,14 @@ class Gateway:
             db.commit()
             raise
         limits.settle(db, res, {"REQUESTS": 1, "TOKENS": response.tokens_in + response.tokens_out})
+        provider = db.get_one(ProviderRegistry, code)
+        if provider.tier == "P":
+            paid.debit(
+                db, provider, paid.cost_minor(provider, response.tokens_in, response.tokens_out) or 0, now=now
+            )
         db.commit()
+        if (sign := indicators.inspect(provider, response.headers)) is not None:
+            self._paid_indicator(db, provider, AdapterError("PAID_INDICATOR", 200, sign))
         return response, response.tokens_in, response.tokens_out, False
 
     # ---------------------------------------------------------------------------------- alerts

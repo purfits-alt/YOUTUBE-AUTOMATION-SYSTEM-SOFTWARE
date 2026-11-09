@@ -671,7 +671,49 @@ class CostBudget(Base):
     currency: Mapped[str] = mapped_column(String(3), default="USD")
 
 
+# --------------------------------------------------------------------- Phase 5: agents
+class AgentConfiguration(Base):
+    __tablename__ = "agent_configurations"
+    agent_code: Mapped[str] = mapped_column(Text, primary_key=True)
+    name: Mapped[str] = mapped_column(Text)
+    version: Mapped[str] = mapped_column(Text)
+    is_auditor: Mapped[bool] = mapped_column(Boolean)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    prompt_version: Mapped[str] = mapped_column(Text)
+    provider_chain: Mapped[list[str]] = mapped_column(JSONB)
+    limits: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    permissions: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+
+
+class AgentRun(Base):
+    __tablename__ = "agent_runs"
+    id: Mapped[uuid.UUID] = _id()
+    agent_code: Mapped[str] = mapped_column(ForeignKey("agent_configurations.agent_code"))
+    channel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    job_id: Mapped[str | None] = mapped_column(Text)
+    input_sha256: Mapped[str] = mapped_column(String(64))
+    input: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    output: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    status: Mapped[str] = mapped_column(Text)
+    provider_code: Mapped[str | None] = mapped_column(Text)
+    model: Mapped[str | None] = mapped_column(Text)
+    tokens_in: Mapped[int | None] = mapped_column(Integer)
+    tokens_out: Mapped[int | None] = mapped_column(Integer)
+    duration_ms: Mapped[int | None] = mapped_column(Integer)
+    repair_attempted: Mapped[bool] = mapped_column(Boolean, default=False)
+    error_class: Mapped[str | None] = mapped_column(Text)
+    error_detail: Mapped[str | None] = mapped_column(Text)
+    quality_score: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))
+    started_at: Mapped[datetime] = _ts()
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 __all__ = [
+    "AgentConfiguration",
+    "AgentRun",
     "ApprovalRequest",
     "AssetRights",
     "AuditLog",

@@ -10,6 +10,17 @@
 - **Independent auditors:** A21, A22, A23, A30, A31, A32 write only their reports/alerts; production agents cannot write `audit_reports`; only the owner can override, with reason, logged.
 - **Typed I/O:** every input/output has a JSON Schema in `packages/shared/schemas/agents/<code>.{input,output}.json`; Pydantic models generated from them.
 
+**Implementation (Phase 5):**
+- **Catalogue and settings.** `workers/tubeforge_agents/catalogue.py` lists the agents with codes `A01_ORCHESTRATOR` … `A32_COST_MONITOR`, plus the test agent `T00_HELLO`, and is seeded into `agent_configurations` (migration 0008).
+- **Runner.** `base.run_agent()` applies the common rules:
+  - Emergency Stop and agent kill switch → ABORTED;
+  - per-agent daily call and token budgets → WAITING_QUOTA with a notification;
+  - provider limits → WAITING_QUOTA with the resume time;
+  - a refusal object → FAILED with its reason;
+  - redacted `agent_runs` logging (secrets, e-mail addresses, phone numbers);
+  - opt-in idempotency (`agent_code + input hash + prompt version`).
+- **Prompts.** Prompts render through Jinja2 with strict undefined; untrusted text goes only through the `untrusted` filter, which defuses closing tags.
+
 ## 2. Agent map
 | Group | Agents |
 |---|---|

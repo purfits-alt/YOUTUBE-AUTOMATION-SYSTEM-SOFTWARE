@@ -180,3 +180,19 @@ def test_problem_json_shape(env: Env) -> None:
         assert r.status_code == 400 and r.headers["content-type"].startswith("application/problem+json")
         assert body["code"] == "VALIDATION_ERROR" and body["request_id"] == r.headers["X-Request-ID"]
         assert {e["field"] for e in body["errors"]} == {"email", "password"}
+
+
+def test_nul_bytes_are_a_400_not_a_500(owner_client) -> None:  # type: ignore[no-untyped-def]
+    """Regression (contract test): a NUL byte reached PostgreSQL and became a 500."""
+    import uuid as _uuid
+
+    client, headers = owner_client
+    r = client.post("/api/v1/auth/login", json={"email": "own\x00er@example.com", "password": "x"})
+    assert r.status_code == 400
+    # Safety net for any other text field: the database's refusal becomes a VALIDATION_ERROR.
+    r = client.post(
+        "/api/v1/channels",
+        json={"name": "bad\x00name", "content_language": "en"},
+        headers={**headers, "Idempotency-Key": str(_uuid.uuid4())},
+    )
+    assert r.status_code == 400 and r.json()["code"] == "VALIDATION_ERROR"

@@ -913,7 +913,7 @@
         "properties": {
           "email": {
             "maxLength": 254,
-            "pattern": "^[^@ \\t\\r\\n]+@[^@ \\t\\r\\n]+\\.[^@ \\t\\r\\n]+$",
+            "pattern": "^[^@\\x00-\\x20\\x7f]+@[^@\\x00-\\x20\\x7f]+\\.[^@\\x00-\\x20\\x7f]+$",
             "title": "Email",
             "type": "string"
           },

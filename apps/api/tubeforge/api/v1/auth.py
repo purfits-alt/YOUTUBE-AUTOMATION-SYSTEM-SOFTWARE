@@ -46,8 +46,9 @@ class UserOut(BaseModel):
 
 
 class LoginIn(BaseModel):
-    # Explicit ASCII whitespace: "\s" means different things in Python and JSON-Schema regex.
-    email: str = Field(pattern=r"^[^@ \t\r\n]+@[^@ \t\r\n]+\.[^@ \t\r\n]+$", max_length=254)
+    # No spaces or control characters (NUL included); explicit ranges because "\s" means different
+    # things in Python and JSON-Schema regex.
+    email: str = Field(pattern=r"^[^@\x00-\x20\x7f]+@[^@\x00-\x20\x7f]+\.[^@\x00-\x20\x7f]+$", max_length=254)
     password: str = Field(min_length=1, max_length=1024)
 
 

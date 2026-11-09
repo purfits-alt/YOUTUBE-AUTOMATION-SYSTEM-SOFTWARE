@@ -28,6 +28,7 @@ CACHE_PURGE_CRON = "45 * * * *"
 PENDING_FLOWS_CRON = "*/10 * * * *"
 RECONCILE_CRON = "*/2 * * * *"
 APPROVALS_CRON = "5 * * * *"
+A32_CRON = "*/15 * * * *"
 
 log = get_logger("tubeforge.jobs")
 
@@ -88,6 +89,37 @@ def reconcile(timestamp: int) -> dict[str, Any]:
 def expire_approvals(timestamp: int) -> int:
     """orch.approvals_expire: PENDING approvals past their deadline (14 days) expire."""
     return _run("orch.approvals_expire", lambda db, *_: approvals.expire_due(db))
+
+
+def a32_usage_scan(timestamp: int) -> dict[str, Any]:
+    """a32.usage_scan: provider/YouTube/budget thresholds, re-verify and statement reminders."""
+    from tubeforge_auditors import a32_cost
+
+    report = _run("a32.usage_scan", lambda db, *_: a32_cost.scan(db))
+    return {"alerts": report.alerts, "reverify_due": report.reverify_due}
+
+
+def run_agent(
+    agent_code: str, data: dict[str, Any], channel_id: str | None = None, idempotent: bool = True
+) -> str:
+    """agent.run: one agent task through the AI Provider Gateway; returns the run status."""
+    from tubeforge_agents.base import run_agent as run
+    from tubeforge_agents.hello import HANDLERS
+
+    from tubeforge.gateway.core import Gateway
+
+    with _deps() as (db, box, _google, _youtube):
+        outcome = run(
+            db,
+            Gateway(box),
+            HANDLERS[agent_code],
+            data,
+            channel_id=uuid.UUID(channel_id) if channel_id else None,
+            idempotent=idempotent,
+        )
+        status = outcome.run.status
+    log.info("agent.run", agent=agent_code, status=status)
+    return status
 
 
 def upload(upload_job_id: str) -> str:

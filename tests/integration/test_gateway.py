@@ -223,6 +223,11 @@ def test_paid_provider_is_refused_below_step_two(gw: Gateway, db: Session) -> No
         call(gw, db, [PAID])
     assert "not activated" in exc.value.reasons[0]
     row.paid_activation_step = 2
+    row.limits = {"price_in_per_mtok_minor": 100, "price_out_per_mtok_minor": 400}
+    db.commit()
+    from tubeforge.gateway import paid
+
+    paid.set_cap(db, scope="PAID_PROVIDER", provider_code=PAID, cap_minor=500, now=NOW)
     db.commit()
     assert call(gw, db, [PAID]).provider_code == PAID
 

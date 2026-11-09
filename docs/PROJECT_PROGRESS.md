@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 5 — Orchestrator & agent infrastructure
-**Current step:** P5-A (orchestrator) and P5-B (AI Provider Gateway) built; next P5-C (agent framework, paid activation, A32). Phase 4 merged to `main` (PR #8); the owner's manual real-OAuth test is still open.
+**Current step:** P5-A, P5-B and P5-C built (backend complete); next P5-D (Agent Control Center + Cost & Usage screens, report). Phase 4 merged to `main` (PR #8); the owner's manual real-OAuth test is still open.
 **Last updated:** 2026-11-08
 
 ---
@@ -363,7 +363,15 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
   - Atomic usage reservation and settlement against limits.
   - Cache; JSON-schema validation with one repair attempt; fallback chains; local-only, data-use and licence rules.
   - Adapters for Gemini (free tier), Groq (free plan) and Ollama (local), all over httpx and tested against fakes.
-- **P5-C Agent framework and cost safety**
+- **P5-C Agent framework and cost safety** ✅ — built:
+  - `workers/tubeforge_agents/{catalogue,prompting,base,hello}.py`, with prompts in `prompts/T00_HELLO/`.
+  - `workers/tubeforge_auditors/a32_cost.py`.
+  - `gateway/{paid,indicators}.py`.
+  - Migration 0008 seeds the 33 agent configurations.
+  - Jobs `agent.run` and `a32.usage_scan`.
+  - New dependency `jinja2` (BSD-3).
+  - Tests: 10 unit and 10 integration. They include the roadmap demo: a limit of 2 a day, the third run waits and you are notified, then a switch to the local model, then Emergency Stop. They also cover the two-step paid activation (too soon, wrong phrase, no cap, expired step 1), paid calls capped and paused at the cap, paid-tier signs in responses, and A32 thresholds and reminders.
+  - Fixes: A32 alerts were not de-duplicated. A NUL byte in the login e-mail caused a 500; it now gets a 400, and any NUL that still reaches PostgreSQL gets a 400 everywhere. Found by the contract test.
   - AgentTask base, schemas, versioned prompt files, `agent_runs` with redacted input and output, metrics, and a "hello" test agent.
   - Paid (Tier P) two-step activation with a 60-second gap, budgets, and the A32 paid-indicator detector.
 - **P5-D Web and report**

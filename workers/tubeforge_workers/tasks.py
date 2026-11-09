@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import procrastinate
 
-from tubeforge.queue import QUEUE_HEAVY, QUEUE_MAINTENANCE, QUEUE_ORCHESTRATOR, QUEUE_YOUTUBE
+from tubeforge.queue import QUEUE_AGENTS, QUEUE_HEAVY, QUEUE_MAINTENANCE, QUEUE_ORCHESTRATOR, QUEUE_YOUTUBE
 from tubeforge_workers import maintenance
 
 
@@ -40,9 +40,11 @@ def make_blueprint() -> procrastinate.Blueprint:
         ),
         ("orch.reconcile", maintenance.RECONCILE_CRON, maintenance.reconcile),
         ("orch.approvals_expire", maintenance.APPROVALS_CRON, maintenance.expire_approvals),
+        ("a32.usage_scan", maintenance.A32_CRON, maintenance.a32_usage_scan),
     ]
     for name, cron, fn in periodic:
         queue = QUEUE_ORCHESTRATOR if name.startswith("orch.") else QUEUE_MAINTENANCE
         bp.periodic(cron=cron)(bp.task(name=name, queue=queue)(fn))
     bp.task(name="yt.upload", queue=QUEUE_YOUTUBE)(maintenance.upload)
+    bp.task(name="agent.run", queue=QUEUE_AGENTS)(maintenance.run_agent)
     return bp
