@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { t } from "../i18n";
 import { applyTheme, readTheme, type ThemeChoice } from "../lib/theme";
-import { useShell } from "../lib/useBackend";
+import { useSelectedChannel } from "../lib/channel";
+import { useChannels, useNotificationSummary, useQuota, useShell } from "../lib/useBackend";
 import { EmergencyStop } from "./EmergencyStop";
 import { GlobalSearch } from "./GlobalSearch";
 import { Icon } from "./icons";
@@ -32,10 +33,16 @@ function ThemeSelect() {
   );
 }
 
-function ChannelSwitcher({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) {
-  const shell = useShell();
-  const channels = shell.data?.channels ?? [];
-  const current = channels.find((c) => c.id === selected) ?? channels[0];
+function ChannelSwitcher() {
+  const { channelId, setChannelId } = useSelectedChannel();
+  const channels = useChannels().data?.items ?? [];
+  const current = channels.find((c) => c.id === channelId);
+  if (channels.length === 0)
+    return (
+      <Link to="/channels" data-testid="channel-switcher" className="text-sm text-accent underline">
+        {t("topbar.addChannel")}
+      </Link>
+    );
   return (
     <div className="flex items-center gap-2">
       <label className="text-sm">
@@ -43,7 +50,7 @@ function ChannelSwitcher({ selected, onSelect }: { selected: string; onSelect: (
         <select
           data-testid="channel-switcher"
           value={current?.id ?? ""}
-          onChange={(e) => onSelect(e.target.value)}
+          onChange={(e) => setChannelId(e.target.value)}
           className="min-h-9 max-w-40 rounded-md border border-line bg-surface px-2 text-sm"
         >
           {channels.map((c) => (
@@ -55,10 +62,10 @@ function ChannelSwitcher({ selected, onSelect }: { selected: string; onSelect: (
       </label>
       {current && (
         <span data-testid="mode-badge">
-          <Badge tone="info">{t(`modes.${current.mode}`)}</Badge>
+          <Badge tone="info">{t(`modes.${current.operating_mode}`)}</Badge>
         </span>
       )}
-      {current?.private_only && (
+      {current?.private_only_mode && (
         <span data-testid="private-only-badge">
           <Badge tone="ok">{t("badges.privateOnly")}</Badge>
         </span>
@@ -69,7 +76,9 @@ function ChannelSwitcher({ selected, onSelect }: { selected: string; onSelect: (
 
 function QuotaMeter() {
   const shell = useShell();
-  const yt = shell.data?.quota.youtube_default_pct ?? 0;
+  const quota = useQuota();
+  const def = quota.data?.[0]?.buckets.find((b) => b.bucket === "DEFAULT");
+  const yt = def && def.usable > 0 ? Math.round(((def.used + def.held) / def.usable) * 100) : 0;
   const peak = shell.data?.quota.free_tier_peak_pct ?? 0;
   const label = t("topbar.quotaDetail", { youtube: yt, peak });
   return (
@@ -99,8 +108,9 @@ function QuotaMeter() {
 }
 
 function Bell() {
-  const shell = useShell();
-  const unread = shell.data?.unread_notifications ?? 0;
+  const summary = useNotificationSummary();
+  const unread = summary.data?.unread ?? 0;
+  const critical = (summary.data?.critical_unread ?? 0) > 0;
   return (
     <Link
       to="/notifications"
@@ -114,7 +124,10 @@ function Bell() {
       {unread > 0 && (
         <span
           aria-hidden="true"
-          className="absolute -end-1 -top-1 rounded-full bg-danger px-1.5 text-xs font-bold text-white dark:text-black"
+          data-testid="bell-count"
+          className={`absolute -end-1 -top-1 rounded-full px-1.5 text-xs font-bold ${
+            critical ? "bg-danger text-white dark:text-black" : "bg-accent text-accent-fg"
+          }`}
         >
           {unread}
         </span>
@@ -123,7 +136,7 @@ function Bell() {
   );
 }
 
-export function TopBar({ channelId, onChannel }: { channelId: string; onChannel: (id: string) => void }) {
+export function TopBar() {
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-surface/80 backdrop-blur-md">
       <div className="flex flex-wrap items-center gap-2 px-3 py-2 sm:px-4">
@@ -132,7 +145,7 @@ export function TopBar({ channelId, onChannel }: { channelId: string; onChannel:
         <GlobalSearch />
         <div className="ms-auto flex items-center gap-2">
           <div className="hidden sm:block">
-            <ChannelSwitcher selected={channelId} onSelect={onChannel} />
+            <ChannelSwitcher />
           </div>
           <QuotaMeter />
           <Bell />
@@ -143,7 +156,7 @@ export function TopBar({ channelId, onChannel }: { channelId: string; onChannel:
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2 border-t border-line px-3 py-1.5 sm:hidden">
-        <ChannelSwitcher selected={channelId} onSelect={onChannel} />
+        <ChannelSwitcher />
         <div className="ms-auto">
           <ThemeSelect />
         </div>

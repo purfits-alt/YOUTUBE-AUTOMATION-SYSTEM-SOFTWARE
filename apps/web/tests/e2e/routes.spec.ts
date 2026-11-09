@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { en, openPage, PAGES, STATES, watchConsole } from "./helpers";
+import { en, NO_EMPTY_STATE, openPage, PAGES, STATES, watchConsole } from "./helpers";
 
 // Roadmap Phase 2: every route (31 + Channel Trending = 32) × 4 states = 128 cases, no console errors, Emergency Stop on every route.
 for (const def of PAGES) {
@@ -12,10 +12,11 @@ for (const def of PAGES) {
         const problems = watchConsole(page, state === "error" ? [503] : []);
         await openPage(page, def, state);
         await expect(page.getByTestId("emergency-stop")).toBeVisible();
-        // Settings has no empty state (FRONTEND_SPECIFICATION §31: "Empty state: N/A") — an empty
-        // response is not possible for it, so its "empty" case checks it still renders its form.
-        const expected = def.id === "settings" && state === "empty" ? "success" : state;
-        if (def.id === "settings" && state === "empty") {
+        // Settings and Onboarding have no empty state (spec: N/A; the 10 steps always exist), so
+        // their "empty" case checks they still render.
+        const noEmpty = NO_EMPTY_STATE.has(def.id) && state === "empty";
+        const expected = noEmpty ? "success" : state;
+        if (noEmpty) {
           await expect(page.getByTestId(`state-${expected}`)).toBeVisible();
           expect(problems).toEqual([]);
           return;

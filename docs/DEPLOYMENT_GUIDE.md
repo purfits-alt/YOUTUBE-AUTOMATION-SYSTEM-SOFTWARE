@@ -33,7 +33,7 @@
 
 ## 3. First-run configuration (in the dashboard)
 1. Settings › General: timezone Asia/Karachi (default), quiet hours, night render window (01:00–07:00), disk budget.
-2. Channels › Add channel → **Onboarding** (10 steps): create the test channel, verify by phone, Google Cloud project (**no billing**), enable YouTube Data API v3 + Analytics API, OAuth consent screen (External, add yourself as test user), OAuth **Desktop** client, privacy policy on GitHub Pages, Connect, test private upload.
+2. Channels › Add channel → **Onboarding** (10 steps): create the test channel, verify by phone, Google Cloud project (**no billing**), enable YouTube Data API v3 + Analytics API, OAuth consent screen (External, add yourself as test user), OAuth **Desktop** client, privacy policy on GitHub Pages, Connect, test private upload. Click-by-click: `docs/OWNER_GUIDE_YOUTUBE_CONNECTION.md`.
 3. Cost & Usage › providers: paste your **Gemini API key** (from a no-billing project) and enter the free limits shown in AI Studio. Add **Groq** (optional) the same way. Leave Tier P providers disabled.
 4. Notifications › Telegram: create a bot with @BotFather, paste the token, send `/start` to your bot, confirm the code.
 5. Settings › Storage & backups: run the first backup and **export the key file** to a USB stick (passphrase ≥ 12 chars).
@@ -44,7 +44,7 @@
 - If a Testing-mode OAuth token is about to expire (7 days), click **Re-authorise** in the banner.
 
 ## 5. Moving the OAuth app to "In production" (optional, recommended after Phase 4)
-Removes the 7-day token expiry. In Google Cloud Console › OAuth consent screen › Publish app. Because the YouTube scopes are sensitive, Google may show your own account an "unverified app" screen, which you can accept for your personal use. Full verification is only needed for other users (re-checked in Phase 4; marked 🟡).
+Removes the 7-day token expiry. In Google Cloud Console › OAuth consent screen › Publish app. Because the YouTube scopes are sensitive, Google may show your own account an "unverified app" screen, which you can accept for your personal use. Full verification is only needed if other people would use the app (Phase 4: a single-owner personal app can stay unverified; see `docs/OWNER_GUIDE_YOUTUBE_CONNECTION.md`).
 
 ## 6. Updates
 `tubeforge.ps1 update`: stop → backup → pull release → `uv sync` → migrate → start. It rolls back automatically if migrations fail (restores the pre-update DB dump).

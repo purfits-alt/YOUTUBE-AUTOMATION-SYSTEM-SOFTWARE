@@ -38,12 +38,15 @@
     "theme": "Theme",
     "themeLight": "Light",
     "themeDark": "Dark",
-    "themeSystem": "System"
+    "themeSystem": "System",
+    "addChannel": "Add a channel"
   },
   "modes": {
     "MANUAL": "Manual",
     "SEMI": "Semi-auto",
-    "AUTO": "Auto"
+    "AUTO": "Auto",
+    "SEMI_AUTOMATIC": "Semi-auto",
+    "FULLY_AUTOMATIC": "Fully automatic"
   },
   "badges": {
     "privateOnly": "Private-only",
@@ -625,5 +628,167 @@
       "SERIES": "Start a series"
     },
     "source": "Your video"
+  },
+  "channelStates": {
+    "PROPOSED": "Proposed",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected",
+    "ONBOARDING": "Setting up",
+    "CONNECTED": "Connected",
+    "ACTIVE": "Active",
+    "PAUSED": "Paused",
+    "NEEDS_REAUTH": "Needs sign-in",
+    "DISCONNECTING": "Disconnecting",
+    "DISCONNECTED": "Disconnected"
+  },
+  "languages": {
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French",
+    "de": "German",
+    "ur": "Urdu"
+  },
+  "uploadStates": {
+    "PREFLIGHT": "Safety checks passed, waiting for the worker",
+    "REJECTED": "Refused",
+    "WAITING_QUOTA": "Waiting for quota",
+    "SESSION_STARTED": "Upload started",
+    "TRANSFERRING": "Sending",
+    "RESUMING": "Resuming after a hiccup",
+    "UPLOADED": "Uploaded",
+    "SETTING_THUMBNAIL": "Setting thumbnail",
+    "SETTING_CAPTIONS": "Adding captions",
+    "SETTING_PLAYLIST": "Adding to playlist",
+    "POLLING_PROCESSING": "YouTube is processing",
+    "COMPLETED": "Done",
+    "PROCESSING_FAILED": "YouTube could not process it",
+    "FAILED": "Failed"
+  },
+  "channelsPage": {
+    "addTitle": "Add a channel",
+    "name": "Channel name (as you want it in TubeForge)",
+    "language": "Content language",
+    "testChannel": "This is my test channel",
+    "testChannelHint": "Recommended first: a separate YouTube channel only for private test uploads.",
+    "create": "Create and start setup",
+    "created": "{name} added. Follow the setup steps next.",
+    "notLinked": "Not linked to YouTube yet",
+    "testBadge": "Test channel",
+    "testUploads": "Private test uploads: {count}",
+    "openSetup": "Connection & setup",
+    "continueSetup": "Continue setup",
+    "pause": "Pause",
+    "resume": "Resume",
+    "paused": "{name} is paused.",
+    "resumed": "{name} is running again.",
+    "statChannels": "Channels",
+    "statConnected": "Connected",
+    "statAttention": "Need attention",
+    "statUploads": "Private test uploads",
+    "tokenExpiring": "Sign-in expires soon",
+    "token": {
+      "ACTIVE": "YouTube connected",
+      "NEEDS_REAUTH": "Needs sign-in",
+      "REVOKED": "Disconnected",
+      "NOT_CONNECTED": "Not connected"
+    }
+  },
+  "onboarding": {
+    "start": "Start setup",
+    "startHint": "Setup takes about 20 minutes. TubeForge guides you; Google pages open in a new tab.",
+    "reconnectChannel": "Reconnect this channel",
+    "reconnectHint": "This channel was disconnected. Reconnecting starts the YouTube steps again.",
+    "progress": "{done} of {total} steps done",
+    "progressLabel": "Setup progress",
+    "stepsLabel": "Setup steps",
+    "skip": "Skip",
+    "undo": "Undo",
+    "opensNewTab": "(opens in a new tab)",
+    "status": {
+      "TODO": "To do",
+      "DONE": "Done",
+      "SKIPPED": "Skipped"
+    },
+    "steps": {
+      "CREATE_GOOGLE_ACCOUNT": {
+        "title": "Google account",
+        "how": "Use a Google account you control. For testing, a separate account keeps your main one tidy."
+      },
+      "CREATE_CHANNEL": {
+        "title": "YouTube channel",
+        "how": "Create the YouTube channel on that account. Start with a test channel for private uploads."
+      },
+      "VERIFY_PHONE": {
+        "title": "Verify the channel",
+        "how": "Verify by phone in YouTube. It unlocks custom thumbnails and longer videos."
+      },
+      "CREATE_GCP_PROJECT": {
+        "title": "Google Cloud project (no billing)",
+        "how": "Create a free Google Cloud project, e.g. tubeforge-youtube. Do not add a billing account — TubeForge never needs one."
+      },
+      "ENABLE_APIS": {
+        "title": "Turn on the YouTube APIs",
+        "how": "In that project, enable “YouTube Data API v3” and “YouTube Analytics API”."
+      },
+      "CONSENT_SCREEN": {
+        "title": "OAuth consent screen",
+        "how": "Choose External, name it “TubeForge (personal)”, add your privacy-policy link and add your own Google account as a test user."
+      },
+      "OAUTH_CLIENT": {
+        "title": "OAuth client (Desktop app)",
+        "how": "Create credentials → OAuth client ID → Desktop app. Paste the Client ID (and secret, if shown) below. They are stored encrypted."
+      },
+      "PRIVACY_POLICY": {
+        "title": "Privacy policy link",
+        "how": "Publish site/privacy.html from this repository on GitHub Pages (fill in your name and e-mail first) and paste its address here."
+      },
+      "CONNECT": {
+        "title": "Connect with Google",
+        "how": "Sign in with the channel's Google account and tick every permission box. Then confirm it is the right channel."
+      },
+      "TEST_UPLOAD": {
+        "title": "Private test upload",
+        "how": "TubeForge uploads a 5-second test clip as private. Check it in YouTube Studio, then delete it if you like."
+      }
+    },
+    "clientLabel": "Label",
+    "clientProject": "Cloud project ID (optional)",
+    "clientProjectHint": "Used to track quota per project.",
+    "clientId": "Client ID",
+    "clientSecret": "Client secret (if Google shows one)",
+    "clientSecretHint": "Write-only: TubeForge never shows it again.",
+    "saveClient": "Save OAuth client",
+    "clientRegistered": "OAuth client “{label}” is saved:",
+    "publishing": {
+      "TESTING": "Testing mode (7-day sign-in)",
+      "IN_PRODUCTION": "In production"
+    },
+    "privacyUrl": "Privacy policy address (https://…)",
+    "privacyInvalid": "Enter a full https:// address.",
+    "connect": "Connect with Google",
+    "reconnect": "Reconnect with Google",
+    "connectHint": "Google opens in this tab and sends you back here. TubeForge asks only for upload and read access.",
+    "connectedAs": "Connected as {handle}.",
+    "expiresHint": "Testing mode: Google ends this sign-in around {when}. Reconnect before then.",
+    "readingIdentity": "Reading which YouTube channel you signed in to…",
+    "identityQuestion": "You signed in to this YouTube channel. Is it the right one?",
+    "identityYes": "Yes, this is my channel",
+    "identityNo": "No, sign in again",
+    "confirmed": "Channel confirmed. It stays private-only until you decide otherwise.",
+    "testUploadHint": "Private, not made for kids, no AI-generated people. Uses 1 of today's 100 upload calls.",
+    "testUploadNeedsConnect": "Connect and confirm the channel first.",
+    "uploadQueued": "Test upload started.",
+    "uploadProgress": "Upload progress",
+    "uploadDone": "Done — the private video is on YouTube.",
+    "openStudio": "Open in YouTube Studio"
+  },
+  "notificationsPage": {
+    "unreadOnly": "Unread only",
+    "open": "Open",
+    "severity": {
+      "INFO": "Info",
+      "WARNING": "Warning",
+      "CRITICAL": "Critical"
+    }
   }
 }

@@ -64,13 +64,16 @@ def sql_blocks(markdown: str) -> list[str]:
 
 
 def split_top_level(body: str) -> list[str]:
-    items, depth, current = [], 0, []
+    """Split a column list on top-level commas (not inside parentheses or '...' string literals)."""
+    items, depth, current, quoted = [], 0, [], False
     for ch in body:
-        if ch == "(":
+        if ch == "'":
+            quoted = not quoted
+        elif not quoted and ch == "(":
             depth += 1
-        elif ch == ")":
+        elif not quoted and ch == ")":
             depth -= 1
-        if ch == "," and depth == 0:
+        if ch == "," and depth == 0 and not quoted:
             items.append("".join(current))
             current = []
         else:

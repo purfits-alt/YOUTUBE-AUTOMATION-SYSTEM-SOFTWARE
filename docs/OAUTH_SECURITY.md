@@ -69,6 +69,13 @@ Enforced by a FastAPI dependency `require(permission, channel_id)` on every rout
 ### 4.2 Flow
 Installed-app flow with a **loopback redirect** (`http://127.0.0.1:8765/oauth/callback`) and **PKCE S256** (Y13). The `state` parameter is 256-bit random, single-use, with a 10-minute TTL (`oauth_pending_flows`). `access_type=offline`, `prompt=consent` on first connect, `include_granted_scopes=true`. Sequence diagram: SYSTEM_ARCHITECTURE §8.
 
+Implementation rules (Phase 4, `youtube/oauth.py`):
+- The state row is deleted on first use, whatever the outcome. An unknown state is logged as a `OAUTH_STATE_UNKNOWN` security event.
+- **Granular consent:** if Google returns fewer scopes than requested (the owner un-ticked a box), the new token is revoked and nothing is stored; the page asks the owner to tick every box.
+- Client choice: the channel's current OAuth client, else the newest registered one (same rule at start and callback, so the pending flow needs no client column).
+- **Re-authorisation** of a NEEDS_REAUTH channel checks `channels.list mine=true` against the stored `youtube_channel_id`; a different channel is refused and the channel stays NEEDS_REAUTH.
+- The callback page sends `Referrer-Policy: no-referrer`, `Cache-Control: no-store` and a CSP without scripts.
+
 ### 4.3 Scopes (least privilege, requested incrementally)
 
 | Feature | Scope | Requested when |
@@ -89,7 +96,7 @@ Installed-app flow with a **loopback redirect** (`http://127.0.0.1:8765/oauth/ca
 ### 4.5 Token storage and use
 - `refresh_token_enc` is AES-GCM encrypted (§5). Access tokens are cached encrypted and expire about 1 h after issue.
 - Token refresh happens only inside the YouTube Integration Service. Tokens never reach the browser.
-- **Token health job** (daily + before each YouTube job): refresh → on `invalid_grant` / 401 → `oauth_connections.status = NEEDS_REAUTH`, channel → NEEDS_REAUTH, YouTube jobs paused, CRITICAL notification.
+- **Token health job** (`mnt.token_health`, daily 07:00 PKT + before each YouTube job): refresh → on `invalid_grant` / 401 → `oauth_connections.status = NEEDS_REAUTH`, channel → NEEDS_REAUTH, YouTube jobs paused, CRITICAL notification.
 - **Disconnect:** call `https://oauth2.googleapis.com/revoke` → delete token rows → create a `data_deletion_tasks` entry (due in 7 days) for all stored API data of that channel (DP-4).
 
 ## 5. Secrets & encryption

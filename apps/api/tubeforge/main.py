@@ -24,14 +24,20 @@ from starlette.types import Scope
 
 from tubeforge.api.errors import STANDARD_RESPONSES, install_error_handlers, problem_response
 from tubeforge.api.v1 import auth as auth_v1
+from tubeforge.api.v1 import channels as channels_v1
 from tubeforge.api.v1 import events as events_v1
+from tubeforge.api.v1 import notifications as notifications_v1
+from tubeforge.api.v1 import oauth as oauth_v1
 from tubeforge.api.v1 import security as security_v1
 from tubeforge.api.v1 import system as system_v1
+from tubeforge.api.v1 import uploads as uploads_v1
 from tubeforge.config import Settings, get_settings
 from tubeforge.db.session import check_database, get_engine, table_exists
 from tubeforge.events import EventBus
 from tubeforge.logging import configure_logging, get_logger
 from tubeforge.secrets import MasterKeyMissingError, SecretBox, SecretsError, default_store
+from tubeforge.youtube.client import SafeYouTubeClient
+from tubeforge.youtube.oauth import GoogleOAuth
 
 PLACEHOLDER_HTML = """<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>TubeForge</title></head>
@@ -157,6 +163,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(security_v1.router, prefix="/api/v1")
     app.include_router(system_v1.router, prefix="/api/v1")
     app.include_router(events_v1.router, prefix="/api/v1")
+    app.include_router(channels_v1.router, prefix="/api/v1")
+    app.include_router(oauth_v1.router, prefix="/api/v1")
+    app.include_router(uploads_v1.router, prefix="/api/v1")
+    app.include_router(notifications_v1.router, prefix="/api/v1")
+    app.include_router(oauth_v1.callback_router)
+    # Google clients (tests replace these with mocked transports).
+    app.state.google_oauth = GoogleOAuth()
+    app.state.youtube = SafeYouTubeClient()
     app.state.events = EventBus()
     app.state.sse_idle_limit_s = None
 

@@ -114,22 +114,23 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 |---|---|---|---|
 | GET | `/channels` | Page[ChannelOut] (filter: state, language, mode) | `channel.view` |
 | POST | `/channels` 🔁 | ChannelCreate `{name, content_language, is_test_channel, is_monetised, from_strategy_id?}` → ChannelOut (state APPROVED) | `channel.manage` |
-| GET/PATCH | `/channels/{id}` | ChannelOut / `{name, audience_timezone, local_only, is_monetised}` (If-Match) | `channel.view` / `channel.manage` |
+| GET/PATCH | `/channels/{id}` | ChannelOut (+ `oauth_status`) / `{name, audience_timezone, local_only, is_monetised, privacy_policy_url}` (If-Match; setting the privacy URL can complete CONNECTED → ACTIVE) | `channel.view` / `channel.manage` |
 | DELETE | `/channels/{id}` 🔐 | 204 (requires DISCONNECTED or never connected) | `channel.manage` |
-| POST | `/channels/{id}/commands/{cmd}` 🔁 | cmd ∈ `start-onboarding, pause, resume, disconnect, reconnect` | `channel.manage` |
+| POST | `/channels/{id}/commands/{cmd}` 🔁 | cmd ∈ `start-onboarding, pause, resume, disconnect, reconnect` (`disconnect` also 🔐). Illegal moves → 409 `INVALID_TRANSITION` | `channel.manage` |
 | POST | `/channels/{id}/mode` 🔁🔐 | `{mode}`. FULLY_AUTOMATIC guards: test runs ≥ N, public-release test, auto rules accepted | `channel.mode` |
 | POST | `/channels/{id}/private-only` 🔁🔐 | `{enabled}`. Disabling needs ≥ 3 private test uploads | `channel.mode` |
 | GET/PUT | `/channels/{id}/publishing-rules` | PublishingRules (If-Match) | `channel.manage` |
 | POST | `/channels/{id}/publishing-rules/accept-auto-rules` 🔁🔐 | `{rules_sha256}` → records DP-6 consent | `channel.mode` |
 | GET | `/channels/{id}/onboarding` | `steps[]` | `channel.view` |
-| PATCH | `/channels/{id}/onboarding/{step_code}` | `{status, notes}` | `channel.manage` |
-| GET/POST/DELETE | `/oauth/clients` | register the owner's OAuth client `{label, client_id, client_secret?}` (secret write-only) | `oauth.manage` |
-| POST | `/oauth/youtube/start` 🔁 | `{channel_id, features[]}` → `{authorization_url}` (scopes computed) | `oauth.manage` |
+| PATCH | `/channels/{id}/onboarding/{step_code}` | `{status, notes}`; `CONNECT` and `TEST_UPLOAD` are set by TubeForge (409 `SYSTEM_STEP`) | `channel.manage` |
+| GET/POST/DELETE | `/oauth/clients` | register the owner's OAuth client `{label, client_id, client_secret?, gcp_project_id?, publishing_status}` (secret write-only, stored encrypted); DELETE → 409 `CLIENT_IN_USE` while a channel uses it | `oauth.manage` |
+| POST | `/oauth/youtube/start` 🔁 | `{channel_id, features[]}` → `{authorization_url, expires_at}` (scopes computed; `features` ⊆ upload, readonly, captions, playlists, metadata, comments, analytics) | `oauth.manage` |
 | GET | `/oauth/callback` | browser redirect from Google → HTML page "Connected — return to TubeForge" | public (state-checked) |
+| GET | `/channels/{id}/oauth/identity` | `{youtube_channel_id, title, handle}` of the signed-in account (`channels.list mine=true`, 1 unit) — shown before the owner confirms | `oauth.manage` |
 | POST | `/channels/{id}/oauth/confirm-identity` 🔁 | `{youtube_channel_id}` must equal the fetched ID → state CONNECTED | `oauth.manage` |
 | POST | `/channels/{id}/oauth/incremental` 🔁 | `{features[]}` → `{authorization_url}` | `oauth.manage` |
-| GET | `/channels/{id}/oauth/health` | `{status, scopes, expires_hint, last_refresh_at}` | `channel.view` |
-| POST | `/channels/{id}/test-upload` 🔁⚙ | uploads the generated 5-s test clip, private, `is_test` | `upload.execute` |
+| GET | `/channels/{id}/oauth/health` | `{status, scopes, expires_hint, expiring_soon, last_refresh_at, last_error, publishing_status}` | `channel.view` |
+| POST | `/channels/{id}/test-upload` 🔁⚙ | uploads the generated 5-s test clip, private, `is_test` → 202 UploadJobOut; preflight refusals → 409 `REFUSED_*` (503 `WAITING_QUOTA`); job `yt.upload` is created in the same transaction | `upload.execute` |
 | POST | `/channels/{id}/delete-api-data` 🔁🔐 | creates a `data_deletion_tasks` row (OWNER_REQUEST, due ≤ 7 days) | `channel.manage` |
 
 ### 4.5 Niche discovery, trends, blueprints, competitor lookup, keywords
@@ -310,6 +311,7 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 | Method | Path | Request → Response | Perm |
 |---|---|---|---|
 | GET | `/notifications` | Page (filter unread, severity, channel) | session |
+| GET | `/notifications/summary` | `{unread, critical_unread}` for the bell | session |
 | POST | `/notifications/{id}/read` · `/notifications/read-all` | | session |
 | GET/PUT | `/notifications/preferences` | matrix event_type × channel {enabled, digest} | session |
 | PUT | `/notifications/targets/telegram` | `{bot_token, chat_id}` (write-only, encrypted) | `settings.manage` |

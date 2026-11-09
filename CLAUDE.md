@@ -33,10 +33,11 @@ Owner install root: `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE` (the path has spaces
 | Web tests | `pnpm -C apps/web test` · e2e (API running with built web, migrated DB, master key and an owner: e2e signs in as `TUBEFORGE_E2E_EMAIL`/`TUBEFORGE_E2E_PASSWORD`, defaults in `tests/e2e/global-setup.ts`): `pnpm -C apps/web e2e` (routes×states, axe, mobile, visual) · visual baselines come from CI: push a commit whose message contains `[update-snapshots]` (non-main branch) and CI commits refreshed screenshots |
 | API contract & client | `uv run python tools/export_openapi.py` → `packages/shared/openapi.json` (a test fails if stale) · `pnpm -C apps/web api:gen` (real contract + `openapi.stub.json` for still-mocked pages) · CI: `api:check` |
 | Lottie animations | `uv run python tools/gen_lottie.py` (own artwork → `apps/web/src/assets/lottie/`) |
-| Mock data / states | Pages not yet backed by the API use MSW (`apps/web/src/mocks`); `?scenario=empty\|loading\|error\|success` or the dev switcher. Auth, controls, settings, audit are real since Phase 3 |
+| Mock data / states | Pages not yet backed by the API use MSW (`apps/web/src/mocks`); `?scenario=empty\|loading\|error\|success` or the dev switcher. Auth, controls, settings, audit are real since Phase 3; channels, onboarding, OAuth, uploads, quota, notifications since Phase 4 |
 | Docs checks | `uv run python tools/check_traceability.py` |
 | Security | `uv run pre-commit run --all-files` (gitleaks, ruff, traceability) · `uv run pip-audit --skip-editable` · `pnpm -C apps/web audit --audit-level high` · licences: `tools/check_licenses.py` |
 | Local Postgres for dev (Linux) | `docker compose -f infra/compose/docker-compose.dev.yml up -d` |
+| Privacy/terms site | `site/` → GitHub Pages via `.github/workflows/pages.yml` (owner: Settings › Pages › Source: GitHub Actions) |
 | Windows (owner PC) | `tubeforge.ps1 doctor` · `setup` · `start` · `stop` · `status` (in `infra/windows/`) |
 
 ## Coding standards

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router";
 import { t } from "../i18n";
+import { useSelectedChannel } from "../lib/channel";
 import { GROUP_ORDER, PAGES, pageHref, getPage } from "../pages/registry";
 import type { GroupKey, PageDef } from "../pages/types";
 import { Dialog } from "./Dialog";
@@ -50,9 +51,10 @@ function NavItem({
   onNavigate?: (() => void) | undefined;
 }) {
   const title = t(`pages.${page.id}.title`);
+  const { channelId } = useSelectedChannel();
   return (
     <NavLink
-      to={pageHref(page)}
+      to={pageHref(page, channelId)}
       end // exact match: "/channels" must not also light up on "/channels/:id/trending"
       onClick={onNavigate}
       title={rail ? title : undefined}

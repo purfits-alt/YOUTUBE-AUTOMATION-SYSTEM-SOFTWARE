@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy import select
 
@@ -16,6 +16,9 @@ from tubeforge.audit import verify_chain
 from tubeforge.db.models import AuditLog, SecurityEvent
 
 router = APIRouter(tags=["security"])
+# Filter codes are identifiers ("auth.login", "LOGIN_FAILED"): a pattern keeps out NUL bytes and junk
+# that PostgreSQL would reject with a server error (found by the contract test).
+Code = Annotated[str | None, Query(pattern=r"^[A-Za-z0-9_.:-]{1,64}$")]
 SecurityView = Annotated[Principal, Depends(require("security.view"))]
 
 
@@ -55,8 +58,8 @@ def audit_log(
     _: SecurityView,
     limit: Limit = None,
     cursor: Cursor = None,
-    action: str | None = None,
-    entity_type: str | None = None,
+    action: Code = None,
+    entity_type: Code = None,
 ) -> Page[AuditLogOut]:
     n = clamp_limit(limit)
     stmt = select(AuditLog).order_by(AuditLog.id.desc()).limit(n + 1)
@@ -88,8 +91,8 @@ def security_events(
     _: SecurityView,
     limit: Limit = None,
     cursor: Cursor = None,
-    kind: str | None = None,
-    severity: str | None = None,
+    kind: Code = None,
+    severity: Literal["INFO", "WARNING", "CRITICAL"] | None = None,
 ) -> Page[SecurityEventOut]:
     n = clamp_limit(limit)
     stmt = select(SecurityEvent).order_by(SecurityEvent.id.desc()).limit(n + 1)

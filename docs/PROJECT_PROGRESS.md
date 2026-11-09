@@ -2,8 +2,8 @@
 
 > Living document. Updated at every checkpoint and at the end of every phase.
 
-**Current phase:** Phase 3 — Backend, database & auth
-**Current step:** Phase 3 (+ Channel Trending screens) approved by the owner 2026-11-08; PR into `main` opened. Next: Phase 4 — channel onboarding, OAuth & quota ledger.
+**Current phase:** Phase 4 — Channel onboarding, OAuth & quota ledger
+**Current step:** Phase 4 built (P4-A…D) — report below. Waiting for the owner's manual test (real OAuth + private upload) and "approved". Phase 3 merged to `main` (PR #7).
 **Last updated:** 2026-11-08
 
 ---
@@ -262,6 +262,86 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 **Owner request during Phase 3 — Channel Trending (2026-11-08):** Outliers, Replicate / "milky" videos and New Ideas. Owner decisions: **own channels only** for outliers (YouTube data policy, ADR-0015), **variations of own winners** with an originality guard (similarity ≤ 0.70 + owner value-add; near copies refused), **plan + screens now**. Done: US-4.6, ADR-0025, FRONTEND_SPECIFICATION §32 (test plan moved to §33), A08 variation mode, API endpoints, schema (`video_ideas.source` + REPLICATE, `based_on_youtube_video_id`, `variation_kind`, `similarity_to_source`), roadmap (Phase 7 variation mode, Phase 13 outliers), compliance line; **Page 32 Channel Trending** (Channels group) with three keyboard-accessible tabs on sample data and the replicate dialog (the guard refuses "Updated version" in the sample). Tests: Vitest 23, Playwright 128 route×state cases + axe for page 32. Also fixed: the menu highlighted "Channel Manager" on every /channels/… page (links now match exactly).
 
 **Demo script (owner, Windows):** `git -C "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app" pull` → `tubeforge.ps1 setup` (creates the master key; asks your e-mail, name and a password) → `tubeforge.ps1 start` → sign in → Settings › Two-factor sign-in › scan the QR with a phone authenticator, enter the code, save the recovery codes → press Emergency Stop (red banner on every page; open a second tab to see it appear there too) → clear it (asks your password and code) → Audit & Security Center › Verify chain → Channels › Channel Trending: switch tabs, press Replicate this, try "Updated version" (refused as too similar) and "New angle" (created).
+
+### Phase 4 — Channel onboarding, OAuth & quota ledger · report 2026-11-09 · branch `claude/vigilant-tesla-lkhgme` · awaiting the owner's manual test and approval
+
+**Plan (from IMPLEMENTATION_ROADMAP Phase 4), in four steps:**
+- **P4-A YouTube core** ✅ — `youtube/errors.py` (classification §7), `youtube/quota.py` (buckets, PT day + PKT reset time, reservations under an advisory lock, ledger, research share, forecast), migration 0004 seeding `quota_config` with the costs verified 2026-11-08, `youtube/client.py` `SafeYouTubeClient` preflight I-1…I-12 (I-4 refuses non-test uploads until Phase 9; I-12 refuses auto-publish until Phase 14) and an httpx REST client (ADR-0026). ORM models for the Phase 4 tables. 5-second private test clip (`youtube/assets/test_clip.mp4`, own artwork). `tzdata` added so time zones work on Windows.
+- **P4-B OAuth** ✅ — OAuth client registration (secret encrypted), PKCE loopback flow (`/oauth/callback` on 127.0.0.1:8765), identity confirmation via `channels.list mine=true`, token refresh → NEEDS_REAUTH, revoke + 7-day data deletion, token-health job with Testing-mode 7-day warnings. Mocked Google in tests (a fake that verifies PKCE). Added `GET /channels/{id}/oauth/identity` so the owner sees the signed-in channel before confirming; `tubeforge.notifications.notify_owners` (dedup window) shared by preflight and OAuth.
+- **P4-C Channels & test upload** ✅ — Channels API (CRUD, start-onboarding/pause/resume/disconnect/reconnect, publishing rules, private-only/mode with step-up), 10 onboarding steps, resumable private test upload job (8 MiB chunks, persisted offset, resume, idempotent) with a fault-injection test, retention jobs (cache purge, deletion tasks, 30-day re-auth check), minimal notifications + bell count. Built: `channel_lifecycle.py` (allowed moves + workflow_transitions), `youtube/uploads.py` (resumable engine, encrypted session URI, offset committed after each chunk), `youtube/retention.py`, `/uploads`, `/quota`, `/notifications`; the upload job is created in the same DB transaction as the upload record (`queue.defer_in_transaction`). Duplicate guard via the uploads playlist after an expired session is deferred to Phase 10 (a test upload fails instead).
+- **P4-D Web, site & docs** ✅ — Channel Manager + Onboarding pages on the real API, bell, `site/privacy.html` + `site/terms.html` (DP-5), owner guide for the Google Cloud project (no billing), OAuth Desktop client and test channel, e2e + CI, phase report. Then the one **manual** real OAuth + private upload on the owner PC.
+
+**Decisions so far:** ADR-0026 (httpx instead of the Google client libraries). Fix: the schema generator now keeps commas inside quoted defaults together (`min_audit_scores`).
+
+**Phase 4 report (TESTING_AND_QA §7)**
+
+1. **Modules implemented**
+   - `youtube/errors.py`: sorts Google errors into classes (§7).
+   - `youtube/quota.py`: buckets, the PT quota day with the reset time also shown in PKT, reservations under an advisory lock, a ledger row for every call, the research share, and a 7-day forecast.
+   - `youtube/client.py`: **SafeYouTubeClient** runs preflight checks I-1…I-12 before every upload, and its httpx client only talks to allowed hosts (ADR-0026).
+   - `youtube/oauth.py`: PKCE loopback sign-in, encrypted tokens, identity confirmation, refresh, NEEDS_REAUTH handling, the token health job, and disconnect with revoke.
+   - `youtube/uploads.py`: resumable upload engine and the private test upload.
+   - `youtube/retention.py`: DP-2/3/4 retention rules.
+   - `channel_lifecycle.py`: channel state machine and onboarding steps.
+   - `notifications.py`: shared helper for in-app notifications.
+   - `queue.defer_in_transaction`: creates a queue job in the same transaction as the database row.
+   - Worker jobs: `yt.upload`, plus 5 scheduled maintenance jobs.
+   - Web, now on the real API: Channel Manager, Channel Onboarding (10 steps with official help links, OAuth client form, privacy link, Connect with Google, identity confirmation, live test-upload progress), Notification Center, the bell, the channel switcher, the quota meter, and banners. The top-bar channel is shared by all channel pages.
+   - The app has its own favicon.
+   - `site/privacy.html` and `site/terms.html` meet the DP-5 checklist, published by the `pages` workflow.
+2. **Files created/modified:**
+   - Backend: `apps/api/tubeforge/{youtube/*, channel_lifecycle.py, notifications.py, api/v1/{oauth,channels,uploads,notifications}.py, queue/__init__.py, db/models}` and migration `0004_seed_quota_config`.
+   - Workers: `workers/tubeforge_workers/{tasks,maintenance}.py`.
+   - Web: `apps/web/src/{pages/channels/*, pages/NotificationsPage.tsx, lib/channel.tsx, lib/useBackend.ts, components/{TopBar,Banners,Navigation}.tsx, mocks/testApi.ts, i18n/en.json}`, e2e (`global-setup.ts` seeding, `helpers.ts`, `routes.spec.ts`, `stateful.spec.ts`).
+   - Site and CI: `site/*`, `.github/workflows/pages.yml`.
+   - Docs: ADR-0026, `docs/OWNER_GUIDE_YOUTUBE_CONNECTION.md`, YOUTUBE_API_INTEGRATION, OAUTH_SECURITY, BACKEND_SPECIFICATION, WORKFLOW_STATE_MACHINE, DEPLOYMENT_GUIDE, CLAUDE.md.
+   - Generator: `tools/gen_schema_sql.py` (quote-aware split).
+3. **Database changes:** migration 0004 seeds `quota_config` with Google's limits and costs, verified 2026-11-08. The ORM now has models for the 17 Phase 4 tables (DDL from Phase 3). There were no schema-document changes.
+4. **APIs implemented:** 30 new routes.
+   - OAuth (7): clients ×3, start, incremental, identity, confirm-identity, plus health and the public `/oauth/callback` page.
+   - Channels (13): CRUD, 5 commands, mode, private-only, publishing rules ×2, accept-auto-rules, onboarding ×2, test-upload, delete-api-data.
+   - Uploads ×2, `/quota`, and notifications ×4.
+5. **Agents created:** none (Phase 5).
+6. **Tests executed (Linux, this session):**
+   - **Python: 177 passed** (+55 contract subtests). New tests:
+     - each check I-1…I-12 on its own;
+     - 20 workers racing for the last quota units (exactly the remaining 5 win);
+     - 13 OAuth tests against a fake Google that checks PKCE, including single-use state, expired state, a forged verifier, an un-ticked permission box, and incremental consent;
+     - 14 channel and upload tests, including fault injection (connection reset mid-chunk, a 503, a worker crash and resume: every byte sent once, one upload session), refusals, guards, retention and the bell;
+     - DP-5 site content.
+   - The contract test found two real bugs, both fixed: a NUL byte in a log filter caused a 500, and on an unconnected channel the test upload stopped before its safety checks ran, so no refusal was recorded.
+   - **Web unit: 29 passed.**
+   - **Playwright, local run against the real API:**
+     - **204 passed** on desktop and mobile: 32 routes × 4 states, axe light and dark, mobile, shell.
+     - **5/5 stateful**, including the new channel-setup flow (Google's page intercepted) and the bell.
+     - 8 visual snapshots differ as expected and are re-rendered by CI.
+7. **Free-tier services used:**
+   - YouTube Data API v3 (free quota), Google OAuth, GitHub Pages and GitHub Actions (free for public repositories).
+   - New dependencies: `httpx` (BSD-3-Clause, now used at runtime) and `tzdata` (Apache-2.0). Without `tzdata`, Windows has no time zones, so this also fixes a latent Phase 3 bug.
+   - **This phase introduces no paid dependency: ✔**
+8. **Resource consumption:** same processes. Uploads run on the light worker's `youtube` queue, one per channel at a time, in 8 MiB chunks, so memory stays flat.
+9. **Known limitations:**
+   - Only **private test uploads** pass the checks. Non-test uploads are refused at I-4 until the auditors exist (Phase 9), and auto-publish is refused at I-12 until Phase 14.
+   - If an upload session expires (about a week), the test upload fails and the owner presses the button again. The duplicate guard through the uploads playlist arrives with real uploads (Phase 10).
+   - The 30-day re-authorisation check covers stored video IDs. Analytics data arrives in Phase 13.
+   - Notifications are in-app only. Telegram and e-mail delivery arrive in Phase 12.
+   - Help links: 8 of the 14 checked load and are on topic. The consent-screen page was replaced by Google's "Manage App Audience" page, which is linked from the old one. The console, `policies.google.com`, `myaccount`/`security.google.com`, `youtube.com/t/terms` and `studio.youtube.com` could not be reached from the build machine. Those are the addresses Google's own documentation cites.
+   - Visual snapshot baselines changed: the top bar now shows the real channel. CI re-renders them.
+10. **Remaining tasks for Phase 4 acceptance:**
+   - CI green, including refreshed snapshots.
+   - **The owner's one manual test** on the PC: real OAuth with the test channel and one private upload. The steps are in `docs/OWNER_GUIDE_YOUTUBE_CONNECTION.md`. The result gets recorded here.
+   - The owner fills in name, e-mail and date in `site/privacy.html` and `site/terms.html`, then turns on GitHub Pages.
+   - The owner replies "approved".
+
+**Demo script (owner, Windows):**
+1. `git -C "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app" pull`, then `tubeforge.ps1 setup` and `tubeforge.ps1 start`.
+2. Sign in, then go to **Channels › Add channel** ("My Test Channel", tick "This is my test channel").
+3. Follow the 10 steps (the guide has the clicks), then **Connect with Google**, then confirm your channel.
+4. **Run test private upload**. The progress bar fills; then **Open in YouTube Studio** shows a private 5-second video.
+5. The bell shows "Private test upload done", and the top bar's quota meter moves.
+6. Optional: Channels › Pause and Resume.
+
+**Manual real-OAuth test (owner PC):** *not yet run — to be recorded here.*
 
 ## Resource consumption
 

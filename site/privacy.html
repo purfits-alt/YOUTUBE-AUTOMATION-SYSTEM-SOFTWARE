@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TubeForge (personal) — Privacy Policy</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav><a href="index.html">TubeForge</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></nav>
+    <h1>Privacy Policy</h1>
+    <p class="muted">TubeForge (personal) · last updated <span class="fill">[DATE]</span></p>
+
+    <p>
+      TubeForge is a personal, self-hosted YouTube production assistant. This copy is installed and operated
+      by <span class="fill">[OWNER NAME]</span> (“I”, “the owner”) on my own Windows computer, for my own
+      YouTube channels only. I am the developer of this personal install for the purposes of the
+      <a href="https://developers.google.com/youtube/terms/developer-policies">YouTube API Services Developer Policies</a>.
+      There are no other users and no customers.
+    </p>
+
+    <h2>1. What YouTube and Google data TubeForge accesses</h2>
+    <p>TubeForge uses the YouTube API Services. It is authorised by me, with Google sign-in, for my own channels:</p>
+    <table>
+      <tr><th>Data</th><th>Why</th><th>Google permission</th></tr>
+      <tr><td>My channel's ID, title and handle</td><td>To confirm I connected the right channel</td><td>youtube.readonly</td></tr>
+      <tr><td>Status of videos I upload (processing, privacy, publish state)</td><td>To show upload progress and results</td><td>youtube.readonly</td></tr>
+      <tr><td>Uploading my own videos and thumbnails</td><td>The upload feature; every upload is approved by me first</td><td>youtube.upload</td></tr>
+      <tr><td>Captions, playlists, metadata updates (only if I turn these on)</td><td>Optional publishing steps</td><td>youtube.force-ssl</td></tr>
+      <tr><td>My channels' analytics (only if I turn it on)</td><td>Performance reports for my own channels</td><td>yt-analytics.readonly</td></tr>
+    </table>
+    <p>
+      TubeForge does not read other people's private data, does not scrape YouTube or Google, does not download
+      YouTube videos and does not combine data from channels I do not own.
+    </p>
+
+    <h2>2. Where the data is stored</h2>
+    <ul>
+      <li>
+        Everything is stored <strong>locally on my computer</strong> in a PostgreSQL database and data folder.
+        Nothing is sent to a TubeForge server: there is none.
+      </li>
+      <li>
+        Google sign-in tokens, the OAuth client secret and upload session links are encrypted (AES-256-GCM)
+        with a key kept in Windows Credential Manager.
+      </li>
+      <li>
+        Data from owner-initiated look-ups of public YouTube items is kept for at most 30 days. Stored data about my own channels is
+        re-authorised at least every 30 days. Data for videos that no longer exist on YouTube is deleted.
+      </li>
+    </ul>
+
+    <h2>3. Sharing</h2>
+    <p>
+      YouTube API data is not sold or shared with third parties. TubeForge may send text (never YouTube
+      audiovisual content, never sign-in tokens) to AI providers that I choose to enable, and only under their
+      own terms. AI providers enabled in this install: <span class="fill">[NONE — or list each provider with a link to its data-use terms]</span>.
+    </p>
+
+    <h2>4. Cookies and local storage</h2>
+    <p>
+      The TubeForge dashboard runs at <code>http://127.0.0.1:8765</code> on my computer. It uses one sign-in
+      cookie (<code>tf_session</code>), one anti-forgery cookie (<code>tf_csrf</code>) and browser local
+      storage for display preferences (theme, chosen channel). No tracking or advertising cookies are used.
+    </p>
+
+    <h2>5. Google's privacy policy</h2>
+    <p>
+      Use of YouTube is subject to the
+      <a href="https://policies.google.com/privacy">Google Privacy Policy</a>
+      (also at <a href="http://www.google.com/policies/privacy">www.google.com/policies/privacy</a>) and the
+      <a href="https://www.youtube.com/t/terms">YouTube Terms of Service</a>.
+    </p>
+
+    <h2>6. Revoking access and deleting data</h2>
+    <ul>
+      <li>
+        Access can be revoked at any time in the Google security settings:
+        <a href="https://security.google.com/settings/security/permissions">security.google.com/settings/security/permissions</a>.
+      </li>
+      <li>
+        In TubeForge, <strong>Channels → Disconnect</strong> revokes the token at Google, deletes it at once, and
+        deletes all stored YouTube API data of that channel within 7 days. <strong>Delete API data</strong> does
+        the deletion without disconnecting.
+      </li>
+      <li>If TubeForge sees that access was revoked, it stops using the data and deletes it within 7 days.</li>
+    </ul>
+
+    <h2>7. Contact</h2>
+    <p>Questions about this policy: <span class="fill">[CONTACT E-MAIL]</span>.</p>
+  </body>
+</html>

@@ -13,3 +13,14 @@ def test_tasks_registered_on_expected_queues() -> None:
     app = build_app("postgresql://nobody@127.0.0.1:1/none")  # no connection is opened
     assert app.tasks[task_name("mnt.ping")].queue == "maintenance"
     assert app.tasks[task_name("heavy.ping")].queue == "heavy"
+
+
+def test_token_health_runs_daily_on_maintenance() -> None:
+    app = build_app("postgresql://nobody@127.0.0.1:1/none")
+    task = app.tasks[task_name("mnt.token_health")]
+    assert task.queue == "maintenance"
+    crons = {p.task.name.split(":")[-1]: p.cron for p in app.periodic_registry.periodic_tasks.values()}
+    assert crons["mnt.token_health"] == "0 2 * * *"
+    assert crons["mnt.retention.oauth_pending_cleanup"] == "*/10 * * * *"
+    assert {"mnt.retention.deletion_deadlines", "mnt.retention.purge_api_cache"} <= crons.keys()
+    assert app.tasks[task_name("yt.upload")].queue == "youtube"
