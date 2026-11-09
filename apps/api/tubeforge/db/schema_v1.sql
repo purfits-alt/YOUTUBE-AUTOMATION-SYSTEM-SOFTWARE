@@ -559,8 +559,8 @@ CREATE TRIGGER stock_purchases_updated_at BEFORE UPDATE ON stock_purchases FOR E
 CREATE TABLE voice_profiles (
   id uuid PRIMARY KEY,
   owner_user_id uuid NOT NULL,
-  label text NOT NULL CHECK (label IN ('RECORDING_SAMPLES', 'CONSENT_PENDING', 'VERIFYING', 'READY', 'DISABLED', 'REJECTED', 'DELETED')),
-  state text NOT NULL,
+  label text NOT NULL,
+  state text NOT NULL CHECK (state IN ('RECORDING_SAMPLES', 'CONSENT_PENDING', 'VERIFYING', 'READY', 'DISABLED', 'REJECTED', 'DELETED')),
   engine text NOT NULL CHECK (engine IN ('OPENVOICE_V2','CHATTERBOX_ML')),
   sample_asset_ids uuid[] NOT NULL DEFAULT '{}',
   embedding_enc bytea NULL,
@@ -1070,8 +1070,8 @@ CREATE TABLE notifications (
 CREATE TABLE notification_deliveries (
   id uuid PRIMARY KEY,
   notification_id uuid NOT NULL,
-  channel text NOT NULL CHECK (channel IN ('CREATED', 'SUPPRESSED', 'DEFERRED', 'DIGEST_PENDING', 'QUEUED', 'SENT', 'RETRYING', 'FAILED', 'READ')),
-  state text NOT NULL,
+  channel text NOT NULL,
+  state text NOT NULL CHECK (state IN ('CREATED', 'SUPPRESSED', 'DEFERRED', 'DIGEST_PENDING', 'QUEUED', 'SENT', 'RETRYING', 'FAILED', 'READ')),
   attempts int NOT NULL DEFAULT 0,
   next_attempt_at timestamptz NULL,
   provider_message_id text NULL,

@@ -78,3 +78,14 @@ def test_commas_inside_string_defaults_are_kept_together() -> None:
         """min_audit_scores jsonb NOT NULL DEFAULT '{"content":70,"policy":80,"quality":75,"thumbnail":70}'"""
         in sql
     )
+
+
+def test_enum_comment_applies_to_the_last_text_column_on_the_line() -> None:
+    from tools.gen_schema_sql import enum_column
+
+    assert enum_column("  label text NOT NULL, state text NOT NULL,  -- enum voice_profile_state") == (
+        "state",
+        "voice_profile_state",
+    )
+    assert enum_column("  state text NOT NULL,  -- enum idea_state") == ("state", "idea_state")
+    assert enum_column("  id uuid PRIMARY KEY,") is None

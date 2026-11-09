@@ -42,6 +42,41 @@ def test_migrations_up_down_up(migrated: str) -> None:
     assert table_exists(migrated, "procrastinate_jobs")
 
 
+def _state_checks(dsn: str) -> set[str]:
+    engine = create_engine(dsn)
+    with engine.connect() as conn:
+        names = set(
+            conn.execute(
+                text(
+                    "SELECT conname FROM pg_constraint WHERE conrelid IN "
+                    "('voice_profiles'::regclass, 'notification_deliveries'::regclass) AND contype = 'c'"
+                )
+            ).scalars()
+        )
+    engine.dispose()
+    return names
+
+
+def test_migration_0005_moves_enum_checks_to_state(migrated: str) -> None:
+    """Databases built before the generator fix had the checks on label/channel; 0005 repairs them."""
+    right = {"voice_profiles_state_check", "notification_deliveries_state_check"}
+    assert right <= _state_checks(migrated)
+    engine = create_engine(migrated)
+    with engine.begin() as conn:  # recreate the old, wrong placement
+        for table, col in (("voice_profiles", "label"), ("notification_deliveries", "channel")):
+            conn.execute(text(f"ALTER TABLE {table} DROP CONSTRAINT {table}_state_check"))
+            conn.execute(
+                text(f"ALTER TABLE {table} ADD CONSTRAINT {table}_{col}_check CHECK ({col} IN ('X'))")
+            )
+    engine.dispose()
+    cfg = alembic_config()
+    command.downgrade(cfg, "0004")
+    command.upgrade(cfg, "head")
+    names = _state_checks(migrated)
+    assert right <= names
+    assert not names & {"voice_profiles_label_check", "notification_deliveries_channel_check"}
+
+
 def test_readyz_ok_with_real_database(
     migrated: str, settings: Settings, monkeypatch: pytest.MonkeyPatch
 ) -> None:

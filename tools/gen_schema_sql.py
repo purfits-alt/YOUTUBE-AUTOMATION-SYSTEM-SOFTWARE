@@ -41,7 +41,18 @@ SHORTHAND = {
 # unique expression index, so the two plain key columns must stay NOT NULL explicitly.
 NOT_NULL_FROM_PK = {"user_roles": {"user_id", "role_id"}}
 REF_RE = re.compile(r"\s+REFERENCES\s+(\w+)(?:\s*\((\w+)\))?")
-ENUM_COMMENT_RE = re.compile(r"^\s*(\w+)\s+text\b.*?--\s*enum\s+(\w+)", re.IGNORECASE)
+ENUM_COMMENT_RE = re.compile(r"^(.*?)--\s*enum\s+(\w+)", re.IGNORECASE)
+TEXT_COLUMN_RE = re.compile(r"(\w+)\s+text\b", re.IGNORECASE)
+
+
+def enum_column(line: str) -> tuple[str, str] | None:
+    """``-- enum X`` names the enum of the *last* text column before the comment on that line
+    (a line can declare several, e.g. ``label text NOT NULL, state text NOT NULL, -- enum …``)."""
+    m = ENUM_COMMENT_RE.match(line)
+    if not m:
+        return None
+    columns = TEXT_COLUMN_RE.findall(m.group(1))
+    return (columns[-1], m.group(2)) if columns else None
 
 
 @dataclass
@@ -92,9 +103,7 @@ def parse(markdown: str, enums: dict[str, list[str]]) -> Schema:
         for stmt in re.finditer(r"CREATE TABLE (\w+)\s*\((.*?)\);[^\n]*", block, re.DOTALL):
             name, raw_body = stmt.group(1), stmt.group(2)
             # Per table: two tables in one block can both have a "state" column with different enums.
-            enum_cols = {
-                m.group(1): m.group(2) for line in raw_body.splitlines() if (m := ENUM_COMMENT_RE.match(line))
-            }
+            enum_cols = dict(found for line in raw_body.splitlines() if (found := enum_column(line)))
             header_line = block[block.rfind("\n", 0, stmt.start()) + 1 : block.find("\n", stmt.start())]
             table = Table(name=name, append_only="(AO)" in header_line)
             for item in split_top_level(strip_comments(raw_body)):

@@ -2,8 +2,8 @@
 
 > Living document. Updated at every checkpoint and at the end of every phase.
 
-**Current phase:** Phase 4 — Channel onboarding, OAuth & quota ledger
-**Current step:** Phase 4 built (P4-A…D) — report below. Waiting for the owner's manual test (real OAuth + private upload) and "approved". Phase 3 merged to `main` (PR #7).
+**Current phase:** Phase 5 — Orchestrator & agent infrastructure
+**Current step:** P5-A (orchestrator: state machines as code, guards, approvals, reconciler, Emergency Stop in every layer). Phase 4 merged to `main` (PR #8); the owner's manual real-OAuth test is still open.
 **Last updated:** 2026-11-08
 
 ---
@@ -263,7 +263,7 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 
 **Demo script (owner, Windows):** `git -C "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app" pull` → `tubeforge.ps1 setup` (creates the master key; asks your e-mail, name and a password) → `tubeforge.ps1 start` → sign in → Settings › Two-factor sign-in › scan the QR with a phone authenticator, enter the code, save the recovery codes → press Emergency Stop (red banner on every page; open a second tab to see it appear there too) → clear it (asks your password and code) → Audit & Security Center › Verify chain → Channels › Channel Trending: switch tabs, press Replicate this, try "Updated version" (refused as too similar) and "New angle" (created).
 
-### Phase 4 — Channel onboarding, OAuth & quota ledger · report 2026-11-09 · branch `claude/vigilant-tesla-lkhgme` · awaiting the owner's manual test and approval
+### Phase 4 — Channel onboarding, OAuth & quota ledger · report 2026-11-09 · branch `claude/vigilant-tesla-lkhgme` · merged to `main` (PR #8) by the owner 2026-11-09 ("merged, go ahead with phase 5") · manual real-OAuth test still open
 
 **Plan (from IMPLEMENTATION_ROADMAP Phase 4), in four steps:**
 - **P4-A YouTube core** ✅ — `youtube/errors.py` (classification §7), `youtube/quota.py` (buckets, PT day + PKT reset time, reservations under an advisory lock, ledger, research share, forecast), migration 0004 seeding `quota_config` with the costs verified 2026-11-08, `youtube/client.py` `SafeYouTubeClient` preflight I-1…I-12 (I-4 refuses non-test uploads until Phase 9; I-12 refuses auto-publish until Phase 14) and an httpx REST client (ADR-0026). ORM models for the Phase 4 tables. 5-second private test clip (`youtube/assets/test_clip.mp4`, own artwork). `tzdata` added so time zones work on Windows.
@@ -342,6 +342,30 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 6. Optional: Channels › Pause and Resume.
 
 **Manual real-OAuth test (owner PC):** *not yet run — to be recorded here.*
+
+### Phase 5 — Orchestrator & agent infrastructure · in progress · branch `claude/vigilant-tesla-lkhgme`
+
+**Plan (from IMPLEMENTATION_ROADMAP Phase 5), in four steps:**
+- **P5-A Orchestrator**
+  - The 10 state machines of WORKFLOW_STATE_MACHINE as code tables: Channel, Idea, Video Project (with external editing), Render, Upload, Notification delivery, Approval, Voice Profile, Stock Purchase.
+  - One transition engine: row lock, Emergency Stop rule, actor rules, mode gates [S]/[F], guard registry, `workflow_transitions` + audit in the same transaction, idempotent replay.
+  - Approval requests bound to a subject hash: decide, invalidate, expire.
+  - Reconciler: every 2 minutes, re-enqueue lost jobs exactly once.
+  - Emergency Stop and kill switches also checked inside running jobs (the upload stops at a chunk boundary).
+  - Table-driven tests: every allowed transition, each guard violated on its own, every illegal pair, Emergency Stop, idempotency. Property tests. A reconciler crash test.
+- **P5-B AI Provider Gateway**
+  - Registry seeded from FREE_TIER_PROVIDER_MATRIX; encrypted credentials.
+  - Atomic usage reservation and settlement against limits.
+  - Cache; JSON-schema validation with one repair attempt; fallback chains; local-only, data-use and licence rules.
+  - Adapters for Gemini (free tier), Groq (free plan) and Ollama (local), all over httpx and tested against fakes.
+- **P5-C Agent framework and cost safety**
+  - AgentTask base, schemas, versioned prompt files, `agent_runs` with redacted input and output, metrics, and a "hello" test agent.
+  - Paid (Tier P) two-step activation with a 60-second gap, budgets, and the A32 paid-indicator detector.
+- **P5-D Web and report**
+  - Agent Control Center and Cost & Usage Manager on the real API, where the owner enters the real Gemini/Groq free limits.
+  - e2e tests, docs, phase report.
+
+**Fix found while starting:** the schema generator put an enum check on the first text column of a line that declares two. `voice_profiles.label` and `notification_deliveries.channel` got the state checks. The generator is fixed, and migration 0005 repairs existing databases.
 
 ## Resource consumption
 
