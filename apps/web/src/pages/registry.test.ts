@@ -29,13 +29,21 @@ describe("page registry", () => {
 
   it("uses only endpoints declared in the real contract or the stub", () => {
     for (const p of PAGES) {
-      if (p.real) expect(Object.keys(real.paths)).toContain("/api/v1" + p.api);
+      // Compare shapes: the real contract names parameters (`{channel_id}`), the registry uses `{id}`.
+      const shape = (path: string) => path.replace(/\{[^}]+\}/g, "{}");
+      if (p.real) expect(Object.keys(real.paths).map(shape)).toContain(shape("/api/v1" + p.api));
       else expect(Object.keys(stub.paths)).toContain(p.api);
     }
   });
 
-  it("marks Security and Settings as real (Phase 3)", () => {
-    expect(PAGES.filter((p) => p.real).map((p) => p.id)).toEqual(["security", "settings"]);
+  it("marks the pages backed by the real API (Phase 3: Security, Settings; Phase 4: channels, bell)", () => {
+    expect(PAGES.filter((p) => p.real).map((p) => p.id)).toEqual([
+      "channels",
+      "onboarding",
+      "notifications",
+      "security",
+      "settings",
+    ]);
   });
 
   it("builds concrete links without route parameters", () => {

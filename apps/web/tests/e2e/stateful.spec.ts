@@ -51,6 +51,63 @@ test("Audit & Security Center lists the actions and verifies the chain", async (
   await expect(page.getByTestId("chain-result")).toContainText("rows intact");
 });
 
+test("channel setup: add a channel, follow the steps, save the OAuth client, Connect with Google", async ({
+  page,
+}) => {
+  // 400 = the forged callback below (expected).
+  const problems = watchConsole(page, [400]);
+  await page.goto("/channels");
+  await expect(page.getByTestId("state-success")).toBeVisible();
+  await page.getByRole("button", { name: "Add channel" }).click();
+  const dialog = page.getByTestId("add-channel-dialog");
+  await dialog.getByLabel(/Channel name/).fill("E2E Lab");
+  await dialog.getByRole("button", { name: "Create and start setup" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Channel Onboarding" })).toBeVisible();
+  await page.getByRole("button", { name: "Start setup" }).click();
+  await expect(page.getByTestId(/^step-/)).toHaveCount(10);
+  await expect(page.getByText("0 of 10 steps done")).toBeVisible();
+
+  const phone = page.getByTestId("step-VERIFY_PHONE");
+  await phone.getByRole("button", { name: "Mark step done" }).click();
+  await expect(phone.getByRole("button", { name: "Undo" })).toBeVisible();
+
+  const form = page.getByTestId("oauth-client-form");
+  await form.getByLabel("Client ID").fill("123456789-e2etest.apps.googleusercontent.com");
+  await form.getByLabel(/Client secret/).fill("e2e-not-a-real-secret");
+  await form.getByRole("button", { name: "Save OAuth client" }).click();
+  await expect(page.getByTestId("oauth-client-registered")).toBeVisible();
+
+  // Google's consent page is not contacted: answer it here and check what TubeForge asked for.
+  await page.route("https://accounts.google.com/**", (route) =>
+    route.fulfill({ status: 200, contentType: "text/html", body: "<title>Google</title><h1>consent</h1>" }),
+  );
+  await page.getByTestId("connect-google").click();
+  await page.waitForURL(/accounts\.google\.com/);
+  const url = new URL(page.url());
+  expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+  expect(url.searchParams.get("redirect_uri")).toBe("http://127.0.0.1:8765/oauth/callback");
+  expect(url.searchParams.get("scope")?.split(" ").sort()).toEqual([
+    "https://www.googleapis.com/auth/youtube.readonly",
+    "https://www.googleapis.com/auth/youtube.upload",
+  ]);
+  expect(url.searchParams.get("state")).toHaveLength(43);
+
+  // A forged redirect (unknown state) is refused and nothing is connected.
+  await page.goto(`/oauth/callback?state=${"x".repeat(43)}&code=forged`);
+  await expect(page.getByRole("heading", { name: "Not connected" })).toBeVisible();
+  expect(problems).toEqual([]);
+});
+
+test("the bell shows real notifications and clears when read", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("bell-count")).toBeVisible();
+  await page.getByTestId("notification-bell").click();
+  await expect(page.getByRole("heading", { level: 1, name: "Notification Center" })).toBeVisible();
+  await expect(page.getByTestId("notification").first()).toContainText("Upload stopped by a safety check");
+  await page.getByRole("button", { name: "Mark all read" }).click();
+  await expect(page.getByTestId("bell-count")).toHaveCount(0);
+});
+
 test.describe("signed out", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 

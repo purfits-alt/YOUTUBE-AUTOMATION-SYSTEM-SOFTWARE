@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { t } from "../i18n";
-import { useControls, useShell } from "../lib/useBackend";
+import { useSelectedChannel } from "../lib/channel";
+import { useChannels, useControls } from "../lib/useBackend";
 
 function Banner({
   tone,
@@ -34,22 +35,22 @@ function Banner({
 }
 
 /** Global banners (FRONTEND_SPECIFICATION §0.1). Emergency Stop and Private-only are not dismissible. */
-export function Banners({ channelId }: { channelId: string }) {
-  const shell = useShell();
+export function Banners() {
+  const { channelId } = useSelectedChannel();
+  const channels = useChannels();
   const controls = useControls();
   const [dismissedToken, setDismissedToken] = useState(false);
   if (controls.isError) return <Banner tone="danger">{t("banners.offline")}</Banner>;
-  const data = shell.data;
-  const channel = data?.channels.find((c) => c.id === channelId) ?? data?.channels[0];
+  const channel = channels.data?.items.find((c) => c.id === channelId);
   const estop = controls.data?.emergency_stop;
   return (
     <div data-testid="banners">
       {estop?.active && <Banner tone="danger">{t("banners.estop", { reason: estop.reason ?? "—" })}</Banner>}
       {controls.data?.publishing_kill_switch && <Banner tone="danger">{t("banners.killSwitch")}</Banner>}
-      {channel?.private_only && (
+      {channel?.private_only_mode && (
         <Banner tone="info">{t("banners.privateOnly", { channel: channel.name })}</Banner>
       )}
-      {channel?.token_expiring && !dismissedToken && (
+      {channel?.oauth_expiring_soon && !dismissedToken && (
         <Banner tone="warn" onDismiss={() => setDismissedToken(true)}>
           {t("banners.tokenExpiring", { channel: channel.name })}
         </Banner>

@@ -987,6 +987,8 @@ export interface components {
             local_only: boolean;
             /** Name */
             name: string;
+            /** Oauth Expiring Soon */
+            oauth_expiring_soon: boolean;
             /** Oauth Status */
             oauth_status: string;
             /**

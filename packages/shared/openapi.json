@@ -310,6 +310,10 @@
             "title": "Name",
             "type": "string"
           },
+          "oauth_expiring_soon": {
+            "title": "Oauth Expiring Soon",
+            "type": "boolean"
+          },
           "oauth_status": {
             "title": "Oauth Status",
             "type": "string"
@@ -406,6 +410,7 @@
           "successful_private_test_uploads",
           "privacy_policy_url",
           "oauth_status",
+          "oauth_expiring_soon",
           "version",
           "created_at",
           "updated_at"

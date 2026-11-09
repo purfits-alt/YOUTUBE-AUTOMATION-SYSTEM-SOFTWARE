@@ -123,6 +123,7 @@ class ChannelOut(BaseModel):
     successful_private_test_uploads: int
     privacy_policy_url: str | None
     oauth_status: str
+    oauth_expiring_soon: bool
     version: int
     created_at: datetime
     updated_at: datetime
@@ -204,6 +205,7 @@ def _box(request: Request) -> SecretBox:
 
 
 def channel_out(db: Session, ch: Channel) -> ChannelOut:
+    health = oauth.health(db, ch.id)
     return ChannelOut(
         id=ch.id,
         name=ch.name,
@@ -219,7 +221,8 @@ def channel_out(db: Session, ch: Channel) -> ChannelOut:
         local_only=ch.local_only,
         successful_private_test_uploads=ch.successful_private_test_uploads,
         privacy_policy_url=ch.privacy_policy_url,
-        oauth_status=oauth.health(db, ch.id).status,
+        oauth_status=health.status,
+        oauth_expiring_soon=health.expiring_soon,
         version=ch.version,
         created_at=ch.created_at,
         updated_at=ch.updated_at,

@@ -73,78 +73,6 @@
         }
       }
     },
-    "/channels": {
-      "get": {
-        "operationId": "get_channels",
-        "tags": [
-          "channels"
-        ],
-        "summary": "Page 3 data (channels)",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageData"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error (RFC 9457 problem+json)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/channels/{id}/onboarding": {
-      "get": {
-        "operationId": "get_onboarding",
-        "tags": [
-          "channels"
-        ],
-        "summary": "Page 4 data (onboarding)",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageData"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error (RFC 9457 problem+json)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ]
-      }
-    },
     "/niches/candidates/{id}": {
       "get": {
         "operationId": "get_niche",
@@ -923,37 +851,6 @@
           "control"
         ],
         "summary": "Page 26 data (usage)",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageData"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error (RFC 9457 problem+json)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/notifications": {
-      "get": {
-        "operationId": "get_notifications",
-        "tags": [
-          "control"
-        ],
-        "summary": "Page 27 data (notifications)",
         "responses": {
           "200": {
             "description": "OK",

@@ -11,6 +11,15 @@ export type SettingsIn = Schemas["SettingsIn"];
 export type AuditLogEntry = Schemas["AuditLogOut"];
 export type SecurityEventEntry = Schemas["SecurityEventOut"];
 export type SessionInfo = Schemas["SessionOut"];
+export type ChannelOut = Schemas["ChannelOut"];
+export type StepOut = Schemas["StepOut"];
+export type UploadJobOut = Schemas["UploadJobOut"];
+export type OAuthClientOut = Schemas["OAuthClientOut"];
+export type HealthOut = Schemas["HealthOut"];
+export type IdentityOut = Schemas["IdentityOut"];
+export type NotificationOut = Schemas["NotificationOut"];
+export type NotificationSummary = Schemas["SummaryOut"];
+export type ProjectQuota = Schemas["ProjectQuotaOut"];
 
 /** Still-mocked endpoints (MSW until their phase), from packages/shared/openapi.stub.json. */
 export type StubSchemas = stubComponents["schemas"];

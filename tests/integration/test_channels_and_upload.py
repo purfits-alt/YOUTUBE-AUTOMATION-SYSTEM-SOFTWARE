@@ -334,9 +334,14 @@ def test_changed_file_is_refused(world: World, tmp_path: Path) -> None:
 
 
 def test_test_upload_safety_checks(world: World) -> None:
+    world.env.sql("DELETE FROM oauth_clients")  # even with no OAuth client the safety checks run and record
     cid = world.new_channel()
     r = world.post(f"/api/v1/channels/{cid}/test-upload")
     assert r.status_code == 409 and r.json()["code"] == "REFUSED_CHANNEL_STATE"
+    assert world.client.get("/api/v1/notifications/summary").json()["unread"] == 1
+    world.post(
+        "/api/v1/oauth/clients", {"label": "Desktop", "client_id": CLIENT_ID, "client_secret": "s3cret-value"}
+    )
     world.connect(cid)
     world.env.sql("UPDATE system_settings SET emergency_stop = true")
     r = world.post(f"/api/v1/channels/{cid}/test-upload")

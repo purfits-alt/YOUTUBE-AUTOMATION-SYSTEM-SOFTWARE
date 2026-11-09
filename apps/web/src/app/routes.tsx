@@ -1,5 +1,8 @@
 import type { RouteObject } from "react-router";
+import { ChannelsPage } from "../pages/channels/ChannelsPage";
+import { OnboardingPage } from "../pages/channels/OnboardingPage";
 import { NotFound } from "../pages/NotFound";
+import { NotificationsPage } from "../pages/NotificationsPage";
 import { OverviewPage } from "../pages/OverviewPage";
 import { PageView } from "../pages/PageView";
 import { PAGES } from "../pages/registry";
@@ -9,8 +12,12 @@ import { SettingsPage } from "../pages/SettingsPage";
 import { AuthGate } from "./AuthGate";
 import { Layout } from "./Layout";
 
-/** Pages with their own component: Security and Settings (real API since Phase 3) and Channel Trending (US-4.6). */
+/** Pages with their own component: real API pages (Phase 3: Security, Settings; Phase 4: Channels,
+ * Onboarding, Notifications) and Channel Trending (US-4.6). */
 const REAL_PAGES: Record<string, () => React.JSX.Element> = {
+  channels: () => <ChannelsPage />,
+  onboarding: () => <OnboardingPage />,
+  notifications: () => <NotificationsPage />,
   security: () => <SecurityPage />,
   trending: () => <ChannelTrendingPage />,
   settings: () => <SettingsPage />,

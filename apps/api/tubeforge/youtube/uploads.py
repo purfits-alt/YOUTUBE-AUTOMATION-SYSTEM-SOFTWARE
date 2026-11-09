@@ -40,7 +40,7 @@ from tubeforge.db.models import (
 )
 from tubeforge.notifications import notify_owners
 from tubeforge.secrets import SecretBox, aad
-from tubeforge.youtube import oauth
+from tubeforge.youtube import oauth, quota
 from tubeforge.youtube.client import UPLOAD_BASE, CallContext, SafeYouTubeClient, UploadIntent, preflight
 from tubeforge.youtube.errors import ErrorClass, YouTubeApiError
 
@@ -138,6 +138,14 @@ TEST_CHOICES: dict[str, Any] = {
 }
 
 
+def _gcp_project(db: Session, channel: Channel) -> str:
+    """Quota project for this channel; without a client the safety checks refuse anyway (I-3)."""
+    try:
+        return oauth.gcp_project(oauth.client_for(db, channel.id))
+    except oauth.OAuthFlowError:
+        return quota.DEFAULT_PROJECT
+
+
 def create_test_upload(
     db: Session, *, channel: Channel, owner: Actor, owner_id: uuid.UUID, now: datetime | None = None
 ) -> UploadJob:
@@ -220,7 +228,7 @@ def create_test_upload(
             is_test=True,
             job_id=str(job_id),
         ),
-        gcp_project=oauth.gcp_project(oauth.client_for(db, channel.id)),
+        gcp_project=_gcp_project(db, channel),
         now=now,
         actor=owner,
     )

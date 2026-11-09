@@ -30,6 +30,7 @@ export const PAGES: readonly PageDef[] = [
     path: "/channels",
     group: "channels",
     api: "/channels",
+    real: true,
     columns: ["name", "language", "state", "mode", "privateOnly", "tokenStatus", "inProgress", "lastUpload"],
     actions: ["addChannel", "pauseResume", "changeMode", "killSwitch"],
     safety: false,
@@ -41,6 +42,7 @@ export const PAGES: readonly PageDef[] = [
     path: "/channels/:id/onboarding",
     group: "channels",
     api: "/channels/{id}/onboarding",
+    real: true,
     columns: ["step", "title", "status"],
     actions: ["markDone", "connectGoogle", "runTestUpload", "finish"],
     safety: false,
@@ -294,6 +296,7 @@ export const PAGES: readonly PageDef[] = [
     path: "/notifications",
     group: "control",
     api: "/notifications",
+    real: true,
     columns: ["notification", "severity", "received", "read"],
     actions: ["markRead", "markAllRead", "sendTest"],
     safety: false,
@@ -372,10 +375,10 @@ export const GROUP_ORDER: readonly GroupKey[] = [
 /** Sample IDs used by navigation until real data exists (Phase 3+). */
 export const SAMPLE_IDS = { project: "p-101", channel: "ch-1", candidate: "nc-1", strategy: "st-1" } as const;
 
-/** Concrete URL for a page, filling route parameters with the sample IDs. */
-export function pageHref(page: PageDef): string {
+/** Concrete URL for a page, filling route parameters with the sample IDs (or the selected channel). */
+export function pageHref(page: PageDef, channelId?: string): string {
   if (page.path.startsWith("/projects/")) return page.path.replace(":id", SAMPLE_IDS.project);
-  if (page.path.startsWith("/channels/")) return page.path.replace(":id", SAMPLE_IDS.channel);
+  if (page.path.startsWith("/channels/")) return page.path.replace(":id", channelId ?? SAMPLE_IDS.channel);
   if (page.path.startsWith("/strategies/")) return page.path.replace(":id", SAMPLE_IDS.strategy);
   return page.path.replace(":candidateId", SAMPLE_IDS.candidate);
 }

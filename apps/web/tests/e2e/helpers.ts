@@ -1,4 +1,6 @@
+import { readFileSync } from "node:fs";
 import { expect, type Page } from "@playwright/test";
+import { SEED_FILE } from "./global-setup";
 import en from "../../src/i18n/en.json" with { type: "json" };
 import { PAGES, pageHref } from "../../src/pages/registry";
 import type { PageDef } from "../../src/pages/types";
@@ -7,6 +9,19 @@ export { en, PAGES, pageHref };
 export type { PageDef };
 
 export const STATES = ["success", "empty", "loading", "error"] as const;
+
+/** IDs of the real data created by global-setup. */
+export function seed(): { channelId: string } {
+  return JSON.parse(readFileSync(SEED_FILE, "utf-8")) as { channelId: string };
+}
+
+/** Pages with no empty state (FRONTEND_SPECIFICATION: "Empty state: N/A" / steps always exist). */
+export const NO_EMPTY_STATE = new Set(["settings", "onboarding"]);
+
+/** URL of a page: real channel pages open the seeded channel, mock pages keep the sample IDs. */
+export function hrefFor(def: PageDef): string {
+  return def.real ? pageHref(def, seed().channelId) : pageHref(def);
+}
 export type State = (typeof STATES)[number];
 
 const HTTP_LOG = /Failed to load resource: the server responded with a status of (\d+)/;
@@ -48,8 +63,8 @@ async function interceptRealPage(page: Page, def: PageDef, state: State): Promis
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(SHELL_STUB) }),
   );
   if (state === "success") return;
-  if (def.id === "settings" && state === "empty") return; // no empty state for Settings (spec: N/A)
-  const path = `/api/v1${def.api}`;
+  if (NO_EMPTY_STATE.has(def.id) && state === "empty") return;
+  const path = `/api/v1${def.api.replace("{id}", seed().channelId)}`;
   await page.route(
     (url) => url.pathname === path,
     async (route) => {
@@ -78,6 +93,6 @@ async function interceptRealPage(page: Page, def: PageDef, state: State): Promis
 
 export async function openPage(page: Page, def: PageDef, state: State = "success"): Promise<void> {
   await interceptRealPage(page, def, state);
-  await page.goto(`${pageHref(def)}?scenario=${state}`);
+  await page.goto(`${hrefFor(def)}?scenario=${state}`);
   await expect(page.getByRole("heading", { level: 1, name: en.pages[def.id].title })).toBeVisible();
 }

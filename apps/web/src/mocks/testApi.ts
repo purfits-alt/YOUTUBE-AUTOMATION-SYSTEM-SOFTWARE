@@ -4,7 +4,17 @@
  * Contract tests (Python + Playwright e2e) cover the real implementation.
  */
 import { http, HttpResponse, type HttpHandler } from "msw";
-import type { Controls, Me, Problem, SettingsOut } from "../lib/api/client";
+import type {
+  ChannelOut,
+  Controls,
+  Me,
+  NotificationOut,
+  OAuthClientOut,
+  Problem,
+  SettingsOut,
+  StepOut,
+  UploadJobOut,
+} from "../lib/api/client";
 
 const OWNER: Me = {
   user: {
@@ -28,6 +38,12 @@ const OWNER: Me = {
 };
 
 interface State {
+  channels: ChannelOut[];
+  steps: StepOut[];
+  clients: OAuthClientOut[];
+  notifications: NotificationOut[];
+  upload: UploadJobOut | null;
+  uploadPolls: number;
   signedIn: boolean;
   controls: Controls;
   reauthUntil: number;
@@ -38,8 +54,70 @@ export function testSettings(): SettingsOut {
   return initial().settings;
 }
 
+const STEP_CODES: StepOut["step_code"][] = [
+  "CREATE_GOOGLE_ACCOUNT",
+  "CREATE_CHANNEL",
+  "VERIFY_PHONE",
+  "CREATE_GCP_PROJECT",
+  "ENABLE_APIS",
+  "CONSENT_SCREEN",
+  "OAUTH_CLIENT",
+  "PRIVACY_POLICY",
+  "CONNECT",
+  "TEST_UPLOAD",
+];
+
+export function testChannel(overrides: Partial<ChannelOut> = {}): ChannelOut {
+  return {
+    id: "ch-1",
+    name: "Calm Science",
+    state: "CONNECTED",
+    youtube_channel_id: "UC" + "a".repeat(22),
+    youtube_handle: "@calmscience",
+    content_language: "en",
+    audience_timezone: "UTC",
+    operating_mode: "MANUAL",
+    private_only_mode: true,
+    is_test_channel: true,
+    is_monetised: false,
+    local_only: false,
+    successful_private_test_uploads: 0,
+    privacy_policy_url: null,
+    oauth_status: "ACTIVE",
+    oauth_expiring_soon: false,
+    version: 1,
+    created_at: "2026-11-08T00:00:00Z",
+    updated_at: "2026-11-08T00:00:00Z",
+    ...overrides,
+  };
+}
+
 function initial(): State {
   return {
+    channels: [testChannel()],
+    steps: STEP_CODES.map((code) => ({
+      step_code: code,
+      status: code === "CONNECT" ? "DONE" : "TODO",
+      completed_at: null,
+      notes: null,
+      system: code === "CONNECT" || code === "TEST_UPLOAD",
+    })),
+    clients: [],
+    notifications: [
+      {
+        id: "n-1",
+        channel_id: "ch-1",
+        event_type: "oauth.expiring",
+        severity: "CRITICAL",
+        title: "YouTube needs you to sign in again",
+        body: "Calm Science: access to YouTube stopped working.",
+        link: "/channels/ch-1/onboarding",
+        created_at: "2026-11-08T09:00:00Z",
+        read_at: null,
+      },
+    ],
+    upload: null,
+    uploadPolls: 0,
     signedIn: true,
     controls: {
       emergency_stop: { active: false, reason: null, since: null, by: null },
@@ -159,4 +237,138 @@ export const testApiHandlers: HttpHandler[] = [
     HttpResponse.json({ ok: true, checked: 2, first_broken_id: null }),
   ),
   http.get("/api/v1/security-events", () => HttpResponse.json({ items: [], next_cursor: null })),
+  http.get("/api/v1/channels", () => HttpResponse.json({ items: state.channels, next_cursor: null })),
+  http.post("/api/v1/channels", async ({ request }) => {
+    const body = (await request.json()) as { name: string; content_language: string };
+    const ch = testChannel({
+      id: `ch-${String(state.channels.length + 1)}`,
+      name: body.name,
+      content_language: body.content_language,
+      state: "APPROVED",
+      oauth_status: "NOT_CONNECTED",
+      youtube_handle: null,
+    });
+    state.channels = [...state.channels, ch];
+    return HttpResponse.json(ch, { status: 201 });
+  }),
+  http.get("/api/v1/channels/:id", ({ params }) => {
+    const ch = state.channels.find((c) => c.id === params.id);
+    return ch ? HttpResponse.json(ch) : problem(404, "NOT_FOUND", "Not found", "No such channel.");
+  }),
+  http.post("/api/v1/channels/:id/commands/:cmd", ({ params }) => {
+    const ch = state.channels.find((c) => c.id === params.id);
+    if (!ch) return problem(404, "NOT_FOUND", "Not found", "No such channel.");
+    ch.state = params.cmd === "pause" ? "PAUSED" : params.cmd === "resume" ? "CONNECTED" : "ONBOARDING";
+    return HttpResponse.json(ch);
+  }),
+  http.get("/api/v1/channels/:id/onboarding", () => HttpResponse.json(state.steps)),
+  http.patch("/api/v1/channels/:id/onboarding/:code", async ({ params, request }) => {
+    const body = (await request.json()) as { status: StepOut["status"] };
+    const step = state.steps.find((s) => s.step_code === params.code);
+    if (!step) return problem(404, "NOT_FOUND", "Not found", "No such step.");
+    step.status = body.status;
+    return HttpResponse.json(step);
+  }),
+  http.get("/api/v1/channels/:id/oauth/health", () =>
+    HttpResponse.json({
+      status: "ACTIVE",
+      scopes: ["youtube.readonly", "youtube.upload"],
+      expires_hint: "2026-11-15T00:00:00Z",
+      expiring_soon: false,
+      last_refresh_at: null,
+      last_error: null,
+      publishing_status: "TESTING",
+    }),
+  ),
+  http.get("/api/v1/channels/:id/oauth/identity", () =>
+    HttpResponse.json({
+      youtube_channel_id: "UC" + "a".repeat(22),
+      title: "Calm Science",
+      handle: "@calmscience",
+    }),
+  ),
+  http.get("/api/v1/oauth/clients", () => HttpResponse.json(state.clients)),
+  http.post("/api/v1/oauth/clients", async ({ request }) => {
+    const body = (await request.json()) as { label: string; client_id: string };
+    const row: OAuthClientOut = {
+      id: "oc-1",
+      label: body.label,
+      client_id: body.client_id,
+      has_secret: true,
+      gcp_project_id: null,
+      publishing_status: "TESTING",
+      created_at: "2026-11-08T00:00:00Z",
+    };
+    state.clients = [row];
+    const step = state.steps.find((s) => s.step_code === "OAUTH_CLIENT");
+    if (step) step.status = "DONE";
+    return HttpResponse.json(row, { status: 201 });
+  }),
+  http.post("/api/v1/channels/:id/test-upload", ({ params }) => {
+    state.uploadPolls = 0;
+    state.upload = {
+      id: "up-1",
+      channel_id: String(params.id),
+      project_id: "p-1",
+      state: "PREFLIGHT",
+      privacy_status: "private",
+      made_for_kids: false,
+      contains_synthetic_media: false,
+      is_test: true,
+      bytes_total: 11861,
+      bytes_confirmed: 0,
+      youtube_video_id: null,
+      error_class: null,
+      error_detail: null,
+      created_at: "2026-11-08T00:00:00Z",
+      updated_at: "2026-11-08T00:00:00Z",
+    };
+    return HttpResponse.json(state.upload, { status: 202 });
+  }),
+  http.get("/api/v1/uploads/:id", () => {
+    if (!state.upload) return problem(404, "NOT_FOUND", "Not found", "No such upload.");
+    state.uploadPolls += 1; // the second poll finds it finished
+    if (state.uploadPolls >= 2)
+      state.upload = {
+        ...state.upload,
+        state: "COMPLETED",
+        bytes_confirmed: 11861,
+        youtube_video_id: "vid-1",
+      };
+    return HttpResponse.json(state.upload);
+  }),
+  http.get("/api/v1/notifications/summary", () => {
+    const unread = state.notifications.filter((n) => !n.read_at);
+    return HttpResponse.json({
+      unread: unread.length,
+      critical_unread: unread.filter((n) => n.severity === "CRITICAL").length,
+    });
+  }),
+  http.get("/api/v1/notifications", () =>
+    HttpResponse.json({ items: state.notifications, next_cursor: null }),
+  ),
+  http.post("/api/v1/notifications/read-all", () => {
+    state.notifications = state.notifications.map((n) => ({ ...n, read_at: "2026-11-08T10:00:00Z" }));
+    return new HttpResponse(null, { status: 204 });
+  }),
+  http.get("/api/v1/quota", () =>
+    HttpResponse.json([
+      {
+        gcp_project: "default",
+        buckets: [
+          {
+            bucket: "DEFAULT",
+            daily_limit: 10000,
+            usable: 9000,
+            used: 900,
+            held: 0,
+            available: 8100,
+            resets_at: "2026-11-09T08:00:00Z",
+            resets_at_pkt: "13:00 PKT",
+          },
+        ],
+        forecast: [],
+      },
+    ]),
+  ),
 ];
