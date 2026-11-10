@@ -36,11 +36,13 @@ describe("page registry", () => {
     }
   });
 
-  it("marks the pages backed by the real API (Phase 3: Security, Settings; Phase 4: channels, bell)", () => {
+  it("marks the pages backed by the real API (Phase 3: Security, Settings; Phase 4: channels, bell; Phase 5: agents, usage)", () => {
     expect(PAGES.filter((p) => p.real).map((p) => p.id)).toEqual([
       "channels",
       "onboarding",
+      "usage",
       "notifications",
+      "agents",
       "security",
       "settings",
     ]);

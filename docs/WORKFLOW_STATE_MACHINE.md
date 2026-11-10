@@ -285,6 +285,31 @@ Agents can never create a `CONFIRMED` transition. Only the `OWNER` actor is allo
 
 ---
 
+## 9a. Implementation notes (Phase 5, `apps/api/tubeforge/orchestrator/`)
+
+- **Code tables.** `machines.py` holds every machine above as data: each edge lists its source states, target, event, allowed actors, guards and approval gate (`None`, `""`, `"S"`, `"SF"`). `engine.transition()` is the only code that changes a workflow state. The channel helpers, OAuth, retention and the upload runner all go through it. External editing (§3a) is part of the Video Project table.
+- **Mode gates.** An owner gate may be taken by `ORCH`:
+  - in SEMI mode only when unmarked;
+  - in FULLY mode only when not `[F]` and the event names its accepted `auto_rule_id`, which is recorded in the audit row.
+
+  Approvals of money, privacy and permission subjects stay owner-only in every mode: `UPLOAD_PACKAGE`, `AUTO_RULES`, `STOCK_PURCHASE`, `PRIVATE_ONLY_OFF`, `MODE_CHANGE`, `PAID_PROVIDER_ENABLE`.
+- **Emergency Stop (rule 7) exemptions.** Besides moves to PAUSED or CANCELLED, these safety and alert moves stay possible during Emergency Stop, because blocking them would make an emergency worse:
+  - token revoked (`NEEDS_REAUTH`), disconnect, and data deletion (`DISCONNECTED`);
+  - approval expiry and invalidation;
+  - every notification-delivery move;
+  - failing an upload, refusing or failing a stock purchase;
+  - disabling or deleting a voice profile.
+- **Payload facts.** Guards whose data arrives in later phases (research claims, QC report, audits, package checks, voice verification, stock budget) read named facts from the event payload (`guards.FACTS`). The phase that stores the data replaces the fact with a database lookup.
+- **Additions to §1 and §5.**
+  - Channel: CONNECTED may also be paused; a disconnect may also come from SYSTEM when a revocation is detected.
+  - Upload: `UPLOADED → COMPLETED` exists for **test uploads** only, which have no thumbnail, caption or playlist steps. `SESSION_STARTED → RESUMING` and `RESUMING → UPLOADED` exist because a status query can find the upload already finished. `FAILED` is reachable from every active upload state.
+  - A test project may go APPROVED → UPLOADING while its channel is CONNECTED (mirrors SafeYouTubeClient I-3).
+- **Reconciler** (every 2 min, `orch.reconcile`):
+  - Stalled jobs (no worker heartbeat for 5 min) are handed back with Procrastinate's own retry function, so the same job runs again exactly once and keeps its lock.
+  - Entities in a job-expecting state without a waiting or running job get one; the `queueing_lock` prevents duplicates.
+  - Nothing is re-enqueued during Emergency Stop.
+  - Long jobs check Emergency Stop and kill switches at each checkpoint (the upload runner: before every chunk).
+
 ## 10. Test requirements for this document (Phase 5)
 - Table-driven test per machine: every allowed transition succeeds with its guard satisfied, and fails with each guard violated individually.
 - Every unlisted (from, event) pair is rejected.

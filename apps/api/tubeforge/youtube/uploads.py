@@ -39,6 +39,8 @@ from tubeforge.db.models import (
     VideoProject,
 )
 from tubeforge.notifications import notify_owners
+from tubeforge.orchestrator import controls, engine
+from tubeforge.orchestrator.machines import PROJECT, UPLOAD
 from tubeforge.secrets import SecretBox, aad
 from tubeforge.youtube import oauth, quota
 from tubeforge.youtube.client import UPLOAD_BASE, CallContext, SafeYouTubeClient, UploadIntent, preflight
@@ -251,7 +253,15 @@ def create_test_upload(
         created_at=now,
     )
     db.add(job)
-    project.state = "UPLOADING"
+    # The orchestrator moves the (test) project APPROVED → UPLOADING with the approval it checks.
+    engine.transition(
+        db,
+        PROJECT,
+        project.id,
+        "start_upload",
+        actor=Actor("ORCH", "orchestrator"),
+        payload={"approval_request_id": str(approval.id), "current_package_sha256": subject},
+    )
     record(
         db,
         actor=owner,
@@ -295,14 +305,40 @@ def _open_uri(box: SecretBox, job: UploadJob) -> str:
     ).decode()
 
 
+def _move(db: Session, job: UploadJob, to_state: str, event: str | None = None) -> None:
+    """Upload states change only through the orchestrator (workflow_transitions + audit)."""
+    if job.state != to_state:
+        engine.move(db, UPLOAD, job, to_state, actor=SYSTEM, event_hint=event)
+
+
+def _stopped(db: Session, job: UploadJob) -> bool:
+    """Checkpoint: Emergency Stop / channel kill switch → stop here; the reconciler resumes later."""
+    db.commit()
+    reason = controls.stop_reason(db, channel_id=job.channel_id)
+    if reason is None:
+        return False
+    record(
+        db,
+        actor=SYSTEM,
+        action="upload.stopped_at_checkpoint",
+        entity_type="upload_job",
+        entity_id=str(job.id),
+        channel_id=job.channel_id,
+        details={"reason": reason, "bytes_confirmed": job.bytes_confirmed},
+    )
+    db.commit()
+    return True
+
+
 def _fail(db: Session, job: UploadJob, cls: ErrorClass | str, detail: str) -> UploadJob:
-    job.state = "FAILED"
+    if job.state not in FINAL_STATES:
+        _move(db, job, "FAILED")
     job.error_class = str(cls)
     job.error_detail = detail[:1000]
     job.session_uri_enc = None
     project = db.get(VideoProject, job.project_id)
-    if project is not None:
-        project.state = "FAILED"
+    if project is not None and project.state not in ("FAILED", "CANCELLED", "ARCHIVED"):
+        engine.transition(db, PROJECT, project.id, "fail", actor=SYSTEM, reason=f"upload failed: {cls}")
     for res in db.scalars(
         select(QuotaReservation).where(
             QuotaReservation.job_id == str(job.id), QuotaReservation.state == "HELD"
@@ -340,10 +376,12 @@ def _finish(db: Session, job: UploadJob, video: dict[str, Any]) -> UploadJob:
     job.processing_status = (video.get("status") or {}).get("uploadStatus")
     job.bytes_confirmed = job.bytes_total
     job.session_uri_enc = None
-    job.state = "COMPLETED"  # a test upload has no thumbnail/caption/playlist steps
+    _move(db, job, "UPLOADED")
+    _move(db, job, "COMPLETED")  # a test upload has no thumbnail/caption/playlist steps
     project = db.get_one(VideoProject, job.project_id)
     project.youtube_video_id = video_id
-    project.state = "PRIVATE_DONE"
+    engine.transition(db, PROJECT, project.id, "video_id_received", actor=SYSTEM)
+    engine.transition(db, PROJECT, project.id, "processed_private", actor=SYSTEM)
     channel = db.get_one(Channel, job.channel_id)
     if job.is_test:
         channel.successful_private_test_uploads += 1
@@ -401,6 +439,8 @@ def run_upload_job(
     channel = db.get_one(Channel, job.channel_id)
     project = db.get_one(VideoProject, job.project_id)
     uploader = ResumableUploader(youtube)
+    if _stopped(db, job):
+        return job
     try:
         ctx = oauth.call_context(db, box, google, channel, job_id=str(job.id))
     except (YouTubeApiError, oauth.OAuthFlowError) as exc:
@@ -422,11 +462,11 @@ def run_upload_job(
             return _fail(db, job, exc.error_class, exc.detail)
         _seal_uri(box, job, uri)
         job.session_started_at = datetime.now(UTC)
-        job.state = "SESSION_STARTED"
+        _move(db, job, "SESSION_STARTED")
         db.commit()
     else:
         uri = _open_uri(box, job)
-        job.state = "RESUMING"
+        _move(db, job, "RESUMING")
         db.commit()
         try:
             status = uploader.query_offset(ctx, uri, job.bytes_total)
@@ -447,14 +487,16 @@ def run_upload_job(
             start = job.bytes_confirmed
             f.seek(start)
             data = f.read(chunk_size)
-            job.state = "TRANSFERRING"
+            if _stopped(db, job):
+                return job
+            _move(db, job, "TRANSFERRING")
             try:
                 result = uploader.put_chunk(ctx, uri, data, start, job.bytes_total)
             except YouTubeApiError as exc:
                 if not exc.retryable or resumes >= max_resumes:
                     return _fail(db, job, exc.error_class, exc.detail)
                 resumes += 1
-                job.state = "RESUMING"
+                _move(db, job, "RESUMING")
                 db.commit()
                 sleep(5.0 * 2**resumes)
                 try:

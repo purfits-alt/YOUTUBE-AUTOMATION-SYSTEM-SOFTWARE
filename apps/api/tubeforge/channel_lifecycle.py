@@ -1,7 +1,7 @@
-"""Channel state machine (WORKFLOW_STATE_MACHINE §1) and onboarding steps.
+"""Channel lifecycle helpers and onboarding steps (WORKFLOW_STATE_MACHINE §1).
 
-Every state change goes through :func:`transition`, which checks the edge, writes a
-``workflow_transitions`` row and an audit row in the caller's transaction.
+State changes go through the orchestrator engine (``orchestrator/engine.py``), which owns the
+channel machine table, writes ``workflow_transitions`` + audit and applies Emergency Stop rules.
 """
 
 from __future__ import annotations
@@ -11,23 +11,15 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from tubeforge.audit import Actor, record
+from tubeforge.audit import Actor
 from tubeforge.db.ids import uuid7
-from tubeforge.db.models import Channel, OnboardingStep, WorkflowTransition
+from tubeforge.db.models import Channel, OnboardingStep
+from tubeforge.orchestrator import engine
+from tubeforge.orchestrator.machines import CHANNEL
 
-# from-state -> allowed to-states (the diagram, plus pausing/disconnecting a CONNECTED channel and
-# disconnecting a PAUSED one, which the owner needs before a channel is ACTIVE).
+# from-state -> allowed to-states, derived from the orchestrator's channel machine (single source).
 EDGES: dict[str, frozenset[str]] = {
-    "PROPOSED": frozenset({"APPROVED", "REJECTED"}),
-    "APPROVED": frozenset({"ONBOARDING"}),
-    "ONBOARDING": frozenset({"CONNECTED", "DISCONNECTING"}),
-    "CONNECTED": frozenset({"ACTIVE", "PAUSED", "NEEDS_REAUTH", "DISCONNECTING"}),
-    "ACTIVE": frozenset({"PAUSED", "NEEDS_REAUTH", "DISCONNECTING"}),
-    "PAUSED": frozenset({"ACTIVE", "CONNECTED", "NEEDS_REAUTH", "DISCONNECTING"}),
-    "NEEDS_REAUTH": frozenset({"ACTIVE", "CONNECTED", "PAUSED", "DISCONNECTING"}),
-    "DISCONNECTING": frozenset({"DISCONNECTED"}),
-    "DISCONNECTED": frozenset({"ONBOARDING"}),
-    "REJECTED": frozenset(),
+    state: frozenset(e.target for e in CHANNEL.edges_from(state)) for state in CHANNEL.states
 }
 
 ONBOARDING_STEPS = (
@@ -65,36 +57,23 @@ def transition(
     idempotency_key: str | None = None,
     reason: str | None = None,
 ) -> None:
-    from_state = channel.state
+    """Move a channel through the orchestrator (workflow_transitions + audit in the caller's TX).
+
+    An illegal move raises :class:`TransitionError`; Emergency Stop, actor and guard refusals raise
+    :class:`~tubeforge.orchestrator.engine.TransitionRejected`."""
     if not can(channel, to_state):
-        raise TransitionError(from_state, to_state)
-    channel.state = to_state
-    db.add(
-        WorkflowTransition(
-            entity_type="channel",
-            entity_id=channel.id,
-            channel_id=channel.id,
-            from_state=from_state,
-            to_state=to_state,
-            event=event,
-            actor_type=actor.type,
-            actor_id=actor.id,
-            reason=reason,
-            idempotency_key=idempotency_key or str(uuid7()),
-        )
-    )
-    record(
+        raise TransitionError(channel.state, to_state)
+    engine.move(
         db,
+        CHANNEL,
+        channel,
+        to_state,
         actor=actor,
-        action=f"channel.{event}",
-        entity_type="channel",
-        entity_id=str(channel.id),
-        channel_id=channel.id,
-        before={"state": from_state},
-        after={"state": to_state},
-        details={"reason": reason} if reason else None,
+        event_hint=event,
+        idempotency_key=idempotency_key,
+        reason=reason,
     )
-    db.flush()
+    db.refresh(channel)
 
 
 def ensure_onboarding_steps(db: Session, channel: Channel) -> list[OnboardingStep]:
@@ -136,6 +115,9 @@ def maybe_activate(db: Session, channel: Channel, *, actor: Actor) -> bool:
         and channel.successful_private_test_uploads >= 1
         and bool(channel.privacy_policy_url)
     ):
-        transition(db, channel, "ACTIVE", event="activated", actor=actor)
+        try:
+            transition(db, channel, "ACTIVE", event="activated", actor=actor)
+        except engine.TransitionRejected:
+            return False  # e.g. Emergency Stop: activation happens on the next success instead
         return True
     return False

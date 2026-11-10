@@ -174,6 +174,11 @@ Each component lists: **Purpose · Boundaries · Interfaces · Data owned · Fai
 - **Data owned:** `provider_registry`, `usage_records`, `gateway_cache`.
 - **Failure modes:** every provider in the chain exhausted → task `WAITING_QUOTA` with resume time. Licence mismatch → hard error, logged.
 - **Tests:** "provider pauses at limit" test (required by the PRD), licence-block test, data-use-block test for local-only channels, cache-hit test, schema-repair test.
+- **Implementation (Phase 5, `apps/api/tubeforge/gateway/`):**
+  - Adapters for Gemini (key sent in the `x-goog-api-key` header, never in the URL), Groq and Ollama (loopback only), over httpx (ADR-0026).
+  - The gateway commits its own usage rows, so every worker sees a reservation before the slow call.
+  - A local-only channel may use only Tier L providers or providers with `data_use_training = false`. "Unknown" counts as "may train".
+  - Billing or payment wording in any provider response triggers A32 (provider kill switch + CRITICAL alert).
 
 ### I. YouTube Integration Service
 - **Purpose:** OAuth, channel verification, uploads, metadata, thumbnails, captions, playlists, analytics retrieval, the quota ledger, and retention and deletion jobs.

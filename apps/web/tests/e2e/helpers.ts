@@ -15,6 +15,9 @@ export function seed(): { channelId: string } {
   return JSON.parse(readFileSync(SEED_FILE, "utf-8")) as { channelId: string };
 }
 
+/** Real pages whose main endpoint returns a plain array (not a cursor page). */
+const ARRAY_PAGES = new Set(["agents", "usage"]);
+
 /** Pages with no empty state (FRONTEND_SPECIFICATION: "Empty state: N/A" / steps always exist). */
 export const NO_EMPTY_STATE = new Set(["settings", "onboarding"]);
 
@@ -85,7 +88,8 @@ async function interceptRealPage(page: Page, def: PageDef, state: State): Promis
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ items: [], next_cursor: null }),
+        // List endpoints of the Phase 5 pages return arrays; the others return a page.
+        body: JSON.stringify(ARRAY_PAGES.has(def.id) ? [] : { items: [], next_cursor: null }),
       });
     },
   );

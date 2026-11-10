@@ -96,3 +96,20 @@ def test_every_python_source_file_is_tracked_by_git() -> None:
     ).stdout.split()
     hidden = [f for f in ignored if f.endswith((".py", ".sql", ".ts", ".tsx")) and "node_modules" not in f]
     assert hidden == [], f"source files ignored by .gitignore: {hidden}"
+
+
+def test_no_billing_api_hosts_in_code() -> None:
+    """COST_CONTROL_SPEC G2/G4: no code path can reach a billing, plan or payment API (the test above
+    covers dependencies; this one the source)."""
+    import re
+
+    root = ROOT
+    forbidden = re.compile(
+        r"cloudbilling\.googleapis\.com|billingbudgets\.googleapis\.com|api\.stripe\.com|api\.paypal\.com"
+        r"|\bimport stripe\b|\bfrom stripe\b|braintree|paddle\.com|checkout\.session",
+        re.IGNORECASE,
+    )
+    for folder in ("apps/api/tubeforge", "workers", "apps/web/src"):
+        for path in (root / folder).rglob("*"):
+            if path.suffix in {".py", ".ts", ".tsx"} and "node_modules" not in path.parts:
+                assert not forbidden.search(path.read_text(encoding="utf-8")), path

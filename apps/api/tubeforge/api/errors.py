@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from sqlalchemy.exc import DataError as DBAPIDataError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from tubeforge.logging import get_logger
@@ -124,6 +125,15 @@ def install_error_handlers(app: FastAPI) -> None:
         return problem_response(
             request, 400, "VALIDATION_ERROR", "Invalid request", "Some fields are not valid.", errors=errors
         )
+
+    @app.exception_handler(DBAPIDataError)
+    async def _data(request: Request, exc: DBAPIDataError) -> JSONResponse:
+        # Safety net: text PostgreSQL cannot store (e.g. a NUL byte) is the client's input, not a 500.
+        if "NUL" in str(exc.orig):
+            return problem_response(
+                request, 400, "VALIDATION_ERROR", "Invalid request", "Text must not contain NUL characters."
+            )
+        raise exc
 
     @app.exception_handler(StarletteHTTPException)
     async def _http(request: Request, exc: StarletteHTTPException) -> JSONResponse:

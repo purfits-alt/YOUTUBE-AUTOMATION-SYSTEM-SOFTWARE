@@ -108,6 +108,47 @@ test("the bell shows real notifications and clears when read", async ({ page }) 
   await expect(page.getByTestId("bell-count")).toHaveCount(0);
 });
 
+test("Agent Control Center and Cost & Usage on the real backend", async ({ page }) => {
+  // 403 = the API asking for the password again before paid step 1 (expected).
+  const problems = watchConsole(page, [403]);
+  await page.goto("/agents");
+  const hello = page.getByTestId("agent-T00_HELLO");
+  await expect(hello).toContainText("Hello test agent");
+  await hello.getByRole("button", { name: "Settings" }).click();
+  const dialog = page.getByTestId("agent-config-dialog");
+  await dialog.getByLabel("Runs per day").fill("2");
+  await dialog.getByRole("button", { name: "Save config" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(hello.getByRole("cell", { name: "2", exact: true })).toBeVisible();
+  await hello.getByRole("button", { name: "Test run" }).click();
+  const run = page.getByTestId("agent-run-dialog");
+  await run.getByLabel("Name to greet").fill("Ayesha");
+  await run.getByRole("button", { name: "Run" }).click();
+  await expect(page.getByText("Test run queued")).toBeVisible();
+
+  await page.goto("/usage");
+  await expect(page.getByTestId("cost-banner")).toContainText("0 paid providers enabled");
+  const form = page.getByTestId("key-form-gemini");
+  await form.getByLabel("gemini API key (write-only)").fill("e2e-fake-key-not-real");
+  await form.getByRole("button", { name: "Save key" }).click();
+  await expect(page.getByTestId("key-set-gemini")).toBeVisible();
+  const paid = page.getByTestId("paid-gemini:gemini-3.1-pro-preview");
+  await paid.getByRole("checkbox").check();
+  await paid.getByRole("button", { name: "Step 1: confirm" }).click();
+  // Step 1 needs the password from the last 5 minutes. An earlier test in this session may already
+  // have given it (the server keeps the step-up window per session), so answer the prompt only if shown.
+  const reauth = page.getByTestId("reauth-modal");
+  const step2 = paid.getByTestId("paid-step2");
+  await expect(reauth.getByLabel("Password").or(step2)).toBeVisible();
+  if (await reauth.getByLabel("Password").isVisible()) {
+    await reauth.getByLabel("Password").fill(OWNER_PASSWORD);
+    await reauth.getByRole("button", { name: "Confirm" }).click();
+  }
+  await expect(paid.getByTestId("paid-step2")).toContainText("ENABLE PAID gemini:gemini-3.1-pro-preview");
+  await expect(paid.getByRole("button", { name: /Wait \d+ s/ })).toBeDisabled();
+  expect(problems).toEqual([]);
+});
+
 test.describe("signed out", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 

@@ -493,36 +493,267 @@ class WorkflowTransition(Base):
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
 
 
+# --------------------------------------------------------------- Phase 5: orchestrated entities
+class VideoIdea(Base):
+    __tablename__ = "video_ideas"
+    id: Mapped[uuid.UUID] = _id()
+    channel_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("channels.id"))
+    state: Mapped[str] = mapped_column(Text)
+    title: Mapped[str] = mapped_column(Text)
+    angle: Mapped[str] = mapped_column(Text)
+    target_viewer: Mapped[str | None] = mapped_column(Text)
+    format: Mapped[str] = mapped_column(Text)
+    pillar: Mapped[str | None] = mapped_column(Text)
+    trend_item_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    originality_notes: Mapped[str | None] = mapped_column(Text)
+    similarity_max: Mapped[Decimal | None] = mapped_column(Numeric(4, 3))
+    similar_to_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    calendar_date: Mapped[date | None] = mapped_column(Date)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    source: Mapped[str] = mapped_column(Text)
+    based_on_youtube_video_id: Mapped[str | None] = mapped_column(Text)
+    variation_kind: Mapped[str | None] = mapped_column(Text)
+    similarity_to_source: Mapped[Decimal | None] = mapped_column(Numeric(4, 3))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class RenderJob(Base):
+    __tablename__ = "render_jobs"
+    id: Mapped[uuid.UUID] = _id()
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("video_projects.id"))
+    channel_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    timeline_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    kind: Mapped[str] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(Text)
+    preset: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    segments_total: Mapped[int] = mapped_column(Integer, default=1)
+    segments_done: Mapped[int] = mapped_column(Integer, default=0)
+    attempt: Mapped[int] = mapped_column(Integer, default=0)
+    output_asset_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    qc_report: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    error_class: Mapped[str | None] = mapped_column(Text)
+    error_detail: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    idempotency_key: Mapped[str] = mapped_column(Text, unique=True)
+
+
+class VoiceProfile(Base):
+    __tablename__ = "voice_profiles"
+    id: Mapped[uuid.UUID] = _id()
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    label: Mapped[str] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(Text)
+    engine: Mapped[str] = mapped_column(Text)
+    sample_asset_ids: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), default=list)
+    embedding_enc: Mapped[bytes | None]
+    key_id: Mapped[str | None] = mapped_column(Text)
+    sample_seconds: Mapped[Decimal] = mapped_column(Numeric(8, 2), default=Decimal(0))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class StockPurchase(Base):
+    __tablename__ = "stock_purchases"
+    id: Mapped[uuid.UUID] = _id()
+    channel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    provider_code: Mapped[str] = mapped_column(Text)
+    provider_asset_id: Mapped[str] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(Text)
+    licence_type: Mapped[str] = mapped_column(Text)
+    price_minor: Mapped[int] = mapped_column(BigInteger)
+    currency: Mapped[str] = mapped_column(String(3))
+    quoted_at: Mapped[datetime] = _ts()
+    confirmed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    provider_order_ref: Mapped[str | None] = mapped_column(Text)
+    asset_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    failure_reason: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class NotificationDelivery(Base):
+    __tablename__ = "notification_deliveries"
+    id: Mapped[uuid.UUID] = _id()
+    notification_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("notifications.id"))
+    channel: Mapped[str] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(Text)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    provider_message_id: Mapped[str | None] = mapped_column(Text)
+    last_error: Mapped[str | None] = mapped_column(Text)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+# --------------------------------------------------------------- Phase 5: AI Provider Gateway
+class ProviderRegistry(Base):
+    __tablename__ = "provider_registry"
+    code: Mapped[str] = mapped_column(Text, primary_key=True)
+    capability: Mapped[str] = mapped_column(Text)
+    tier: Mapped[str] = mapped_column(Text)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    paid_activation_step: Mapped[int] = mapped_column(Integer, default=0)
+    licence: Mapped[str] = mapped_column(Text)
+    licence_url: Mapped[str | None] = mapped_column(Text)
+    lineage: Mapped[str | None] = mapped_column(Text)
+    commercial_use: Mapped[str] = mapped_column(Text)
+    data_use_training: Mapped[bool | None] = mapped_column(Boolean)
+    languages: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
+    limits: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    model_sha256: Mapped[str | None] = mapped_column(String(64))
+    verified_at: Mapped[date] = mapped_column(Date)
+    verified_url: Mapped[str] = mapped_column(Text)
+    notes: Mapped[str | None] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class ProviderCredential(Base):
+    __tablename__ = "provider_credentials"
+    provider_code: Mapped[str] = mapped_column(ForeignKey("provider_registry.code"), primary_key=True)
+    secret_enc: Mapped[bytes]
+    key_id: Mapped[str] = mapped_column(Text)
+    label: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class UsageLimit(Base):
+    __tablename__ = "usage_limits"
+    id: Mapped[uuid.UUID] = _id()
+    provider_code: Mapped[str] = mapped_column(ForeignKey("provider_registry.code"))
+    scope: Mapped[str] = mapped_column(Text)
+    scope_ref: Mapped[str | None] = mapped_column(Text)
+    metric: Mapped[str] = mapped_column(Text)
+    period: Mapped[str] = mapped_column(Text)
+    limit_value: Mapped[int] = mapped_column(BigInteger)
+    reset_tz: Mapped[str] = mapped_column(Text, default="America/Los_Angeles")
+
+
+class UsageRecord(Base):
+    __tablename__ = "usage_records"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    provider_code: Mapped[str] = mapped_column(Text)
+    period_key: Mapped[str] = mapped_column(Text)
+    metric: Mapped[str] = mapped_column(Text)
+    amount: Mapped[int] = mapped_column(BigInteger)
+    kind: Mapped[str] = mapped_column(Text)
+    agent_run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    channel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    task: Mapped[str | None] = mapped_column(Text)
+
+
+class GatewayCache(Base):
+    __tablename__ = "gateway_cache"
+    cache_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    provider_code: Mapped[str] = mapped_column(Text)
+    response: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    expires_at: Mapped[datetime] = _ts()
+    hits: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class CostBudget(Base):
+    __tablename__ = "cost_budgets"
+    id: Mapped[uuid.UUID] = _id()
+    scope: Mapped[str] = mapped_column(Text)
+    provider_code: Mapped[str | None] = mapped_column(Text)
+    month: Mapped[str] = mapped_column(String(7))
+    cap_minor: Mapped[int] = mapped_column(BigInteger, default=0)
+    spent_minor: Mapped[int] = mapped_column(BigInteger, default=0)
+    currency: Mapped[str] = mapped_column(String(3), default="USD")
+
+
+# --------------------------------------------------------------------- Phase 5: agents
+class AgentConfiguration(Base):
+    __tablename__ = "agent_configurations"
+    agent_code: Mapped[str] = mapped_column(Text, primary_key=True)
+    name: Mapped[str] = mapped_column(Text)
+    version: Mapped[str] = mapped_column(Text)
+    is_auditor: Mapped[bool] = mapped_column(Boolean)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    prompt_version: Mapped[str] = mapped_column(Text)
+    provider_chain: Mapped[list[str]] = mapped_column(JSONB)
+    limits: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    permissions: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+
+
+class AgentRun(Base):
+    __tablename__ = "agent_runs"
+    id: Mapped[uuid.UUID] = _id()
+    agent_code: Mapped[str] = mapped_column(ForeignKey("agent_configurations.agent_code"))
+    channel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    job_id: Mapped[str | None] = mapped_column(Text)
+    input_sha256: Mapped[str] = mapped_column(String(64))
+    input: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    output: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    status: Mapped[str] = mapped_column(Text)
+    provider_code: Mapped[str | None] = mapped_column(Text)
+    model: Mapped[str | None] = mapped_column(Text)
+    tokens_in: Mapped[int | None] = mapped_column(Integer)
+    tokens_out: Mapped[int | None] = mapped_column(Integer)
+    duration_ms: Mapped[int | None] = mapped_column(Integer)
+    repair_attempted: Mapped[bool] = mapped_column(Boolean, default=False)
+    error_class: Mapped[str | None] = mapped_column(Text)
+    error_detail: Mapped[str | None] = mapped_column(Text)
+    quality_score: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))
+    started_at: Mapped[datetime] = _ts()
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 __all__ = [
+    "AgentConfiguration",
+    "AgentRun",
     "ApprovalRequest",
     "AssetRights",
     "AuditLog",
     "Base",
     "Channel",
     "ChannelPublishingRules",
+    "CostBudget",
     "DataDeletionTask",
+    "GatewayCache",
     "IdempotencyKey",
     "KillSwitch",
     "MediaAsset",
     "Notification",
+    "NotificationDelivery",
     "OAuthClient",
     "OAuthConnection",
     "OAuthPendingFlow",
     "OnboardingStep",
     "Permission",
+    "ProviderCredential",
+    "ProviderRegistry",
     "QuotaConfig",
     "QuotaLedger",
     "QuotaReservation",
+    "RenderJob",
     "Role",
     "RolePermission",
     "SecurityEvent",
     "Session",
+    "StockPurchase",
     "SystemSettings",
     "UploadJob",
+    "UsageLimit",
+    "UsageRecord",
     "User",
     "UserRecoveryCode",
     "UserRole",
+    "VideoIdea",
     "VideoProject",
+    "VoiceProfile",
     "WorkflowTransition",
     "YoutubeApiCache",
 ]

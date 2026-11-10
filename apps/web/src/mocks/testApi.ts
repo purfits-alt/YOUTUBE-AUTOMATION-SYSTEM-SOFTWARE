@@ -5,7 +5,10 @@
  */
 import { http, HttpResponse, type HttpHandler } from "msw";
 import type {
+  AgentOut,
+  AgentRunOut,
   ChannelOut,
+  ProviderOut,
   Controls,
   Me,
   NotificationOut,
@@ -38,6 +41,9 @@ const OWNER: Me = {
 };
 
 interface State {
+  agents: AgentOut[];
+  runs: AgentRunOut[];
+  providers: ProviderOut[];
   channels: ChannelOut[];
   steps: StepOut[];
   clients: OAuthClientOut[];
@@ -92,8 +98,84 @@ export function testChannel(overrides: Partial<ChannelOut> = {}): ChannelOut {
   };
 }
 
+export function testAgent(overrides: Partial<AgentOut> = {}): AgentOut {
+  return {
+    agent_code: "T00_HELLO",
+    name: "Hello test agent",
+    kind: "TEST",
+    is_auditor: false,
+    enabled: true,
+    paused: false,
+    runnable: true,
+    version: "1.0.0",
+    prompt_version: "v1.0",
+    provider_chain: ["gemini:gemini-3.5-flash-lite", "ollama:qwen2.5:1.5b"],
+    limits: { calls_per_day: 20, tokens_per_day: 20000, max_runtime_s: 60 },
+    updated_at: "2026-11-09T00:00:00Z",
+    etag: "e1",
+    stats_24h: { runs: 0, success_pct: null, p50_ms: null, tokens: 0 },
+    ...overrides,
+  };
+}
+
+export function testProvider(overrides: Partial<ProviderOut> = {}): ProviderOut {
+  return {
+    code: "gemini:gemini-3.5-flash-lite",
+    family: "gemini",
+    capability: "LLM",
+    tier: "F",
+    enabled: true,
+    paid_activation_step: 0,
+    licence: "Gemini API terms",
+    licence_url: null,
+    commercial_use: "YES",
+    data_use_training: true,
+    published_limits: { placeholder: true },
+    limits: [{ metric: "REQUESTS", period: "DAY", limit_value: 200 }],
+    has_key: false,
+    needs_key: true,
+    verified_at: "2026-11-09",
+    verified_url: "https://ai.google.dev/gemini-api/docs/pricing",
+    reverify_due: false,
+    notes: null,
+    ...overrides,
+  };
+}
+
 function initial(): State {
   return {
+    agents: [
+      testAgent(),
+      testAgent({
+        agent_code: "A32_COST_MONITOR",
+        name: "Cost monitor",
+        kind: "DETERMINISTIC",
+        is_auditor: true,
+        runnable: false,
+        provider_chain: [],
+        etag: "e2",
+      }),
+    ],
+    runs: [],
+    providers: [
+      testProvider(),
+      testProvider({
+        code: "ollama:qwen2.5:1.5b",
+        family: "ollama",
+        tier: "L",
+        has_key: true,
+        needs_key: false,
+        data_use_training: false,
+        limits: [],
+      }),
+      testProvider({
+        code: "gemini:gemini-3.1-pro-preview",
+        tier: "P",
+        enabled: false,
+        notes: "Paid.",
+        limits: [],
+      }),
+    ],
     channels: [testChannel()],
     steps: STEP_CODES.map((code) => ({
       step_code: code,
@@ -237,6 +319,88 @@ export const testApiHandlers: HttpHandler[] = [
     HttpResponse.json({ ok: true, checked: 2, first_broken_id: null }),
   ),
   http.get("/api/v1/security-events", () => HttpResponse.json({ items: [], next_cursor: null })),
+  http.get("/api/v1/agents", () => HttpResponse.json(state.agents)),
+  http.patch("/api/v1/agents/:code", async ({ params, request }) => {
+    const agent = state.agents.find((a) => a.agent_code === params.code);
+    if (!agent) return problem(404, "NOT_FOUND", "Not found", "No such agent.");
+    if (request.headers.get("If-Match") !== `"${agent.etag}"`)
+      return problem(412, "VERSION_CONFLICT", "Changed elsewhere", "Reload.");
+    const body = (await request.json()) as Partial<AgentOut>;
+    Object.assign(agent, { ...body, limits: { ...agent.limits, ...body.limits }, etag: agent.etag + "x" });
+    return HttpResponse.json(agent);
+  }),
+  http.post("/api/v1/agents/:code/run", async ({ params, request }) => {
+    const body = (await request.json()) as { input: { name: string } };
+    state.runs = [
+      {
+        id: `r-${String(state.runs.length + 1)}`,
+        agent_code: String(params.code),
+        channel_id: null,
+        project_id: null,
+        status: "SUCCEEDED",
+        provider_code: "gemini:gemini-3.5-flash-lite",
+        model: "gemini-3.5-flash-lite",
+        tokens_in: 30,
+        tokens_out: 10,
+        duration_ms: 420,
+        repair_attempted: false,
+        error_class: null,
+        error_detail: null,
+        input: body.input,
+        output: { greeting: `Hello ${body.input.name}`, language: "en" },
+        started_at: "2026-11-09T10:00:00Z",
+        finished_at: "2026-11-09T10:00:01Z",
+      },
+      ...state.runs,
+    ];
+    return HttpResponse.json({ job_id: 1, agent_code: params.code }, { status: 202 });
+  }),
+  http.get("/api/v1/agent-runs", () => HttpResponse.json({ items: state.runs, next_cursor: null })),
+  http.post("/api/v1/system/kill-switches", async ({ request }) => {
+    const body = (await request.json()) as { target_id: string };
+    const agent = state.agents.find((a) => a.agent_code === body.target_id);
+    if (agent) agent.paused = true;
+    return HttpResponse.json(state.controls);
+  }),
+  http.get("/api/v1/providers", () => HttpResponse.json(state.providers)),
+  http.put("/api/v1/providers/:code/credentials", ({ params }) => {
+    const family = String(params.code).split(":")[0];
+    for (const p of state.providers) if (p.family === family) p.has_key = true;
+    return new HttpResponse(null, { status: 204 });
+  }),
+  http.patch("/api/v1/providers/:code", async ({ params, request }) => {
+    const p = state.providers.find((x) => x.code === params.code);
+    if (!p) return problem(404, "NOT_FOUND", "Not found", "No such provider.");
+    const body = (await request.json()) as Partial<ProviderOut>;
+    Object.assign(p, body);
+    return HttpResponse.json({ provider: p, warnings: [] });
+  }),
+  http.post("/api/v1/providers/:code/paid-activation/step1", ({ params }) =>
+    HttpResponse.json({
+      code: params.code,
+      estimate: {},
+      confirm_phrase: `ENABLE PAID ${String(params.code)}`,
+      earliest_step2_at: new Date(Date.now() + 60_000).toISOString(),
+    }),
+  ),
+  http.get("/api/v1/usage", () =>
+    HttpResponse.json([
+      {
+        provider_code: "gemini:gemini-3.5-flash-lite",
+        metric: "REQUESTS",
+        period: "DAY",
+        period_key: "2026-11-09",
+        used: 50,
+        limit: 200,
+        pct: 25,
+        resets_at: "2026-11-10T08:00:00Z",
+      },
+    ]),
+  ),
+  http.get("/api/v1/costs/summary", () =>
+    HttpResponse.json({ month: "2026-11", spent_minor: 0, paid_enabled: [] }),
+  ),
+  http.get("/api/v1/budgets", () => HttpResponse.json([])),
   http.get("/api/v1/channels", () => HttpResponse.json({ items: state.channels, next_cursor: null })),
   http.post("/api/v1/channels", async ({ request }) => {
     const body = (await request.json()) as { name: string; content_language: string };

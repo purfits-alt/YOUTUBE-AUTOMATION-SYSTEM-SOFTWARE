@@ -31,6 +31,7 @@ from tubeforge.db.models import (
     UploadJob,
 )
 from tubeforge.db.repository import VersionConflictError, update_versioned
+from tubeforge.orchestrator.engine import TransitionRejected
 from tubeforge.queue import defer_in_transaction
 from tubeforge.secrets import SecretBox
 from tubeforge.youtube import oauth, uploads
@@ -251,6 +252,17 @@ def if_match(value: str | None) -> int:
         ) from exc
 
 
+def rejected(exc: TransitionRejected) -> ProblemError:
+    """An orchestrator refusal as problem+json (409, with the reasons as guards)."""
+    return ProblemError(
+        409,
+        exc.code,
+        "Not possible now",
+        "; ".join(exc.reasons),
+        guards=[{"code": exc.code, "message": r, "fix_href": None} for r in exc.reasons],
+    )
+
+
 def _guards(failed: list[tuple[str, str, str | None]]) -> ProblemError:
     return ProblemError(
         409,
@@ -268,6 +280,8 @@ def _transition(db: Session, channel: Channel, to: str, event: str, p: Principal
         raise ProblemError(
             409, "INVALID_TRANSITION", "Not possible now", f"A {exc.from_state} channel cannot do this."
         ) from exc
+    except TransitionRejected as exc:
+        raise rejected(exc) from exc
 
 
 def _audit(

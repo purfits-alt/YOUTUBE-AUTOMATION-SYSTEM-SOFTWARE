@@ -31,6 +31,11 @@
 
 Every paid call then shows the estimated cost on the triggering action (e.g. "Generate with X — est. $0.04") and is debited against the cap (`cost_budgets`). At the cap the provider auto-pauses. Disabling is one click and immediate. Re-enabling repeats both steps.
 
+**Implementation (Phase 5, `gateway/paid.py`):**
+- The step-1 time is read from the tamper-evident audit log. Step 2 must come at least 60 s **and at most 30 min** after step 1; a stale step 1 is reset.
+- A paid call needs a recorded price (`limits.price_in_per_mtok_minor` / `price_out_per_mtok_minor`). Before sending, the gateway checks that the worst case fits this month's budget: estimated input plus the full output allowance. After the call it debits the actual cost.
+- At the cap the provider is disabled and a CRITICAL alert is sent. Budgets are per calendar month (UTC).
+
 ## 4. Stock purchases (ADR-0020)
 - Monthly stock budget `cost_budgets(scope='STOCK')`, cap default **0**. Raising it needs re-auth.
 - Each purchase: quote → owner confirmation of **that** purchase with the price shown (re-auth) → licence → download. Agents can never confirm.
@@ -43,6 +48,16 @@ Triggers a provider kill switch + CRITICAL alert if any of these appear:
 - Gemini: the owner's project shows a usage tier other than Free in the rate-limit header or console info (best effort)
 - Any API error mentioning billing, payment or charges
 - A manual monthly "statement check" reminder: the owner confirms that no charges appeared on Google Cloud billing (no billing account is expected at all)
+
+**Implementation (Phase 5):**
+- Error responses that mention billing or payment are flagged by the adapters.
+- Successful responses are checked by `gateway/indicators.py`: a usage-tier header other than free, or a request limit more than 10× the published free limit.
+- Either sign disables the provider and sets a PROVIDER kill switch, a security event and a CRITICAL alert.
+- A32 (`workers/tubeforge_auditors/a32_cost.py`, every 15 min) covers:
+  - threshold alerts at 70/90/100 % for provider limits, YouTube buckets and paid budgets (once per threshold and period);
+  - re-verify reminders after 90 days;
+  - the statement check on the 1st of each month.
+- Each A32 scan is logged as an `agent_runs` row.
 
 ## 6. Dashboard (page 26) content
 - Banner: "This month: $0.00 spent · 0 paid providers enabled" (green), or the paid totals (amber or red).

@@ -20,6 +20,12 @@ export type IdentityOut = Schemas["IdentityOut"];
 export type NotificationOut = Schemas["NotificationOut"];
 export type NotificationSummary = Schemas["SummaryOut"];
 export type ProjectQuota = Schemas["ProjectQuotaOut"];
+export type AgentOut = Schemas["AgentOut"];
+export type AgentRunOut = Schemas["AgentRunOut"];
+export type ProviderOut = Schemas["ProviderOut"];
+export type UsageLine = Schemas["UsageLine"];
+export type BudgetOut = Schemas["BudgetOut"];
+export type CostSummary = Schemas["CostSummary"];
 
 /** Still-mocked endpoints (MSW until their phase), from packages/shared/openapi.stub.json. */
 export type StubSchemas = stubComponents["schemas"];

@@ -512,8 +512,8 @@
     "agents": {
       "title": "AI Agent Control Center",
       "purpose": "All 32 agents: status, config, limits, runs, errors; pause via kill switch.",
-      "empty": "No agent runs yet.",
-      "emptyAction": "Open Settings"
+      "empty": "No agents are configured yet. Run the database upgrade (tubeforge.ps1 setup).",
+      "emptyAction": "Reload agents"
     },
     "policy": {
       "title": "Copyright & Policy Center",
@@ -790,5 +790,126 @@
       "WARNING": "Warning",
       "CRITICAL": "Critical"
     }
+  },
+  "agentsPage": {
+    "agents": "Agents",
+    "statAgents": "Agents",
+    "statEnabled": "Running",
+    "statPaused": "Paused or off",
+    "statRuns": "Runs (24 h)",
+    "enabled": "On",
+    "disabled": "Off",
+    "paused": "Paused",
+    "auditor": "auditor",
+    "actions": "Actions",
+    "kind": {
+      "LLM": "AI",
+      "HYBRID": "AI + code",
+      "DETERMINISTIC": "Rules",
+      "ADAPTER": "Adapter",
+      "TEST": "Test",
+      "UNKNOWN": "Unknown"
+    },
+    "chain": "Model order (first that can answer)",
+    "callsPerDay": "Runs per day",
+    "tokensPerDay": "Tokens per day",
+    "runs24h": "Runs (24 h)",
+    "testRun": "Test run",
+    "configureShort": "Settings",
+    "configure": "Settings — {name}",
+    "enabledLabel": "Agent is on",
+    "auditorNote": "Auditors cannot be switched off here; pause one with a kill switch and a reason.",
+    "up": "Move {code} up",
+    "down": "Move {code} down",
+    "remove": "Remove {code}",
+    "addProvider": "Add a model…",
+    "saved": "{name} saved.",
+    "queued": "Test run queued — it appears below in a few seconds.",
+    "testRunTitle": "Test run — {name}",
+    "testRunHint": "Runs through the queue, the agent's limits and the AI gateway exactly like real work.",
+    "helloName": "Name to greet",
+    "run": "Run",
+    "pauseReason": "Paused by the owner in the Agent Control Center",
+    "pausedToast": "{name} paused.",
+    "resumed": "{name} resumed.",
+    "recentRuns": "Recent runs",
+    "runTitle": "Run — {agent}",
+    "input": "Input (redacted)",
+    "output": "Output (redacted)",
+    "runStatus": {
+      "RUNNING": "Running",
+      "SUCCEEDED": "Done",
+      "REPAIRED": "Done (repaired)",
+      "FAILED": "Failed",
+      "ABORTED": "Stopped",
+      "WAITING_QUOTA": "Waiting for quota"
+    },
+    "noRuns": "No agent runs yet. Start a test run of the hello agent above."
+  },
+  "usagePage": {
+    "banner": "This month: {spent} spent · {count} paid providers enabled",
+    "family": {
+      "gemini": "Google Gemini (free tier)",
+      "groq": "Groq (free plan)",
+      "ollama": "On this PC (Ollama)"
+    },
+    "familyHint": {
+      "gemini": "Create the key in a Google Cloud project with NO billing linked. The free tier may use your prompts to improve Google's products.",
+      "groq": "Free plan key from console.groq.com. Enter the limits shown in your Groq console.",
+      "ollama": "Runs on your computer: nothing leaves it, no key, no cost. Install with: ollama pull qwen2.5:1.5b"
+    },
+    "apiKey": "{family} API key (write-only)",
+    "saveKey": "Save key",
+    "keySaved": "{family} key saved (encrypted).",
+    "keySet": "Key saved",
+    "removeKey": "Remove key",
+    "tier": {
+      "L": "Local",
+      "F": "Free",
+      "P": "Paid"
+    },
+    "commercial": {
+      "YES": "commercial use OK",
+      "NO": "no commercial use",
+      "WITH_ATTRIBUTION": "commercial with attribution",
+      "REVIEW": "licence needs review"
+    },
+    "mayTrain": "May train on content",
+    "reverifyDue": "Re-verify due",
+    "enabled": "On",
+    "enabledToast": "Provider switched on.",
+    "disabledToast": "Provider switched off.",
+    "requestsToday": "Requests today",
+    "tokensToday": "Tokens today",
+    "rpd": "Requests per day",
+    "tpd": "Tokens per day",
+    "limitsSaved": "Limits saved.",
+    "placeholder": "Placeholder limits — enter the values from your console.",
+    "verified": "Facts verified {date}.",
+    "source": "Source",
+    "markVerified": "I checked it today",
+    "paidTitle": "Paid providers (switched off)",
+    "paidHint": "Paid providers stay off. Turning one on takes two steps, a typed confirmation and a monthly cap.",
+    "paidOn": "ON — can cost money",
+    "paidStep": "Off (step {step} of 2)",
+    "disablePaid": "Switch off now",
+    "ackCost": "I understand this provider costs money and every call is charged to my account.",
+    "step1": "Step 1: confirm",
+    "step2": "Step 2: enable with this cap",
+    "waitSeconds": "Wait {s} s",
+    "typePhrase": "Type exactly: {phrase}",
+    "phraseLabel": "Confirmation phrase",
+    "monthlyCap": "Monthly cap (USD)",
+    "paidEnabled": "Paid provider enabled with a cap.",
+    "youtube": "YouTube quota (today)",
+    "resets": "resets {at}",
+    "budgets": "Budgets this month",
+    "budgetScope": {
+      "STOCK": "Stock media",
+      "PAID_PROVIDER": "Paid provider"
+    },
+    "stockCap": "Stock media budget: {cap} (0 = off).",
+    "newStockCap": "New stock budget (USD)",
+    "budgetSaved": "Budget saved."
   }
 }
