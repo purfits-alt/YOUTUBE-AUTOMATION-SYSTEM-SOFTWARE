@@ -246,6 +246,14 @@ function Initialize-Database {
 }
 
 function Invoke-Setup {
+    # A running API or worker locks its .exe in .venv\Scripts, and then `uv sync` cannot replace it
+    # ("being used by another process", os error 32). Stop TubeForge first; start it again at the end.
+    $wasRunning = @($Processes | Where-Object { Get-RunningProcess $_.Name }).Count -gt 0
+    if ($wasRunning) {
+        Write-Check 'TubeForge' 'INFO' 'running - stopping it so setup can update its files'
+        Invoke-Stop
+        Start-Sleep -Seconds 2
+    }
     foreach ($key in $Paths.Keys) {
         if ($key -ne 'App') { New-Item -ItemType Directory -Force -Path $Paths[$key] | Out-Null }
     }
@@ -283,7 +291,12 @@ function Invoke-Setup {
     } finally { Pop-Location }
 
     if (-not $NonInteractive) { New-DesktopShortcut }
-    Write-Host "Setup complete. Start TubeForge with: tubeforge.ps1 start" -ForegroundColor Green
+    if ($wasRunning) {
+        Write-Host "Setup complete. Starting TubeForge again..." -ForegroundColor Green
+        Invoke-Start
+    } else {
+        Write-Host "Setup complete. Start TubeForge with: tubeforge.ps1 start" -ForegroundColor Green
+    }
 }
 
 function Initialize-Owner {

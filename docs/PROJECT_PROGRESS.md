@@ -470,6 +470,8 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 6. Press **Emergency Stop** in the top bar, then start another test run: it shows **Stopped**. Clear Emergency Stop.
 7. Paid safety, look only: on a paid row, tick the box and press **Step 1: confirm**. Step 2 counts down 60 seconds and asks for the typed phrase and a cap. **Do not finish it.** Press **Switch off now**.
 
+**After the merge (owner PC, 2026-11-10):** the first `setup` stopped at `uv sync` because TubeForge was still running and Windows locks `tubeforge-api.exe` (os error 32). Fix: `setup` now stops TubeForge first and starts it again at the end. Workaround on the old copy: `stop`, then `setup`.
+
 ## Resource consumption
 
 | Resource | Used |
