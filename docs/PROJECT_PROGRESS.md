@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 6 — Niche discovery & trends
-**Current step:** P6-A and P6-B built (research sources; discovery agents, scoring, blueprints); next P6-C (competitor lookup, A04). Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
+**Current step:** P6-A, P6-B and P6-C built (research sources; discovery agents, scoring, blueprints; competitor lookup); next P6-D (screens, blueprint approval → channel, phase report). Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
 **Last updated:** 2026-11-10
 
 ---
@@ -500,7 +500,14 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
   - deterministic scoring and rescore, with weight profiles;
   - evidence on every candidate;
   - a forbidden-phrase scan.
-- **P6-C Competitor lookup (A04):**
+- **P6-C Competitor lookup (A04)** ✅ — built (2026-11-10):
+  - `youtube/lookup.py` and `api/v1/lookups.py` (2 routes);
+  - one channel, one video or one search (at most 10 snippets) per lookup, started by the owner;
+  - only the allowed public fields are stored, cached for at most 30 days (enforced by the database), purged hourly, and metered in the quota ledger;
+  - calls use the owner's own connected channel with read-only access, and Emergency Stop blocks them;
+  - the static check (step B) confirms that no module both reads this data and writes scores;
+  - tests: 7 integration tests (parsing ids, handles and links; channel, video and search with a fake YouTube; dropped fields; cache hit without a call; quota buckets and a failed call metered; expiry and purge; the database refusing more than 30 days; Emergency Stop; quota used up; roles).
+- **Plan for P6-C:**
   - one public item per lookup, kept for 30 days;
   - a policy banner;
   - no aggregation and nothing fed into scores (ADR-0015), enforced by a static check and a test.

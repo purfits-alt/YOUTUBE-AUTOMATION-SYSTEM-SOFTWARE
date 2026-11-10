@@ -173,6 +173,16 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 - **Weight profiles.** `PUT /niches/weight-profiles/{id}` takes `{name?, weights?, is_default?: true}`; one default at a time.
 - **Reading blueprints.** `GET /strategies/{id}` returns the blueprint with `problems`, re-checked on every read. PATCH and the approval commands come in step D.
 
+*`/lookups/youtube` implemented in Phase 6 step C (`api/v1/lookups.py`):*
+- **POST** `{kind, query, channel_id?}` needs an `Idempotency-Key` and returns `{id, kind, query_key, items[], cached, fetched_at, expires_at, notice}`.
+- **POST errors:**
+  - 422 `INVALID_QUERY`;
+  - 404 `NOT_FOUND_ON_YOUTUBE`;
+  - 409 `STOPPED`, `NO_CONNECTED_CHANNEL`, `NEEDS_REAUTH` or `WAITING_QUOTA` (with `resets_at`);
+  - 502 `YOUTUBE_ERROR`.
+- **GET** lists the unexpired lookups, newest first, each on its own.
+- Successful lookups are audited (`youtube.lookup`: kind, query key and whether the cache answered).
+
 ### 4.6 Ideas & calendar
 
 | Method | Path | Request → Response | Perm |

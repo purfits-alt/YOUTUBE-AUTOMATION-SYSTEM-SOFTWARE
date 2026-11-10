@@ -643,6 +643,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/lookups/youtube": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recent Lookups
+         * @description Recent lookups, newest first. Each is its own result; nothing is combined or ranked.
+         */
+        get: operations["recent_lookups_api_v1_lookups_youtube_get"];
+        put?: never;
+        /** Run Lookup */
+        post: operations["run_lookup_api_v1_lookups_youtube_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/niches/candidates/{candidate_id}": {
         parameters: {
             query?: never;
@@ -1982,6 +2003,88 @@ export interface components {
             /** Mfa Required */
             mfa_required: boolean;
             user: components["schemas"]["UserOut"];
+        };
+        /** LookupIn */
+        LookupIn: {
+            /**
+             * Channel Id
+             * @description Which of your connected channels makes the call (default: the first one).
+             */
+            channel_id?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "CHANNEL" | "VIDEO" | "SEARCH";
+            /** Query */
+            query: string;
+        };
+        /** LookupItem */
+        LookupItem: {
+            /** Channel Id */
+            channel_id?: string | null;
+            /** Channel Title */
+            channel_title?: string | null;
+            /**
+             * Description Excerpt
+             * @default
+             */
+            description_excerpt: string;
+            /** Duration */
+            duration?: string | null;
+            /** Handle */
+            handle?: string | null;
+            /** Published At */
+            published_at?: string | null;
+            /** Subscriber Count */
+            subscriber_count?: number | null;
+            /** Title */
+            title?: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "channel" | "video";
+            /** Video Count */
+            video_count?: number | null;
+            /** Video Id */
+            video_id?: string | null;
+            /** View Count */
+            view_count?: number | null;
+        };
+        /** LookupOut */
+        LookupOut: {
+            /** Cached */
+            cached: boolean;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Fetched At
+             * Format: date-time
+             */
+            fetched_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Items */
+            items: components["schemas"]["LookupItem"][];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "CHANNEL" | "VIDEO" | "SEARCH";
+            /**
+             * Notice
+             * @default Public info about one channel or video — not combined with others. Kept for 30 days at most.
+             */
+            notice: string;
+            /** Query Key */
+            query_key: string;
         };
         /** MeOut */
         MeOut: {
@@ -7111,6 +7214,201 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description NOT_READY (master key or database missing) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    recent_lookups_api_v1_lookups_youtube_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LookupOut"][];
+                };
+            };
+            /** @description VALIDATION_ERROR (field errors in errors[]) or a bad header */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description State conflict (e.g. IDEMPOTENCY_IN_PROGRESS) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description NOT_READY (master key or database missing) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    run_lookup_api_v1_lookups_youtube_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LookupIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LookupOut"];
+                };
+            };
+            /** @description VALIDATION_ERROR (field errors in errors[]) or a bad header */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_FOUND_ON_YOUTUBE */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description STOPPED / NO_CONNECTED_CHANNEL / NEEDS_REAUTH / WAITING_QUOTA */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description INVALID_QUERY / IDEMPOTENCY_MISMATCH */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description YOUTUBE_ERROR */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description NOT_READY (master key or database missing) */

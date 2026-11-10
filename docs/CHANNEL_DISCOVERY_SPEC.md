@@ -117,6 +117,13 @@ Logo and banner: TubeForge produces **briefs** and simple procedural drafts (tex
 - **Not allowed:** tables comparing several channels, averages, rankings, "competitor pattern" analytics, automatic background lookups, or use in scoring.
 - Cache ≤ 30 days (`youtube_api_cache.expires_at` CHECK). Purged hourly.
 
+**Implemented in Phase 6 step C** (`youtube/lookup.py`, `api/v1/lookups.py`):
+- **What the owner can enter.** A channel ID (UC…), a @handle, a youtube.com or youtu.be link (only parsed, never opened), or a search of 2–100 characters showing at most 10 results.
+- **What is kept.** Only the listed public fields; everything else Google returns is dropped before storage. Searches keep the search snippets only, with no per-result statistics calls.
+- **Cache.** 30 days, shared by identical queries. A cached answer makes no call and uses no quota. Expired entries are never shown and are purged hourly.
+- **Which access is used.** Calls use the owner's first connected channel (`youtube.readonly`) and are metered in the quota ledger (searches in the SEARCH bucket). Emergency Stop blocks new calls.
+- **Every answer** carries the notice "Public info about one channel or video — not combined with others. Kept for 30 days at most."
+
 ## 8. Onboarding (manual channel creation + connection)
 Steps are stored in `onboarding_steps`, and each shows official help links (verified when Phase 4 starts):
 1. Create or choose a Google account for the channel (a separate account is recommended for the test channel).
