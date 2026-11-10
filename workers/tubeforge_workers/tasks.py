@@ -46,10 +46,14 @@ def make_blueprint() -> procrastinate.Blueprint:
         ("orch.reconcile", maintenance.RECONCILE_CRON, maintenance.reconcile),
         ("orch.approvals_expire", maintenance.APPROVALS_CRON, maintenance.expire_approvals),
         ("a32.usage_scan", maintenance.A32_CRON, maintenance.a32_usage_scan),
+        ("a03.trend_scan", maintenance.TREND_SCAN_CRON, maintenance.trend_scan),
     ]
     for name, cron, fn in periodic:
         queue = QUEUE_ORCHESTRATOR if name.startswith("orch.") else QUEUE_MAINTENANCE
         bp.periodic(cron=cron)(bp.task(name=name, queue=queue)(fn))
     bp.task(name="yt.upload", queue=QUEUE_YOUTUBE)(maintenance.upload)
     bp.task(name="agent.run", queue=QUEUE_AGENTS)(maintenance.run_agent)
+    bp.task(name="research.discover", queue=QUEUE_AGENTS)(maintenance.discover)
+    bp.task(name="research.blueprint", queue=QUEUE_AGENTS)(maintenance.blueprint)
+    bp.task(name="research.keywords", queue=QUEUE_AGENTS)(maintenance.keywords)
     return bp

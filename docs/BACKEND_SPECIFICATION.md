@@ -165,6 +165,14 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
   - 422 `FETCH_BLOCKED` for an outbound-policy breach;
   - 502 `FETCH_FAILED` or `FEED_UNREADABLE` when the site fails.
 
+*`/niches/*` and `/strategies` (POST, GET) implemented in Phase 6 step B (`api/v1/niches.py`):*
+- **Starting work.** `POST /niches/reports` and `POST /strategies` need an `Idempotency-Key`. They answer 202 and queue `research.discover` or `research.blueprint` on the `agents` queue. While Emergency Stop is on they answer 409 `STOPPED`.
+- **Blueprint precondition.** `POST /strategies` needs a SHORTLISTED candidate (409 `NOT_SHORTLISTED`). Its body is `{niche_candidate_id, owner_notes?}`, and it returns `{job_id, status}`.
+- **Candidate responses** carry `footer` (the fixed estimate disclaimer), `band` (±10 or null), the criteria with weights and evidence links, and `originality_angles`.
+- **Rescore.** `/niches/rescore` takes `weights` or `weight_profile_id` (exactly one). It stores the new scores; unknown criteria or weights outside 0–15 get 422 `INVALID_WEIGHTS`.
+- **Weight profiles.** `PUT /niches/weight-profiles/{id}` takes `{name?, weights?, is_default?: true}`; one default at a time.
+- **Reading blueprints.** `GET /strategies/{id}` returns the blueprint with `problems`, re-checked on every read. PATCH and the approval commands come in step D.
+
 ### 4.6 Ideas & calendar
 
 | Method | Path | Request → Response | Perm |

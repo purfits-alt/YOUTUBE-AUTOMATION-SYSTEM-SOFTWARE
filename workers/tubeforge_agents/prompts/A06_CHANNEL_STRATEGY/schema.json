@@ -1,0 +1,47 @@
+{
+  "type": "object",
+  "required": ["positioning", "target_audience", "pillars", "formats", "calendar_30d", "ideas", "growth_strategy", "risks"],
+  "additionalProperties": false,
+  "properties": {
+    "positioning": { "type": "string", "minLength": 20, "maxLength": 1200 },
+    "target_audience": {
+      "type": "object", "required": ["description", "needs"],
+      "properties": {
+        "description": { "type": "string", "maxLength": 600 },
+        "needs": { "type": "array", "minItems": 1, "maxItems": 10, "items": { "type": "string", "maxLength": 200 } }
+      }
+    },
+    "pillars": {
+      "type": "array", "minItems": 3, "maxItems": 7,
+      "items": { "type": "object", "required": ["name", "description"],
+        "properties": { "name": { "type": "string", "maxLength": 60 }, "description": { "type": "string", "maxLength": 300 } } }
+    },
+    "formats": {
+      "type": "array", "minItems": 3, "maxItems": 8,
+      "items": { "type": "object", "required": ["name", "format", "description", "owner_role"],
+        "properties": {
+          "name": { "type": "string", "maxLength": 60 }, "format": { "enum": ["LONG", "SHORT"] },
+          "description": { "type": "string", "maxLength": 300 }, "owner_role": { "type": "string", "maxLength": 200 } } }
+    },
+    "calendar_30d": {
+      "type": "array", "maxItems": 90,
+      "items": { "type": "object", "required": ["day", "idea_ref", "format"],
+        "properties": { "day": { "type": "integer", "minimum": 1, "maximum": 30 },
+          "idea_ref": { "type": "integer", "minimum": 0, "maximum": 59 }, "format": { "enum": ["LONG", "SHORT"] } } }
+    },
+    "ideas": {
+      "type": "array", "minItems": 50, "maxItems": 60,
+      "items": { "type": "object", "required": ["title", "format", "pillar", "angle"],
+        "properties": { "title": { "type": "string", "minLength": 5, "maxLength": 100 },
+          "format": { "enum": ["LONG", "SHORT"] }, "pillar": { "type": "string", "maxLength": 60 },
+          "angle": { "type": "string", "maxLength": 300 } } }
+    },
+    "growth_strategy": { "type": "array", "minItems": 1, "maxItems": 10, "items": { "type": "string", "maxLength": 300 } },
+    "risks": {
+      "type": "array", "minItems": 1, "maxItems": 12,
+      "items": { "type": "object", "required": ["risk", "severity", "mitigation"],
+        "properties": { "risk": { "type": "string", "maxLength": 300 }, "severity": { "enum": ["LOW", "MEDIUM", "HIGH"] },
+          "mitigation": { "type": "string", "maxLength": 300 } } }
+    }
+  }
+}

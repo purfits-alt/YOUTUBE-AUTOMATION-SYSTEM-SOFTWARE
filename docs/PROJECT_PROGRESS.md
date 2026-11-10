@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 6 — Niche discovery & trends
-**Current step:** P6-A built (research fetcher, sources, Wikipedia pageviews, RSS); next P6-B (discovery agents and scoring). Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
+**Current step:** P6-A and P6-B built (research sources; discovery agents, scoring, blueprints); next P6-C (competitor lookup, A04). Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
 **Last updated:** 2026-11-10
 
 ---
@@ -487,7 +487,15 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
   - a source registry and its API;
   - adapters for Wikipedia pageviews and RSS;
   - a Trends adapter that stays off unless the owner approves it.
-- **P6-B Discovery agents and scoring:**
+- **P6-B Discovery agents and scoring** ✅ — built (2026-11-10):
+  - agents A02, A03, A05, A06 and A07 (prompt v1.0 and schema each) and the pipelines: discovery, trend scan, keywords and blueprint;
+  - scoring, rescore, weight profiles (migration 0010), the evidence rule, the forbidden-phrase scan, pageview signals and the blueprint checks, all in code;
+  - API: `/niches/*` (8 routes) and `/strategies` (3 routes);
+  - jobs: `research.discover`, `research.blueprint`, `research.keywords`, and `a03.trend_scan` daily at 06:00 PKT;
+  - the shared schema `packages/shared/schemas/channel_blueprint.json`;
+  - tests: 57 unit tests (score formula, LOW penalty and band, a property test for deterministic rescore, the evidence rule, 30 forbidden and 6 clean phrases, signals, contrast and similarity, calendar limits, fenced prompts with an injection attempt, the ADR-0015 static check) and 7 integration tests with a scripted model ("let TubeForge suggest" end to end, Emergency Stop, waiting for quota, blueprint draft, trend strength and expiry, keywords, API and roles);
+  - fix: migration 0008's downgrade now clears blueprint links to agent runs first.
+- **Plan for P6-B:**
   - agents A02, A03, A05, A06 and A07 on the Gateway;
   - deterministic scoring and rescore, with weight profiles;
   - evidence on every candidate;

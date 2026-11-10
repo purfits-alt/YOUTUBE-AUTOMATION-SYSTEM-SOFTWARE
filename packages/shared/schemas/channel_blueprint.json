@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tubeforge.local/schemas/channel_blueprint.json",
+  "title": "Channel blueprint (CHANNEL_DISCOVERY_SPEC §4)",
+  "type": "object",
+  "required": [
+    "schema_version", "niche", "name_ideas", "description", "brand", "positioning", "target_audience",
+    "pillars", "formats", "calendar_30d", "ideas", "growth_strategy", "risks", "footer"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "niche": {
+      "type": "object",
+      "required": ["candidate_id", "name", "language"],
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": { "type": ["string", "null"] },
+        "name": { "type": "string", "maxLength": 80 },
+        "language": { "enum": ["en", "es", "fr", "de", "ur"] }
+      }
+    },
+    "name_ideas": {
+      "type": "array", "minItems": 10, "maxItems": 10,
+      "items": {
+        "type": "object", "required": ["name", "reason", "availability_note"], "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 2, "maxLength": 40 },
+          "reason": { "type": "string", "maxLength": 150 },
+          "availability_note": { "type": "string", "maxLength": 200 }
+        }
+      }
+    },
+    "description": { "type": "string", "minLength": 20, "maxLength": 1000 },
+    "brand": {
+      "type": "object",
+      "required": ["tone", "palette", "contrast_pair", "fonts", "logo_brief", "banner_brief"],
+      "additionalProperties": false,
+      "properties": {
+        "tone": { "type": "array", "minItems": 1, "maxItems": 6, "items": { "type": "string", "maxLength": 30 } },
+        "palette": {
+          "type": "array", "minItems": 4, "maxItems": 6,
+          "items": {
+            "type": "object", "required": ["hex", "role"], "additionalProperties": false,
+            "properties": {
+              "hex": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+              "role": { "type": "string", "maxLength": 40 }
+            }
+          }
+        },
+        "contrast_pair": {
+          "type": "object", "required": ["text", "background", "ratio"], "additionalProperties": false,
+          "properties": {
+            "text": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+            "background": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+            "ratio": { "type": "number", "minimum": 1 }
+          }
+        },
+        "fonts": {
+          "type": "array", "minItems": 1, "maxItems": 3,
+          "items": {
+            "type": "object", "required": ["family", "use", "licence"], "additionalProperties": false,
+            "properties": {
+              "family": { "type": "string" },
+              "use": { "enum": ["HEADLINE", "BODY"] },
+              "licence": { "type": "string" }
+            }
+          }
+        },
+        "logo_brief": { "type": "string", "maxLength": 600 },
+        "banner_brief": { "type": "string", "maxLength": 600 }
+      }
+    },
+    "positioning": { "type": "string", "minLength": 20, "maxLength": 1200 },
+    "target_audience": {
+      "type": "object", "required": ["description", "needs"], "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string", "maxLength": 600 },
+        "needs": { "type": "array", "minItems": 1, "maxItems": 10, "items": { "type": "string", "maxLength": 200 } }
+      }
+    },
+    "pillars": {
+      "type": "array", "minItems": 3, "maxItems": 7,
+      "items": {
+        "type": "object", "required": ["name", "description"], "additionalProperties": false,
+        "properties": { "name": { "type": "string", "maxLength": 60 }, "description": { "type": "string", "maxLength": 300 } }
+      }
+    },
+    "formats": {
+      "type": "array", "minItems": 3, "maxItems": 8,
+      "items": {
+        "type": "object", "required": ["name", "format", "description", "owner_role"], "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "maxLength": 60 },
+          "format": { "enum": ["LONG", "SHORT"] },
+          "description": { "type": "string", "maxLength": 300 },
+          "owner_role": { "type": "string", "maxLength": 200 }
+        }
+      }
+    },
+    "calendar_30d": {
+      "type": "array", "maxItems": 90,
+      "items": {
+        "type": "object", "required": ["day", "idea_ref", "format"], "additionalProperties": false,
+        "properties": {
+          "day": { "type": "integer", "minimum": 1, "maximum": 30 },
+          "idea_ref": { "type": "integer", "minimum": 0, "maximum": 49 },
+          "format": { "enum": ["LONG", "SHORT"] }
+        }
+      }
+    },
+    "ideas": {
+      "type": "array", "minItems": 50, "maxItems": 50,
+      "items": {
+        "type": "object", "required": ["title", "format", "pillar", "angle"], "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string", "minLength": 5, "maxLength": 100 },
+          "format": { "enum": ["LONG", "SHORT"] },
+          "pillar": { "type": "string", "maxLength": 60 },
+          "angle": { "type": "string", "maxLength": 300 }
+        }
+      }
+    },
+    "growth_strategy": { "type": "array", "minItems": 1, "maxItems": 10, "items": { "type": "string", "maxLength": 300 } },
+    "risks": {
+      "type": "array", "minItems": 1, "maxItems": 12,
+      "items": {
+        "type": "object", "required": ["risk", "severity", "mitigation"], "additionalProperties": false,
+        "properties": {
+          "risk": { "type": "string", "maxLength": 300 },
+          "severity": { "enum": ["LOW", "MEDIUM", "HIGH"] },
+          "mitigation": { "type": "string", "maxLength": 300 }
+        }
+      }
+    },
+    "footer": { "type": "string" }
+  }
+}

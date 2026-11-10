@@ -785,3 +785,79 @@ class SourceDocument(Base):
     content_text: Mapped[str] = mapped_column(Text)
     language: Mapped[str | None] = mapped_column(Text)
     expires_at: Mapped[datetime] = _ts()
+
+
+class NicheReport(Base):
+    __tablename__ = "niche_reports"
+    id: Mapped[uuid.UUID] = _id()
+    requested_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    params: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    status: Mapped[str] = mapped_column(Text)
+    agent_run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class NicheCandidate(Base):
+    __tablename__ = "niche_candidates"
+    id: Mapped[uuid.UUID] = _id()
+    report_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("niche_reports.id"))
+    name: Mapped[str] = mapped_column(Text)
+    summary: Mapped[str] = mapped_column(Text)
+    language: Mapped[str] = mapped_column(Text)
+    criteria: Mapped[list[dict[str, Any]]] = mapped_column(JSONB)
+    opportunity_score: Mapped[Decimal] = mapped_column(Numeric(5, 2))
+    inauthentic_risk: Mapped[str] = mapped_column(Text)
+    production_difficulty: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text, default="NEW")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class ScoreWeightProfile(Base):
+    __tablename__ = "score_weight_profiles"
+    id: Mapped[uuid.UUID] = _id()
+    name: Mapped[str] = mapped_column(Text, unique=True)
+    weights: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class TrendItem(Base):
+    __tablename__ = "trend_items"
+    id: Mapped[uuid.UUID] = _id()
+    channel_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("channels.id"))
+    topic: Mapped[str] = mapped_column(Text)
+    summary: Mapped[str] = mapped_column(Text)
+    source_document_ids: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)))
+    signal_strength: Mapped[Decimal] = mapped_column(Numeric(5, 2))
+    confidence: Mapped[str] = mapped_column(Text)
+    detected_at: Mapped[datetime] = _ts()
+    expires_at: Mapped[datetime] = _ts()
+    status: Mapped[str] = mapped_column(Text, default="ACTIVE")
+
+
+class Keyword(Base):
+    __tablename__ = "keywords"
+    id: Mapped[uuid.UUID] = _id()
+    channel_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("channels.id"))
+    phrase: Mapped[str] = mapped_column(Text)
+    language: Mapped[str] = mapped_column(Text)
+    evidence: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class ChannelStrategy(Base):
+    __tablename__ = "channel_strategies"
+    id: Mapped[uuid.UUID] = _id()
+    channel_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("channels.id"))
+    niche_candidate_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("niche_candidates.id"))
+    version: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(Text)
+    blueprint: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    agent_run_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("agent_runs.id"))
+    approved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    approved_at: Mapped[datetime | None] = _ts(nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")

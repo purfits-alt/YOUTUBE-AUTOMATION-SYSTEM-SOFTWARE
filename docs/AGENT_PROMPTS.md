@@ -49,6 +49,14 @@ Every output schema allows a refusal object: `{"refusal": {"code": "POLICY|INSUF
 
 ---
 
+*Phase 6: the prompt files for A02, A03, A05, A06 and A07 (v1.0) are in `workers/tubeforge_agents/prompts/`.*
+- They add the rules that code enforces, so the model knows them:
+  - evidence ids must come from the input;
+  - signal strengths are copied, not changed;
+  - A06 gives exactly 50 ideas and respects the calendar limits;
+  - A07 uses fonts from the licensed list only.
+- A06 asks for 50–60 ideas. Code removes near-duplicates and keeps 50.
+
 ## A02 — Niche Discovery (v1.0)
 
 **Role:** Analyse permitted source documents and propose niche candidates with transparent, criterion-level evidence.

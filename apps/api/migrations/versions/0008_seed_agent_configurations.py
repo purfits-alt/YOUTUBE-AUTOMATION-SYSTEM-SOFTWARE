@@ -204,5 +204,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Blueprints keep their content but lose the link to the run log being removed (Phase 6).
+    op.execute("UPDATE channel_strategies SET agent_run_id = NULL WHERE agent_run_id IS NOT NULL")
     op.execute("DELETE FROM agent_runs")
     op.execute("DELETE FROM agent_configurations")
