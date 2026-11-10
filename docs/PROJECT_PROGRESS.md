@@ -2,9 +2,9 @@
 
 > Living document. Updated at every checkpoint and at the end of every phase.
 
-**Current phase:** Phase 5 — Orchestrator & agent infrastructure
-**Current step:** Phase 5 complete (P5-A…P5-D) — report below; waiting for the owner's "approved". Phase 4 merged to `main` (PR #8); the owner's manual real-OAuth test is still open.
-**Last updated:** 2026-11-08
+**Current phase:** Phase 6 — Niche discovery & trends
+**Current step:** Phase 6 plan written (below); waiting for the owner's go for step P6-A. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
+**Last updated:** 2026-11-10
 
 ---
 
@@ -343,7 +343,7 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 
 **Manual real-OAuth test (owner PC):** *not yet run — to be recorded here.*
 
-### Phase 5 — Orchestrator & agent infrastructure · report 2026-11-10 · branch `claude/vigilant-tesla-lkhgme` · waiting for owner approval
+### Phase 5 — Orchestrator & agent infrastructure · report 2026-11-10 · branch `claude/vigilant-tesla-lkhgme` · merged to `main` (PR #9) · ✅ approved by the owner 2026-11-10 (demo run on the owner PC, steps 1–5)
 
 **Plan (from IMPLEMENTATION_ROADMAP Phase 5), in four steps:**
 - **P5-A Orchestrator** ✅ — built: `orchestrator/{machines,guards,engine,approvals,reconciler,controls}.py`; channel helpers, OAuth, retention and the upload runner now change states only through the engine; jobs `orch.reconcile` (2 min) and `orch.approvals_expire` (hourly). Tests: 191 table-driven edge/guard cases, every unlisted (state, event) pair, Emergency Stop per edge, idempotency, actor rules, mode gates, universal states, approval hash invalidation, reconciler lost/stalled/ES, property tests, upload stopped by Emergency Stop at a chunk boundary and resumed. Implementation notes in WORKFLOW_STATE_MACHINE §9a.
@@ -471,6 +471,30 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 7. Paid safety, look only: on a paid row, tick the box and press **Step 1: confirm**. Step 2 counts down 60 seconds and asks for the typed phrase and a cap. **Do not finish it.** Press **Switch off now**.
 
 **After the merge (owner PC, 2026-11-10):** the first `setup` stopped at `uv sync` because TubeForge was still running and Windows locks `tubeforge-api.exe` (os error 32). Fix: `setup` now stops TubeForge first and starts it again at the end. Workaround on the old copy: `stop`, then `setup`.
+
+### Phase 6 — Niche discovery & trends · in progress · branch `claude/vigilant-tesla-lkhgme`
+
+**Owner direction (2026-11-10):** the owner will create a **new YouTube channel from scratch through TubeForge**. Discovery picks the niche with evidence, the owner approves a blueprint, and TubeForge creates the channel record. The owner then creates the YouTube channel and connects it as the **test channel** (Phase 4 onboarding). Private test uploads go only there. Later phases can upgrade it to a real, public channel, but only through the normal gates (auditors from Phase 9, publishing from Phase 12) and the owner's explicit choice. Open question for the owner, asked at P6-D: the language and audience to run the first real discovery for. The roadmap demo uses "English, personal finance for students".
+
+**Plan (from IMPLEMENTATION_ROADMAP Phase 6), in four steps:**
+- **P6-A Research fetcher and sources:**
+  - one fetcher behind the allowlist, with an SSRF guard, sanitiser and untrusted-text wrapper;
+  - a source registry and its API;
+  - adapters for Wikipedia pageviews and RSS;
+  - a Trends adapter that stays off unless the owner approves it.
+- **P6-B Discovery agents and scoring:**
+  - agents A02, A03, A05, A06 and A07 on the Gateway;
+  - deterministic scoring and rescore, with weight profiles;
+  - evidence on every candidate;
+  - a forbidden-phrase scan.
+- **P6-C Competitor lookup (A04):**
+  - one public item per lookup, kept for 30 days;
+  - a policy banner;
+  - no aggregation and nothing fed into scores (ADR-0015), enforced by a static check and a test.
+- **P6-D Web and report:**
+  - Discovery, Research, Trends, Strategies and Branding Studio (blueprint editor) on the real API;
+  - approving a blueprint creates the channel;
+  - e2e tests, docs, phase report.
 
 ## Resource consumption
 
