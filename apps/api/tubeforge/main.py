@@ -30,6 +30,7 @@ from tubeforge.api.v1 import events as events_v1
 from tubeforge.api.v1 import notifications as notifications_v1
 from tubeforge.api.v1 import oauth as oauth_v1
 from tubeforge.api.v1 import providers as providers_v1
+from tubeforge.api.v1 import research as research_v1
 from tubeforge.api.v1 import security as security_v1
 from tubeforge.api.v1 import system as system_v1
 from tubeforge.api.v1 import uploads as uploads_v1
@@ -171,6 +172,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(notifications_v1.router, prefix="/api/v1")
     app.include_router(agents_v1.router, prefix="/api/v1")
     app.include_router(providers_v1.router, prefix="/api/v1")
+    app.include_router(research_v1.router, prefix="/api/v1")
     app.include_router(oauth_v1.callback_router)
     # Google clients (tests replace these with mocked transports).
     app.state.google_oauth = GoogleOAuth()

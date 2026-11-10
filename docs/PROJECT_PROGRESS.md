@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 6 — Niche discovery & trends
-**Current step:** Phase 6 plan written (below); waiting for the owner's go for step P6-A. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
+**Current step:** P6-A built (research fetcher, sources, Wikipedia pageviews, RSS); next P6-B (discovery agents and scoring). Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
 **Last updated:** 2026-11-10
 
 ---
@@ -474,10 +474,15 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 
 ### Phase 6 — Niche discovery & trends · in progress · branch `claude/vigilant-tesla-lkhgme`
 
-**Owner direction (2026-11-10):** the owner will create a **new YouTube channel from scratch through TubeForge**. Discovery picks the niche with evidence, the owner approves a blueprint, and TubeForge creates the channel record. The owner then creates the YouTube channel and connects it as the **test channel** (Phase 4 onboarding). Private test uploads go only there. Later phases can upgrade it to a real, public channel, but only through the normal gates (auditors from Phase 9, publishing from Phase 12) and the owner's explicit choice. Open question for the owner, asked at P6-D: the language and audience to run the first real discovery for. The roadmap demo uses "English, personal finance for students".
+**Owner direction (2026-11-10):** the owner will create a **new YouTube channel from scratch through TubeForge**. Discovery picks the niche with evidence, the owner approves a blueprint, and TubeForge creates the channel record. The owner then creates the YouTube channel and connects it as the **test channel** (Phase 4 onboarding). Private test uploads go only there. Later phases can upgrade it to a real, public channel, but only through the normal gates (auditors from Phase 9, publishing from Phase 12) and the owner's explicit choice. First discovery: the owner chose "let TubeForge suggest" (2026-11-10); the roadmap demo still uses "English, personal finance for students" as a test case.
 
 **Plan (from IMPLEMENTATION_ROADMAP Phase 6), in four steps:**
-- **P6-A Research fetcher and sources:**
+- **P6-A Research fetcher and sources** ✅ — built (2026-11-10):
+  - `research/{net,fetcher,sanitize,sources,wikipedia,rss,trends}.py`, `api/v1/research.py` (4 routes), migration 0009 (registry seed), job `mnt.retention.purge_research_docs`;
+  - tests: 61 unit (address rules, IP forms, redirects re-checked, size/time/type caps, peer re-check, sanitiser, safe feed parsing) and 7 integration (seed, pageviews stored as evidence, Emergency Stop and switched-off sources fetch nothing, RSS items, 90-day purge, API with re-auth approval, anti-scraping, roles);
+  - the owner chose **"let TubeForge suggest"** for the first discovery (no fixed language or audience);
+  - open: Wikimedia's terms and User-Agent policy pages could not be opened from the build machine, so the owner confirms them on the Sources page (step D), and may add a contact to the User-Agent (`research_contact`).
+- **Plan for P6-A:**
   - one fetcher behind the allowlist, with an SSRF guard, sanitiser and untrusted-text wrapper;
   - a source registry and its API;
   - adapters for Wikipedia pageviews and RSS;

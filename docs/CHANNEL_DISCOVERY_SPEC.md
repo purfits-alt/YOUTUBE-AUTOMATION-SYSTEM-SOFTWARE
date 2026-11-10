@@ -19,6 +19,13 @@
 
 Fetcher rules: OAUTH_SECURITY §6–7 (allowlist, SSRF guard, 2 MB cap, sanitising, untrusted wrapper). Documents expire after 90 days.
 
+**Implemented in Phase 6 step A** (`apps/api/tubeforge/research/`, migration 0009):
+- **Registry.** The four built-in sources are seeded. `WIKIPEDIA_PAGEVIEWS` (on) uses `wikimedia.org/api/rest_v1/metrics/pageviews`, with human traffic and all access methods. It provides daily pageviews per article and a daily top list without Main_Page or Special:, Wikipedia:, Portal:, Help:, File: and Talk: pages.
+- **Terms check.** Its terms page could not be opened from the build machine on 2026-11-10, so `terms_verified_at` stays empty until the owner presses "I checked the terms".
+- **RSS.** Each feed item is stored as its own document, and item links are never fetched.
+- **Trends alpha.** `TRENDS_API_ALPHA` refuses every call: it is off, needs approval, and its adapter is added once the owner has alpha access.
+- **Retention.** Hourly job `mnt.retention.purge_research_docs` (minute 50) deletes documents past `expires_at`. Fetching an identical document again refreshes its expiry.
+
 ## 2. Channel Opportunity Score
 
 Score per candidate = **Σ (wᵢ × vᵢ) / Σ wᵢ**, where vᵢ ∈ [0, 100] is the criterion value and wᵢ ∈ [0, 10] is the owner-adjustable weight. A criterion with `confidence = LOW` and no evidence counts at **50 % weight** (an uncertainty penalty). Recalculating with new weights is done in code without calling an LLM (`POST /niches/rescore`).

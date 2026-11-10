@@ -153,6 +153,17 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 | GET | `/lookups/youtube` | recent lookups (non-aggregated list) | `research.lookup` |
 | GET/POST/DELETE | `/channels/{id}/keywords` | keyword list with evidence | `research.run` |
 | GET/POST/PATCH | `/research-sources` | source registry. Enabling a `REQUIRES_OWNER_APPROVAL` source needs 🔐 | `settings.manage` |
+| POST | `/research-sources/{id}/test` | fetch the source once now; returns the stored documents | `research.run` |
+| GET | `/research-sources/{id}/documents?limit=` | recent stored documents (title, URL, 300-character excerpt, expiry) | `research.view` |
+
+*`/research-sources` implemented in Phase 6 (`api/v1/research.py`).* GET needs `research.view`; POST and PATCH need `settings.manage`.
+- POST `{kind: RSS|WEB_ALLOWLISTED, slug, url, terms_url?}` creates `RSS:<slug>` or `WEB:<slug>`. The allowlist is exactly the URL's host. The source starts switched off as `REQUIRES_OWNER_APPROVAL`.
+- POST rejects (422 `INVALID_URL`) anything that is not https on port 443, an IP literal, or a YouTube/Google host.
+- PATCH `{enabled?, terms_verified?: true}`. Switching on an unapproved source needs re-auth and makes it `APPROVED`. `BLOCKED` sources cannot be switched on (409).
+- Test-fetch errors:
+  - 409 for `STOPPED`, `NOT_APPROVED`, `SOURCE_OFF` and `NOT_FETCHABLE`;
+  - 422 `FETCH_BLOCKED` for an outbound-policy breach;
+  - 502 `FETCH_FAILED` or `FEED_UNREADABLE` when the site fails.
 
 ### 4.6 Ideas & calendar
 

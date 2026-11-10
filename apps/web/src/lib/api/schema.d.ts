@@ -909,6 +909,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/research-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sources */
+        get: operations["list_sources_api_v1_research_sources_get"];
+        put?: never;
+        /** Add Source */
+        post: operations["add_source_api_v1_research_sources_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research-sources/{source_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Source */
+        patch: operations["patch_source_api_v1_research_sources__source_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/research-sources/{source_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Documents */
+        get: operations["list_documents_api_v1_research_sources__source_id__documents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research-sources/{source_id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Fetch
+         * @description Fetch the source once now and store what came back (a quick check that it works).
+         */
+        post: operations["test_fetch_api_v1_research_sources__source_id__test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/security-events": {
         parameters: {
             query?: never;
@@ -1501,6 +1573,30 @@ export interface components {
             id: string;
             /** Reason */
             reason: string;
+        };
+        /** DocumentOut */
+        DocumentOut: {
+            /** Excerpt */
+            excerpt: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Fetched At
+             * Format: date-time
+             */
+            fetched_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string | null;
+            /** Url */
+            url: string;
         };
         /** EmergencyStopOut */
         EmergencyStopOut: {
@@ -2118,6 +2214,67 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** SourceIn */
+        SourceIn: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "RSS" | "WEB_ALLOWLISTED";
+            /**
+             * Slug
+             * @description Short name: lower-case letters, digits and '-'.
+             */
+            slug: string;
+            /** Terms Url */
+            terms_url?: string | null;
+            /** Url */
+            url: string;
+        };
+        /** SourceOut */
+        SourceOut: {
+            /** Allowed Hosts */
+            allowed_hosts: string[];
+            /**
+             * Approval Status
+             * @enum {string}
+             */
+            approval_status: "APPROVED" | "REQUIRES_OWNER_APPROVAL" | "BLOCKED";
+            /** Base Url */
+            base_url: string | null;
+            /** Code */
+            code: string;
+            /** Documents */
+            documents: number;
+            /** Enabled */
+            enabled: boolean;
+            /** Fetchable */
+            fetchable: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "API" | "RSS" | "OWNER" | "OWN_ANALYTICS" | "WEB_ALLOWLISTED";
+            /** Terms Url */
+            terms_url: string | null;
+            /** Terms Verified At */
+            terms_verified_at: string | null;
+        };
+        /** SourcePatch */
+        SourcePatch: {
+            /** Enabled */
+            enabled?: boolean | null;
+            /**
+             * Terms Verified
+             * @description The owner checked the terms today.
+             */
+            terms_verified?: true | null;
+        };
         /** StartIn */
         StartIn: {
             /**
@@ -2194,6 +2351,13 @@ export interface components {
             critical_unread: number;
             /** Unread */
             unread: number;
+        };
+        /** TestFetchOut */
+        TestFetchOut: {
+            /** Documents Stored */
+            documents_stored: number;
+            /** Samples */
+            samples: components["schemas"]["DocumentOut"][];
         };
         /** TestRunIn */
         TestRunIn: {
@@ -8041,6 +8205,491 @@ export interface operations {
             };
             /** @description State conflict (e.g. IDEMPOTENCY_IN_PROGRESS) */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_READY (master key or database missing) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_sources_api_v1_research_sources_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"][];
+                };
+            };
+            /** @description VALIDATION_ERROR (field errors in errors[]) or a bad header */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description State conflict (e.g. IDEMPOTENCY_IN_PROGRESS) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_READY (master key or database missing) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    add_source_api_v1_research_sources_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"];
+                };
+            };
+            /** @description VALIDATION_ERROR (field errors in errors[]) or a bad header */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description DUPLICATE_SOURCE / SOURCE_BLOCKED / STOPPED / NOT_APPROVED / SOURCE_OFF / NOT_FETCHABLE */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FETCH_BLOCKED / INVALID_URL */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FETCH_FAILED / FEED_UNREADABLE */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_READY (master key or database missing) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    patch_source_api_v1_research_sources__source_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourcePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"];
+                };
+            };
+            /** @description VALIDATION_ERROR (field errors in errors[]) or a bad header */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description DUPLICATE_SOURCE / SOURCE_BLOCKED / STOPPED / NOT_APPROVED / SOURCE_OFF / NOT_FETCHABLE */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FETCH_BLOCKED / INVALID_URL */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FETCH_FAILED / FEED_UNREADABLE */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_READY (master key or database missing) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_documents_api_v1_research_sources__source_id__documents_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"][];
+                };
+            };
+            /** @description VALIDATION_ERROR (field errors in errors[]) or a bad header */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description State conflict (e.g. IDEMPOTENCY_IN_PROGRESS) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description NOT_READY (master key or database missing) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    test_fetch_api_v1_research_sources__source_id__test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestFetchOut"];
+                };
+            };
+            /** @description VALIDATION_ERROR (field errors in errors[]) or a bad header */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description DUPLICATE_SOURCE / SOURCE_BLOCKED / STOPPED / NOT_APPROVED / SOURCE_OFF / NOT_FETCHABLE */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FETCH_BLOCKED / INVALID_URL */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FETCH_FAILED / FEED_UNREADABLE */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };

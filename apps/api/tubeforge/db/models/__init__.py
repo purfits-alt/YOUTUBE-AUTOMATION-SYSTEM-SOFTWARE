@@ -757,3 +757,31 @@ __all__ = [
     "WorkflowTransition",
     "YoutubeApiCache",
 ]
+
+
+class ResearchSource(Base):
+    __tablename__ = "research_sources"
+    id: Mapped[uuid.UUID] = _id()
+    code: Mapped[str] = mapped_column(Text, unique=True)
+    kind: Mapped[str] = mapped_column(Text)
+    base_url: Mapped[str | None] = mapped_column(Text)
+    allowed_hosts: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
+    terms_url: Mapped[str | None] = mapped_column(Text)
+    terms_verified_at: Mapped[date | None] = mapped_column(Date)
+    approval_status: Mapped[str] = mapped_column(Text)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class SourceDocument(Base):
+    __tablename__ = "source_documents"
+    id: Mapped[uuid.UUID] = _id()
+    source_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("research_sources.id"))
+    url: Mapped[str] = mapped_column(Text)
+    title: Mapped[str | None] = mapped_column(Text)
+    fetched_at: Mapped[datetime] = _ts()
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    content_text: Mapped[str] = mapped_column(Text)
+    language: Mapped[str | None] = mapped_column(Text)
+    expires_at: Mapped[datetime] = _ts()

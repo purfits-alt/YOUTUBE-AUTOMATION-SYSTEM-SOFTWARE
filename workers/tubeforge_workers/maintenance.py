@@ -29,6 +29,7 @@ PENDING_FLOWS_CRON = "*/10 * * * *"
 RECONCILE_CRON = "*/2 * * * *"
 APPROVALS_CRON = "5 * * * *"
 A32_CRON = "*/15 * * * *"
+RESEARCH_PURGE_CRON = "50 * * * *"
 
 log = get_logger("tubeforge.jobs")
 
@@ -79,6 +80,13 @@ def purge_api_cache(timestamp: int) -> int:
 
 def purge_pending_flows(timestamp: int) -> int:
     return _run("mnt.retention.oauth_pending_cleanup", lambda db, *_: retention.purge_pending_flows(db))
+
+
+def purge_research_documents(timestamp: int) -> int:
+    """mnt.retention.purge_research_docs: research documents older than 90 days are deleted."""
+    from tubeforge.research.sources import purge_expired
+
+    return _run("mnt.retention.purge_research_docs", lambda db, *_: purge_expired(db))
 
 
 def reconcile(timestamp: int) -> dict[str, Any]:

@@ -121,6 +121,16 @@ Implementation rules (Phase 4, `youtube/oauth.py`):
 | Blocked | Any `*.youtube.com` HTML page (anti-scraping test), private, link-local and loopback IPs for research fetches |
 | Limits | Research fetch: 2 MB max, 15 s timeout, ≤ 3 redirects (each re-checked against the allowlist), text/html or application/xml or json only |
 
+**Implementation (Phase 6, `tubeforge/research/{net,fetcher}.py`):**
+- Each source's allowlist is a list of exact host names; there are no wildcards.
+- Hosts given as IP literals are refused, including shorthand forms such as `2130706433` or `0x7f.1`.
+- Every address a name resolves to must be public. This excludes private, loopback, link-local, CGNAT, multicast, reserved and documentation ranges, and IPv4-mapped, NAT64, 6to4 and Teredo forms of them.
+- After connecting, the address actually reached is re-checked before the body is read, so DNS rebinding is caught.
+- System proxy settings are ignored.
+- The 15 s limit covers the whole fetch, and a slow, dripping response is cut off at that limit.
+- RSS/Atom documents with a `<!DOCTYPE` or `<!ENTITY` are refused before XML parsing, so entities never expand.
+- The User-Agent is `TubeForge/<version> (self-hosted research tool)`. The owner may add contact details (`research_contact` in `tubeforge.toml`), as Wikimedia asks of API users. Nothing personal is sent by default.
+
 ## 7. Untrusted-content handling (prompt-injection defence)
 
 1. **Fetch** → strip scripts and styles → convert to plain text → cap length → store in `source_documents` with its source ID.
