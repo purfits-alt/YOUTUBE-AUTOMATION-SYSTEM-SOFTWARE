@@ -844,68 +844,6 @@
         }
       }
     },
-    "/usage": {
-      "get": {
-        "operationId": "get_usage",
-        "tags": [
-          "control"
-        ],
-        "summary": "Page 26 data (usage)",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageData"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error (RFC 9457 problem+json)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/agent-runs": {
-      "get": {
-        "operationId": "get_agents",
-        "tags": [
-          "control"
-        ],
-        "summary": "Page 28 data (agents)",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageData"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error (RFC 9457 problem+json)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/audits": {
       "get": {
         "operationId": "get_policy",

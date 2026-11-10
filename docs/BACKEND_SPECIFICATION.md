@@ -327,6 +327,9 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 | GET | `/agents/{code}` · PATCH (If-Match) | config: enabled, provider_chain, limits, prompt_version. **Auditor agents cannot be disabled via API** (only paused through a kill switch with reason) | `agents.view` / `agents.manage` |
 | GET | `/agents/{code}/prompts` | prompt versions (read-only; changed via repo + migration) | `agents.view` |
 | GET | `/agent-runs` · `/agent-runs/{id}` | Page[AgentRunOut] (filter agent, status, project); input and output (redacted) | `agents.view` |
+| POST | `/agents/{code}/run` 🔁 | `{input}` → 202 `{job_id}`; queues a test run (`agent.run`). 409 `NO_HANDLER` for agents not built yet (Phase 5: only `T00_HELLO`) | `agents.manage` |
+
+*Implemented in Phase 5 (`api/v1/agents.py`).* Pause/resume uses the AGENT kill switch (`/system/kill-switches`), so it is the same switch the orchestrator and workers enforce. A `PATCH` that names an unknown provider in the chain returns 409 `UNKNOWN_PROVIDER`.
 
 ### 4.17 Providers, usage, costs
 
@@ -340,6 +343,11 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 | POST | `/providers/{code}/verify` | `{verified_url, notes}` → updates verified_at | `providers.manage` |
 | GET | `/usage?period=day\|month` | UsageOut per provider and metric vs limit | `providers.view` |
 | GET/PUT | `/budgets` | BudgetOut[] / `{scope, provider_code?, month, cap_minor}` 🔐 for raising caps | `providers.paid` |
+| DELETE | `/providers/{code}/credentials` | removes the stored key (one key per family) | `providers.manage` |
+| POST | `/providers/{code}/paid-activation/disable` | switches a paid provider off at once (no re-auth: turning money off must never be hard) | `providers.paid` |
+| GET | `/costs/summary` | month spend vs caps, paid providers enabled, banner text | `providers.view` |
+
+*Implemented in Phase 5 (`api/v1/providers.py`).* Provider codes contain `:` and `/` (`groq:openai/gpt-oss-20b`). Routes take them with a path converter whose segments are never `verify`, `credentials` or `paid-activation`, so a code may be sent with a raw or `%2F`-encoded slash. Keys are stored per family (`gemini`, `groq`); Ollama needs none (409 `NO_KEY_NEEDED`). Enabling a Tier P provider through `PATCH` returns 409 `USE_PAID_ACTIVATION`. Saving limits clears the "placeholder" flag.
 
 ### 4.18 Audit & security
 

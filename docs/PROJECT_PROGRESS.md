@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 5 — Orchestrator & agent infrastructure
-**Current step:** P5-A, P5-B and P5-C built (backend complete); next P5-D (Agent Control Center + Cost & Usage screens, report). Phase 4 merged to `main` (PR #8); the owner's manual real-OAuth test is still open.
+**Current step:** Phase 5 complete (P5-A…P5-D) — report below; waiting for the owner's "approved". Phase 4 merged to `main` (PR #8); the owner's manual real-OAuth test is still open.
 **Last updated:** 2026-11-08
 
 ---
@@ -343,7 +343,7 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 
 **Manual real-OAuth test (owner PC):** *not yet run — to be recorded here.*
 
-### Phase 5 — Orchestrator & agent infrastructure · in progress · branch `claude/vigilant-tesla-lkhgme`
+### Phase 5 — Orchestrator & agent infrastructure · report 2026-11-10 · branch `claude/vigilant-tesla-lkhgme` · waiting for owner approval
 
 **Plan (from IMPLEMENTATION_ROADMAP Phase 5), in four steps:**
 - **P5-A Orchestrator** ✅ — built: `orchestrator/{machines,guards,engine,approvals,reconciler,controls}.py`; channel helpers, OAuth, retention and the upload runner now change states only through the engine; jobs `orch.reconcile` (2 min) and `orch.approvals_expire` (hourly). Tests: 191 table-driven edge/guard cases, every unlisted (state, event) pair, Emergency Stop per edge, idempotency, actor rules, mode gates, universal states, approval hash invalidation, reconciler lost/stalled/ES, property tests, upload stopped by Emergency Stop at a chunk boundary and resumed. Implementation notes in WORKFLOW_STATE_MACHINE §9a.
@@ -374,13 +374,101 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
   - Fixes: A32 alerts were not de-duplicated. A NUL byte in the login e-mail caused a 500; it now gets a 400, and any NUL that still reaches PostgreSQL gets a 400 everywhere. Found by the contract test.
   - AgentTask base, schemas, versioned prompt files, `agent_runs` with redacted input and output, metrics, and a "hello" test agent.
   - Paid (Tier P) two-step activation with a 60-second gap, budgets, and the A32 paid-indicator detector.
-- **P5-D Web and report**
-  - Agent Control Center and Cost & Usage Manager on the real API, where the owner enters the real Gemini/Groq free limits.
-  - e2e tests, docs, phase report.
+- **P5-D Web and report** ✅ — built:
+  - APIs: `api/v1/agents.py` (7 routes) and `api/v1/providers.py` (12 routes).
+  - **Agent Control Center** on the real API:
+    - every agent with its kind, state and 24-hour stats;
+    - Pause/Resume through the same AGENT kill switch the workers obey;
+    - a config dialog: provider chain (reorder, add, remove), runs and tokens per day; saved with If-Match;
+    - a test run for the hello agent;
+    - recent runs with redacted input and output.
+  - **Cost & Usage Manager** on the real API:
+    - a spend banner;
+    - one write-only key per provider family;
+    - a row per model with on/off, usage meters, daily limits, the "placeholder" note and "I checked it today";
+    - the two-step paid activation (acknowledge, then the typed phrase, a cap and a 60-second countdown) and "Switch off now";
+    - YouTube quota meters and monthly budgets.
+  - Fix found by the contract test: provider codes contain `/`, so `PATCH /providers/x/verify` was read as provider `x/verify` and got 403 instead of 405. A path converter now never treats `verify`, `credentials` or `paid-activation` as part of a code.
 
 **Fixes found while building:**
 - **Truncated tables.** The schema generator ended a table at `);` inside a comment and mis-split column lists. `provider_credentials` had **no columns** in every database since Phase 3, and `seo_packages` lost 13 columns in Phase 4. The generator now reads table bodies properly. Migration 0006 rebuilds both tables (no data existed). A new test compares every table's real columns with the generated schema.
 - **Enum check on the wrong column.** the schema generator put an enum check on the first text column of a line that declares two. `voice_profiles.label` and `notification_deliveries.channel` got the state checks. The generator is fixed, and migration 0005 repairs existing databases.
+
+**Phase 5 report (TESTING_AND_QA §7)**
+
+1. **Modules implemented**
+   - **Orchestrator** (`orchestrator/`): 10 state machines as code tables, one transition engine (row lock, Emergency Stop, actor rules, [S]/[F] mode gates, 51 guards, transitions + audit in one transaction, idempotent replay), hash-bound approvals, and a reconciler for lost and stalled jobs. Channel, OAuth, retention and upload code now move states only through the engine.
+   - **AI Provider Gateway** (`gateway/`):
+     - one pipeline for every AI call: stop checks → policy → key → cache → usage reservation → adapter → schema validation with one repair → settle;
+     - adapters for Gemini, Groq and Ollama;
+     - two-step paid activation, budgets, and paid-tier detection.
+   - **Agents** (`workers/tubeforge_agents`): catalogue of 32 agents plus the hello test agent, versioned prompts with untrusted-input fencing, `run_agent()` (refusal, redaction, waiting for quota, Emergency Stop).
+   - **A32 cost monitor** (`workers/tubeforge_auditors/a32_cost.py`): alerts at 70 / 90 / 100 %, re-verify reminders, a day-1 check of the bank statement.
+   - **Web:** Agent Control Center and Cost & Usage Manager now run on the real API. New `Meter` component.
+2. **Files created/modified:**
+   - Backend: `apps/api/tubeforge/{orchestrator/*, gateway/*, api/v1/{agents,providers}.py, main.py, channel_lifecycle.py, youtube/{oauth,uploads,retention}.py, db/models}` and migrations 0005–0008.
+   - Workers: `workers/tubeforge_agents/*` (with `prompts/T00_HELLO/`), `workers/tubeforge_auditors/a32_cost.py`, `workers/tubeforge_workers/{tasks,maintenance}.py`.
+   - Web: `apps/web/src/{pages/agents/*, pages/usage/*, components/Meter.tsx, lib/api/client.ts, pages/registry.ts, app/routes.tsx, mocks/testApi.ts, i18n/en.json}`, e2e (`helpers.ts`, `stateful.spec.ts`).
+   - Contract: `packages/shared/openapi.json`, `openapi.stub.json`.
+   - Generator: `tools/gen_schema_sql.py`.
+   - Docs: ADR-0027, WORKFLOW_STATE_MACHINE §9a, BACKEND_SPECIFICATION §4.16–4.17, AI provider and cost specs, CLAUDE.md.
+3. **Database changes:**
+   - 0005 moves two enum checks to the right columns.
+   - 0006 rebuilds `provider_credentials` and `seo_packages`, which the generator had cut short (no data existed).
+   - 0007 seeds the provider registry and placeholder limits.
+   - 0008 seeds the 33 agent configurations.
+   - A new test compares every real table with the generated schema.
+4. **APIs implemented:** 19 new routes.
+   - Agents (7): list, get, edit (If-Match), prompts, test run, runs list, run detail.
+   - Providers (12): list, edit, key save/remove, verify, paid step 1/step 2/switch-off, usage, cost summary, budgets get/set.
+5. **Agents created:**
+   - `T00_HELLO`, a test agent that runs end to end through the gateway.
+   - A32, the cost and usage monitor, runs every 15 minutes.
+   - The other 31 agents are configured (chain, limits) but have no handler until their phases. Test runs answer `NO_HANDLER`.
+6. **Tests executed (Linux, this session):**
+   - **Python: 283 passed** (+265 contract subtests). New tests:
+     - 191 table-driven state-machine cases;
+     - gateway pipeline and adapter tests;
+     - agent framework tests;
+     - paid activation tests (too soon, wrong phrase, no cap, expired step 1, capped and paused at the cap);
+     - A32 thresholds and reminders;
+     - 6 API tests for agents and providers;
+     - the roadmap demo (a limit of 2 a day, the third run waits, switch to the local model, then Emergency Stop).
+   - The contract test found 2 real bugs, both fixed: a NUL byte in the login e-mail caused a 500, and the provider-route clash described above.
+   - **Web unit: 32 passed.**
+   - **Playwright, local run against the real API:**
+     - **204 passed** on desktop and mobile: routes × states, axe light and dark, mobile.
+     - **6/6 stateful**, including the new "Agent Control Center and Cost & Usage on the real backend" test: set an agent's daily runs, queue a hello test run, save a key, and paid step 1 (with re-auth) → step 2 locked by the countdown.
+     - 8 visual snapshots differ only by local fonts; CI renders the baselines.
+   - **Checks:** ruff, mypy --strict, eslint, tsc, `api:check`, traceability, pre-commit (gitleaks), pip-audit, pnpm audit and the licence check are all green.
+7. **Free-tier services used:**
+   - Gemini API free tier and Groq free plan, both off until the owner saves a key, and both capped by the owner's daily limits. Ollama runs locally for free.
+   - New dependencies: `jsonschema-rs` (MIT) and `jinja2` (BSD-3). The local model Qwen2.5-1.5B is Apache-2.0 (ADR-0027).
+   - Paid (Tier P) providers stay off. They switch on only through the two-step activation with a monthly cap.
+   - **This phase introduces no paid dependency: ✔**
+8. **Resource consumption:**
+   - Same processes as before.
+   - New scheduled jobs are light: the reconciler every 2 minutes, A32 every 15 minutes, approvals expiry hourly.
+   - Ollama (optional) needs about 1.5 GB of RAM while a model is loaded.
+   - No AI provider was called for real in this session. Tests use fakes.
+9. **Known limitations:**
+   - The provider limits in the database are **placeholders** until the owner enters the real numbers from the Gemini and Groq pages. The page marks them.
+   - Only the hello agent can run. Real agents arrive with their phases (Phase 6 onwards).
+   - Paid costs are estimated from per-token prices in the registry. The owner checks the bank statement on day 1 (A32 reminds).
+   - Visual snapshot baselines changed for the two new pages. CI re-renders them.
+10. **Remaining tasks for Phase 5 acceptance:**
+   - CI green, including refreshed snapshots.
+   - The owner runs the demo below and replies "approved".
+   - Still open from Phase 4: the manual real-OAuth + private upload test.
+
+**Demo script (owner, Windows):**
+1. `git -C "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app" pull`, then `tubeforge.ps1 setup` (runs the new database upgrades) and `tubeforge.ps1 start`.
+2. Sign in, then open **Cost & Usage**. Every row shows "placeholder" and all paid providers are off.
+3. Optional, free: get a Gemini key from Google AI Studio (in a Google Cloud project with **no** billing) and paste it into the Gemini **API key** box, then **Save key**. Then open the Gemini rate-limit page, type today's real requests and tokens per day into one model row, and press **I checked it today**.
+4. Open **Agents**. Find **T00_HELLO** and press **Test run**, type a name and press **Run**. It appears in **Recent runs** within a few seconds. With a key (or Ollama) it shows **Done** and a greeting. Without either it shows **Failed** with "no provider available", which is the safe outcome.
+5. Press **Pause** on T00_HELLO, then **Resume**. This uses the same switch the workers obey.
+6. Press **Emergency Stop** in the top bar, then start another test run: it shows **Stopped**. Clear Emergency Stop.
+7. Paid safety, look only: on a paid row, tick the box and press **Step 1: confirm**. Step 2 counts down 60 seconds and asks for the typed phrase and a cap. **Do not finish it.** Press **Switch off now**.
 
 ## Resource consumption
 

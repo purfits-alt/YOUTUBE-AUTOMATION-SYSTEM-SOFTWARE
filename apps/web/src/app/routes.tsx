@@ -1,4 +1,5 @@
 import type { RouteObject } from "react-router";
+import { AgentsPage } from "../pages/agents/AgentsPage";
 import { ChannelsPage } from "../pages/channels/ChannelsPage";
 import { OnboardingPage } from "../pages/channels/OnboardingPage";
 import { NotFound } from "../pages/NotFound";
@@ -9,6 +10,7 @@ import { PAGES } from "../pages/registry";
 import { ChannelTrendingPage } from "../pages/ChannelTrendingPage";
 import { SecurityPage } from "../pages/SecurityPage";
 import { SettingsPage } from "../pages/SettingsPage";
+import { UsagePage } from "../pages/usage/UsagePage";
 import { AuthGate } from "./AuthGate";
 import { Layout } from "./Layout";
 
@@ -18,6 +20,8 @@ const REAL_PAGES: Record<string, () => React.JSX.Element> = {
   channels: () => <ChannelsPage />,
   onboarding: () => <OnboardingPage />,
   notifications: () => <NotificationsPage />,
+  usage: () => <UsagePage />,
+  agents: () => <AgentsPage />,
   security: () => <SecurityPage />,
   trending: () => <ChannelTrendingPage />,
   settings: () => <SettingsPage />,
