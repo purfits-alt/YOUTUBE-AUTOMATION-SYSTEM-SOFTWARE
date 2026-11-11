@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 6 — Niche discovery & trends
-**Current step:** Phase 6 complete (P6-A…P6-D) — report below; waiting for the owner's "approved". The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
+**Current step:** Phase 6 approved by the owner 2026-11-11; PR to `main` opened. Next: Phase 7 (ideas, research, fact-check & scripts) when the owner says go. The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
 **Last updated:** 2026-11-11
 
 ---
@@ -472,7 +472,7 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 
 **After the merge (owner PC, 2026-11-10):** the first `setup` stopped at `uv sync` because TubeForge was still running and Windows locks `tubeforge-api.exe` (os error 32). Fix: `setup` now stops TubeForge first and starts it again at the end. Workaround on the old copy: `stop`, then `setup`.
 
-### Phase 6 — Niche discovery & trends · report 2026-11-11 · branch `claude/vigilant-tesla-lkhgme` · waiting for owner approval
+### Phase 6 — Niche discovery & trends · report 2026-11-11 · branch `claude/vigilant-tesla-lkhgme` · ✅ approved by the owner 2026-11-11 (PR opened)
 
 **Owner direction (2026-11-10):** the owner will create a **new YouTube channel from scratch through TubeForge**. Discovery picks the niche with evidence, the owner approves a blueprint, and TubeForge creates the channel record. The owner then creates the YouTube channel and connects it as the **test channel** (Phase 4 onboarding). Private test uploads go only there. Later phases can upgrade it to a real, public channel, but only through the normal gates (auditors from Phase 9, publishing from Phase 12) and the owner's explicit choice. First discovery: the owner chose "let TubeForge suggest" (2026-11-10); the roadmap demo still uses "English, personal finance for students" as a test case.
 
