@@ -112,7 +112,7 @@
   },
   "toast": {
     "close": "Dismiss notification",
-    "actionQueued": "{action}: queued (mock — no real action in Phase 2)."
+    "actionQueued": "{action}: preview only — this page is built in a later phase, so nothing was done."
   },
   "safety": "Estimates with sources — not a promise of views or earnings.",
   "project": {

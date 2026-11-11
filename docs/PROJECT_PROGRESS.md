@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 6 — Niche discovery & trends
-**Current step:** Phase 6 approved by the owner 2026-11-11; PR to `main` opened. Next: Phase 7 (ideas, research, fact-check & scripts) when the owner says go. The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
+**Current step:** Phase 6 approved and merged to `main` (PR #10) on 2026-11-11. Next: Phase 7 (ideas, research, fact-check & scripts) when the owner says go. The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
 **Last updated:** 2026-11-11
 
 ---
@@ -611,6 +611,8 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 7. **Branding Studio:** read the names, colours, pillars, 50 ideas and calendar. Edit the description if you like and press **Save draft**. Fix anything listed under "things to fix". Then press **Propose**, then **Approve**, choose the channel name and keep "Start as my test channel" ticked.
 8. TubeForge creates the channel and opens its **onboarding**. Create the channel on YouTube with that name, then follow the 10 steps: connect with Google and run one private test upload. This also completes the open Phase 4 test.
 9. **Competitor Research:** look up one public channel by its @handle. You see one card with the "not combined" notice. Looking it up again uses the saved copy.
+
+**After the merge (owner request, 2026-11-11):** placeholder pages said "queued (mock — no real action in Phase 2)", which read as if something had happened. The message now says "preview only — this page is built in a later phase, so nothing was done". A unit test pins the wording.
 
 ## Resource consumption
 
