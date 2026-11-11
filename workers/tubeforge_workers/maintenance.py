@@ -188,6 +188,14 @@ def keywords(channel_id: str, seeds: list[str]) -> int:
         return len(run_keywords(db, gateway, uuid.UUID(channel_id), seeds))
 
 
+def trend_scan_one(channel_id: str) -> int:
+    """research.trend_scan: the owner pressed "Scan now" for one channel."""
+    from tubeforge_agents.discovery import run_trend_scan
+
+    with _research() as (db, gateway, fetcher):
+        return len(run_trend_scan(db, gateway, fetcher, uuid.UUID(channel_id)))
+
+
 def trend_scan(timestamp: int) -> dict[str, int]:
     """a03.trend_scan: daily at 06:00 PKT for every ACTIVE channel with an approved blueprint."""
     from tubeforge_agents.discovery import PipelineError, run_trend_scan

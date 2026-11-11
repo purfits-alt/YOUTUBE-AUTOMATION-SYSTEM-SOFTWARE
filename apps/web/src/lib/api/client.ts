@@ -26,6 +26,16 @@ export type ProviderOut = Schemas["ProviderOut"];
 export type UsageLine = Schemas["UsageLine"];
 export type BudgetOut = Schemas["BudgetOut"];
 export type CostSummary = Schemas["CostSummary"];
+export type ReportOut = Schemas["ReportOut"];
+export type ReportDetail = Schemas["ReportDetail"];
+export type CandidateOut = Schemas["CandidateOut"];
+export type CriterionOut = Schemas["CriterionOut"];
+export type ProfileOut = Schemas["ProfileOut"];
+export type StrategyOut = Schemas["StrategyOut"];
+export type TrendOut = Schemas["TrendOut"];
+export type LookupOut = Schemas["LookupOut"];
+export type LookupItem = Schemas["LookupItem"];
+export type SourceOut = Schemas["SourceOut"];
 
 /** Still-mocked endpoints (MSW until their phase), from packages/shared/openapi.stub.json. */
 export type StubSchemas = stubComponents["schemas"];
@@ -138,6 +148,6 @@ export function idempotencyKey(): string {
  * runtime, so it is typed as one representative PageData path; openapi-fetch fills `{id}`.
  */
 export function getPageData(apiPath: string, id: string | undefined, fallbackId: string): Promise<PageData> {
-  const path = apiPath as "/niches/candidates/{id}";
+  const path = apiPath as "/projects/{id}/script";
   return call(() => stubApi.GET(path, { params: { path: { id: id ?? fallbackId } } }));
 }

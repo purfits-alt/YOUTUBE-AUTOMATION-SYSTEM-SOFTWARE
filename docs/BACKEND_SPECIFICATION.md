@@ -183,6 +183,20 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 - **GET** lists the unexpired lookups, newest first, each on its own.
 - Successful lookups are audited (`youtube.lookup`: kind, query key and whether the cache answered).
 
+*Phase 6 step D:*
+- **Editing a blueprint.** `PATCH /strategies/{id}` needs If-Match with the `etag` (428/412) and works on a DRAFT only (409 `NOT_EDITABLE`). The saved blueprint must match the schema (422 `BLUEPRINT_INVALID`). `niche` and `footer` cannot be edited; other rule problems may stay in a draft.
+- **Commands** — `POST /strategies/{id}/commands/{propose|approve|reject|new-version}`:
+  - `propose` and `approve` need zero problems (409 `BLUEPRINT_HAS_PROBLEMS`);
+  - `approve` needs `{channel_name, is_test_channel = true}` and `channel.manage`. It creates the channel (APPROVED, publishing rules, not monetised, language from the niche), links the blueprint, marks the candidate CONVERTED and the candidate's other drafts SUPERSEDED;
+  - `new-version` copies the blueprint into a new DRAFT.
+- **Trends.**
+  - `GET /trends?channel_id=&include_inactive=`: expired items are hidden by default, and shown as EXPIRED when included.
+  - `POST /trends/scan` (Idempotency-Key) queues `research.trend_scan`.
+  - `POST /trends/{id}/commands/{dismiss|to-idea}`: `to-idea` answers 409 `NOT_AVAILABLE_YET` until Phase 7.
+- **Keywords** — `GET`, `POST` and `DELETE /channels/{id}/keywords`:
+  - POST `{phrase}` adds the phrase now (201, 409 `DUPLICATE_KEYWORD`, 422 `FORBIDDEN_PHRASE`);
+  - POST `{seeds}` queues A05 (202, Idempotency-Key).
+
 ### 4.6 Ideas & calendar
 
 | Method | Path | Request → Response | Perm |

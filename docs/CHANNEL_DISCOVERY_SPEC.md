@@ -124,6 +124,21 @@ Logo and banner: TubeForge produces **briefs** and simple procedural drafts (tex
 - **Which access is used.** Calls use the owner's first connected channel (`youtube.readonly`) and are metered in the quota ledger (searches in the SEARCH bucket). Emergency Stop blocks new calls.
 - **Every answer** carries the notice "Public info about one channel or video — not combined with others. Kept for 30 days at most."
 
+**Phase 6 step D (screens):**
+- **Channel Discovery** (page 2):
+  - runs: "let TubeForge suggest" when no interests are given, or your interests, plus the avoid list and weight profile;
+  - candidates with score ± band, risk and difficulty;
+  - shortlist, dismiss and generate blueprint;
+  - weights and profiles (rescore without AI), and the list of what was left out and why;
+  - the research-source registry: switch on/off with the password for new sources, "I checked the terms", test fetch, and add feed.
+- **Niche Research** (5): the breakdown with evidence links and quotes, originality angles, and links to the candidate's blueprints.
+- **Trend Intelligence** (6): scan now; dismiss. Turning a trend into an idea arrives in Phase 7.
+- **Competitor Research** (7): policy banner; one result per lookup, each with the notice; recent lookups shown one by one.
+- **Channel Branding Studio** (8):
+  - shows the blueprint and the problems that must be fixed;
+  - you can edit the description, positioning and idea titles;
+  - Propose, Approve (choose the name; it starts as the test channel; it creates the channel and opens its onboarding), Reject and New version.
+
 ## 8. Onboarding (manual channel creation + connection)
 Steps are stored in `onboarding_steps`, and each shows official help links (verified when Phase 4 starts):
 1. Create or choose a Google account for the channel (a separate account is recommended for the test channel).

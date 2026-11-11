@@ -59,6 +59,15 @@ async function seed(ctx: APIRequestContext): Promise<void> {
     if (refused.status() !== 409)
       throw new Error(`seed: expected a refused test upload, got ${String(refused.status())}`);
   }
+  // One real discovery report (queued: no worker runs in e2e) so Channel Discovery has data.
+  const reports = (await (await ctx.get("/api/v1/niches/reports")).json()) as unknown[];
+  if (reports.length === 0) {
+    const started = await ctx.post("/api/v1/niches/reports", {
+      headers: headers(),
+      data: { avoid: ["crypto"] },
+    });
+    if (started.status() !== 202) throw new Error(`seed: discovery report, got ${String(started.status())}`);
+  }
   mkdirSync(dirname(SEED_FILE), { recursive: true });
   writeFileSync(SEED_FILE, JSON.stringify({ channelId: channel.id }));
 }

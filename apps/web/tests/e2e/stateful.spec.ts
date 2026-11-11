@@ -176,3 +176,31 @@ test.describe("signed out", () => {
     expect(problems).toEqual([]);
   });
 });
+
+test("Channel Discovery, research sources and Competitor Research on the real backend", async ({ page }) => {
+  // 409 = a lookup before any channel is connected (expected: Google is never called).
+  const problems = watchConsole(page, [409]);
+  await page.goto("/discovery");
+  await expect(page.getByTestId("state-success")).toBeVisible();
+  await expect(page.getByTestId("report-detail")).toBeVisible();
+  await page.getByRole("button", { name: "Run discovery" }).click();
+  const dialog = page.getByTestId("discovery-dialog");
+  await dialog.getByLabel("Niches to avoid (comma-separated)").fill("gambling, crypto");
+  await dialog.getByRole("button", { name: "Start discovery" }).click();
+  await expect(page.getByText(/Discovery queued/)).toBeVisible();
+  await expect(page.getByTestId("report-detail")).toContainText("Queued");
+
+  const wiki = page.getByTestId("source-WIKIPEDIA_PAGEVIEWS");
+  await expect(wiki).toContainText("wikimedia.org");
+  const checked = wiki.getByRole("button", { name: "I checked the terms" });
+  if (await checked.isVisible()) await checked.click();
+  await expect(wiki).toContainText("Terms checked");
+  await expect(page.getByTestId("source-TRENDS_API_ALPHA")).toContainText("Needs your approval");
+
+  await page.goto("/research/lookup");
+  await expect(page.getByTestId("policy-banner")).toContainText("never combined");
+  await page.getByLabel("Channel link, @handle or ID").fill("@somechannel");
+  await page.getByRole("button", { name: "Look up", exact: true }).click();
+  await expect(page.getByText(/connected channel's read-only access/)).toBeVisible();
+  expect(problems).toEqual([]);
+});

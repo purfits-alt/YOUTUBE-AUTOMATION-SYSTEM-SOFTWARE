@@ -7,14 +7,16 @@ model call. Every candidate response carries the fixed footer and the confidence
 
 from __future__ import annotations
 
+import hashlib
+import json
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from pydantic import BaseModel, Field, model_validator
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -23,7 +25,14 @@ from tubeforge.api.errors import ProblemError, not_found, problem_doc
 from tubeforge.api.idempotency import Idempotency
 from tubeforge.audit import record
 from tubeforge.db.ids import uuid7
-from tubeforge.db.models import ChannelStrategy, NicheCandidate, NicheReport, ScoreWeightProfile
+from tubeforge.db.models import (
+    Channel,
+    ChannelPublishingRules,
+    ChannelStrategy,
+    NicheCandidate,
+    NicheReport,
+    ScoreWeightProfile,
+)
 from tubeforge.orchestrator.controls import stop_reason
 from tubeforge.queue import defer_in_transaction
 from tubeforge.research import blueprint as bp
@@ -136,6 +145,14 @@ class ProfileOut(BaseModel):
     max_weight: float = MAX_WEIGHT
 
 
+STRATEGY_WRITE: dict[int | str, dict[str, Any]] = {
+    409: problem_doc("NOT_EDITABLE / INVALID_TRANSITION / BLUEPRINT_HAS_PROBLEMS"),
+    412: problem_doc("VERSION_CONFLICT"),
+    422: problem_doc("BLUEPRINT_INVALID / CHANNEL_NAME_REQUIRED"),
+    428: problem_doc("IF_MATCH_REQUIRED"),
+}
+
+
 class StrategyIn(BaseModel):
     niche_candidate_id: uuid.UUID
     owner_notes: str = Field(default="", max_length=2000)
@@ -154,7 +171,20 @@ class StrategyOut(BaseModel):
     status: Literal["DRAFT", "PROPOSED", "APPROVED", "SUPERSEDED", "REJECTED"]
     blueprint: dict[str, Any]
     problems: list[str]
+    approved_at: datetime | None
     created_at: datetime
+    etag: str
+
+
+class StrategyPatch(BaseModel):
+    blueprint: dict[str, Any]
+
+
+class ApproveIn(BaseModel):
+    channel_name: str = Field(min_length=1, max_length=80)
+    is_test_channel: bool = Field(
+        default=True, description="Start as the test channel (private uploads only)."
+    )
 
 
 # --------------------------------------------------------------------------------------- helpers
@@ -425,6 +455,11 @@ def start_blueprint(body: StrategyIn, request: Request, db: Db, p: StrategyManag
     return out
 
 
+def _etag(row: ChannelStrategy) -> str:
+    raw = json.dumps({"s": row.status, "b": row.blueprint}, sort_keys=True, default=str)
+    return hashlib.sha256(raw.encode()).hexdigest()[:20]
+
+
 def _strategy_out(row: ChannelStrategy) -> StrategyOut:
     return StrategyOut(
         id=row.id,
@@ -434,8 +469,17 @@ def _strategy_out(row: ChannelStrategy) -> StrategyOut:
         status=row.status,
         blueprint=row.blueprint,
         problems=bp.problems(row.blueprint),
+        approved_at=row.approved_at,
         created_at=row.created_at,
+        etag=_etag(row),
     )
+
+
+def _strategy(db: Session, strategy_id: uuid.UUID, *, lock: bool = False) -> ChannelStrategy:
+    row = db.get(ChannelStrategy, strategy_id, with_for_update=lock)
+    if row is None:
+        raise not_found("No such blueprint.")
+    return row
 
 
 @router.get("/strategies", response_model=list[StrategyOut])
@@ -449,8 +493,143 @@ def list_strategies(
 
 
 @router.get("/strategies/{strategy_id}", response_model=StrategyOut)
-def get_strategy(strategy_id: uuid.UUID, db: Db, p: StrategyView) -> StrategyOut:
-    row = db.get(ChannelStrategy, strategy_id)
-    if row is None:
-        raise not_found("No such blueprint.")
+def get_strategy(strategy_id: uuid.UUID, db: Db, p: StrategyView, response: Response) -> StrategyOut:
+    out = _strategy_out(_strategy(db, strategy_id))
+    response.headers["ETag"] = f'"{out.etag}"'
+    return out
+
+
+@router.patch("/strategies/{strategy_id}", response_model=StrategyOut, responses=STRATEGY_WRITE)
+def edit_strategy(
+    strategy_id: uuid.UUID,
+    body: StrategyPatch,
+    request: Request,
+    db: Db,
+    p: StrategyManage,
+    if_match: Annotated[str | None, Header(alias="If-Match")] = None,
+) -> StrategyOut:
+    """The owner edits a DRAFT. The saved blueprint must always match the schema; other rule problems
+    may remain while it is a draft (they block propose and approve)."""
+    row = _strategy(db, strategy_id, lock=True)
+    if if_match is None:
+        raise ProblemError(
+            428, "IF_MATCH_REQUIRED", "Version needed", "Send the blueprint's ETag in If-Match."
+        )
+    if if_match.strip().strip('"') != _etag(row):
+        raise ProblemError(
+            412, "VERSION_CONFLICT", "Changed elsewhere", "Reload the blueprint and try again."
+        )
+    if row.status != "DRAFT":
+        raise ProblemError(
+            409, "NOT_EDITABLE", "Not a draft", "Only a draft can be edited. Make a new version."
+        )
+    new = {**body.blueprint, "niche": row.blueprint.get("niche"), "footer": FOOTER, "schema_version": 1}
+    schema = [x for x in bp.problems(new) if x.startswith("Schema /")]
+    if schema:
+        raise ProblemError(422, "BLUEPRINT_INVALID", "Blueprint not valid", "; ".join(schema[:5]))
+    row.blueprint = new
+    row.updated_at = datetime.now(UTC)
+    _audit(request, db, p, "blueprint.edited", "channel_strategy", row.id, version=row.version)
+    db.commit()
+    return _strategy_out(row)
+
+
+@router.post("/strategies/{strategy_id}/commands/{cmd}", response_model=StrategyOut, responses=STRATEGY_WRITE)
+def strategy_command(
+    strategy_id: uuid.UUID,
+    cmd: Literal["propose", "approve", "reject", "new-version"],
+    request: Request,
+    db: Db,
+    p: StrategyManage,
+    body: ApproveIn | None = None,
+) -> StrategyOut:
+    row = _strategy(db, strategy_id, lock=True)
+    allowed = {
+        "propose": ("DRAFT",),
+        "approve": ("PROPOSED",),
+        "reject": ("DRAFT", "PROPOSED"),
+        "new-version": ("DRAFT", "PROPOSED", "APPROVED", "REJECTED"),
+    }[cmd]
+    if row.status not in allowed:
+        raise ProblemError(
+            409, "INVALID_TRANSITION", "Not possible now", f"A {row.status.lower()} blueprint cannot '{cmd}'."
+        )
+    if cmd in ("propose", "approve"):
+        found = bp.problems(row.blueprint)
+        if found:
+            raise ProblemError(409, "BLUEPRINT_HAS_PROBLEMS", "Fix the problems first", "; ".join(found[:5]))
+    now = datetime.now(UTC)
+    if cmd == "propose":
+        row.status = "PROPOSED"
+    elif cmd == "reject":
+        row.status = "REJECTED"
+    elif cmd == "new-version":
+        top = db.scalar(
+            select(func.max(ChannelStrategy.version)).where(
+                (ChannelStrategy.niche_candidate_id == row.niche_candidate_id)
+                if row.channel_id is None
+                else (ChannelStrategy.channel_id == row.channel_id)
+            )
+        )
+        copy = ChannelStrategy(
+            id=uuid7(),
+            channel_id=row.channel_id,
+            niche_candidate_id=row.niche_candidate_id,
+            version=int(top or row.version) + 1,
+            status="DRAFT",
+            blueprint=dict(row.blueprint),
+        )
+        db.add(copy)
+        db.flush()
+        _audit(request, db, p, "blueprint.new_version", "channel_strategy", copy.id, version=copy.version)
+        db.commit()
+        return _strategy_out(copy)
+    else:
+        if body is None:
+            raise ProblemError(422, "CHANNEL_NAME_REQUIRED", "Name needed", "Choose the channel name.")
+        if not p.has("channel.manage"):
+            raise ProblemError(
+                403, "FORBIDDEN", "Not allowed", "Approving creates a channel (channel.manage)."
+            )
+        niche = row.blueprint.get("niche", {})
+        channel = Channel(
+            id=uuid7(),
+            state="APPROVED",
+            name=body.channel_name.strip(),
+            content_language=str(niche.get("language", "en")),
+            is_test_channel=body.is_test_channel,
+            is_monetised=False,  # a brand-new channel is not in the YouTube Partner Programme
+        )
+        db.add(channel)
+        db.flush()
+        db.add(ChannelPublishingRules(channel_id=channel.id))
+        row.channel_id = channel.id
+        row.status = "APPROVED"
+        row.approved_by = p.user.id
+        row.approved_at = now
+        if row.niche_candidate_id is not None:
+            cand = db.get(NicheCandidate, row.niche_candidate_id, with_for_update=True)
+            if cand is not None:
+                cand.status = "CONVERTED"
+            for other in db.scalars(
+                select(ChannelStrategy).where(
+                    ChannelStrategy.niche_candidate_id == row.niche_candidate_id,
+                    ChannelStrategy.id != row.id,
+                    ChannelStrategy.status.in_(("DRAFT", "PROPOSED")),
+                )
+            ):
+                other.status = "SUPERSEDED"
+        _audit(
+            request,
+            db,
+            p,
+            "channel.created",
+            "channel",
+            channel.id,
+            name=channel.name,
+            from_blueprint=str(row.id),
+        )
+    row.updated_at = now
+    _audit(request, db, p, f"blueprint.{cmd}", "channel_strategy", row.id, version=row.version)
+    db.commit()
     return _strategy_out(row)
