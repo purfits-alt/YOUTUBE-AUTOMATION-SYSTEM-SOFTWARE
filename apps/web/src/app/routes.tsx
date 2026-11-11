@@ -11,6 +11,11 @@ import { ChannelTrendingPage } from "../pages/ChannelTrendingPage";
 import { SecurityPage } from "../pages/SecurityPage";
 import { SettingsPage } from "../pages/SettingsPage";
 import { UsagePage } from "../pages/usage/UsagePage";
+import { BrandingPage } from "../pages/research/BrandingPage";
+import { DiscoveryPage } from "../pages/research/DiscoveryPage";
+import { LookupPage } from "../pages/research/LookupPage";
+import { NichePage } from "../pages/research/NichePage";
+import { TrendsPage } from "../pages/research/TrendsPage";
 import { AuthGate } from "./AuthGate";
 import { Layout } from "./Layout";
 
@@ -22,6 +27,11 @@ const REAL_PAGES: Record<string, () => React.JSX.Element> = {
   notifications: () => <NotificationsPage />,
   usage: () => <UsagePage />,
   agents: () => <AgentsPage />,
+  discovery: () => <DiscoveryPage />,
+  niche: () => <NichePage />,
+  trends: () => <TrendsPage />,
+  lookup: () => <LookupPage />,
+  branding: () => <BrandingPage />,
   security: () => <SecurityPage />,
   trending: () => <ChannelTrendingPage />,
   settings: () => <SettingsPage />,

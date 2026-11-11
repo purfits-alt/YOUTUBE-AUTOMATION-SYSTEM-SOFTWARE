@@ -63,7 +63,9 @@ Removes the 7-day token expiry. In Google Cloud Console › OAuth consent screen
 ## 10. Troubleshooting (runbooks in Phase 16)
 | Symptom | Fix |
 |---|---|
+| Wikipedia research is refused or slow (HTTP 403/429) | Wikimedia asks API users for contact details. Add a line `research_contact = "https://your-site-or-e-mail"` to `config\tubeforge.toml`, then `stop` and `start` |
 | Dashboard won't open | `tubeforge.ps1 status`; check the PostgreSQL service; `doctor` |
+| `setup` says "failed to remove file … tubeforge-api.exe … being used by another process" | TubeForge was running. Since Phase 5, `setup` stops it first and starts it again afterwards; on an older copy run `tubeforge.ps1 stop`, then `setup` |
 | "Needs re-authorisation" | Click Re-authorise; if it repeats every 7 days, consider §5 |
 | Quota wait | Wait for the reset (shown in PKT) or reduce research searches |
 | Provider limit reached | The fallback provider runs or the task waits; adjust limits in Cost & Usage |

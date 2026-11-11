@@ -27,11 +27,15 @@ from tubeforge.api.v1 import agents as agents_v1
 from tubeforge.api.v1 import auth as auth_v1
 from tubeforge.api.v1 import channels as channels_v1
 from tubeforge.api.v1 import events as events_v1
+from tubeforge.api.v1 import lookups as lookups_v1
+from tubeforge.api.v1 import niches as niches_v1
 from tubeforge.api.v1 import notifications as notifications_v1
 from tubeforge.api.v1 import oauth as oauth_v1
 from tubeforge.api.v1 import providers as providers_v1
+from tubeforge.api.v1 import research as research_v1
 from tubeforge.api.v1 import security as security_v1
 from tubeforge.api.v1 import system as system_v1
+from tubeforge.api.v1 import trends as trends_v1
 from tubeforge.api.v1 import uploads as uploads_v1
 from tubeforge.config import Settings, get_settings
 from tubeforge.db.session import check_database, get_engine, table_exists
@@ -171,6 +175,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(notifications_v1.router, prefix="/api/v1")
     app.include_router(agents_v1.router, prefix="/api/v1")
     app.include_router(providers_v1.router, prefix="/api/v1")
+    app.include_router(research_v1.router, prefix="/api/v1")
+    app.include_router(niches_v1.router, prefix="/api/v1")
+    app.include_router(lookups_v1.router, prefix="/api/v1")
+    app.include_router(trends_v1.router, prefix="/api/v1")
     app.include_router(oauth_v1.callback_router)
     # Google clients (tests replace these with mocked transports).
     app.state.google_oauth = GoogleOAuth()

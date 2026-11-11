@@ -2,9 +2,9 @@
 
 > Living document. Updated at every checkpoint and at the end of every phase.
 
-**Current phase:** Phase 5 — Orchestrator & agent infrastructure
-**Current step:** Phase 5 complete (P5-A…P5-D) — report below; waiting for the owner's "approved". Phase 4 merged to `main` (PR #8); the owner's manual real-OAuth test is still open.
-**Last updated:** 2026-11-08
+**Current phase:** Phase 6 — Niche discovery & trends
+**Current step:** Phase 6 approved by the owner 2026-11-11; PR to `main` opened. Next: Phase 7 (ideas, research, fact-check & scripts) when the owner says go. The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
+**Last updated:** 2026-11-11
 
 ---
 
@@ -343,7 +343,7 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 
 **Manual real-OAuth test (owner PC):** *not yet run — to be recorded here.*
 
-### Phase 5 — Orchestrator & agent infrastructure · report 2026-11-10 · branch `claude/vigilant-tesla-lkhgme` · waiting for owner approval
+### Phase 5 — Orchestrator & agent infrastructure · report 2026-11-10 · branch `claude/vigilant-tesla-lkhgme` · merged to `main` (PR #9) · ✅ approved by the owner 2026-11-10 (demo run on the owner PC, steps 1–5)
 
 **Plan (from IMPLEMENTATION_ROADMAP Phase 5), in four steps:**
 - **P5-A Orchestrator** ✅ — built: `orchestrator/{machines,guards,engine,approvals,reconciler,controls}.py`; channel helpers, OAuth, retention and the upload runner now change states only through the engine; jobs `orch.reconcile` (2 min) and `orch.approvals_expire` (hourly). Tests: 191 table-driven edge/guard cases, every unlisted (state, event) pair, Emergency Stop per edge, idempotency, actor rules, mode gates, universal states, approval hash invalidation, reconciler lost/stalled/ES, property tests, upload stopped by Emergency Stop at a chunk boundary and resumed. Implementation notes in WORKFLOW_STATE_MACHINE §9a.
@@ -469,6 +469,148 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 5. Press **Pause** on T00_HELLO, then **Resume**. This uses the same switch the workers obey.
 6. Press **Emergency Stop** in the top bar, then start another test run: it shows **Stopped**. Clear Emergency Stop.
 7. Paid safety, look only: on a paid row, tick the box and press **Step 1: confirm**. Step 2 counts down 60 seconds and asks for the typed phrase and a cap. **Do not finish it.** Press **Switch off now**.
+
+**After the merge (owner PC, 2026-11-10):** the first `setup` stopped at `uv sync` because TubeForge was still running and Windows locks `tubeforge-api.exe` (os error 32). Fix: `setup` now stops TubeForge first and starts it again at the end. Workaround on the old copy: `stop`, then `setup`.
+
+### Phase 6 — Niche discovery & trends · report 2026-11-11 · branch `claude/vigilant-tesla-lkhgme` · ✅ approved by the owner 2026-11-11 (PR opened)
+
+**Owner direction (2026-11-10):** the owner will create a **new YouTube channel from scratch through TubeForge**. Discovery picks the niche with evidence, the owner approves a blueprint, and TubeForge creates the channel record. The owner then creates the YouTube channel and connects it as the **test channel** (Phase 4 onboarding). Private test uploads go only there. Later phases can upgrade it to a real, public channel, but only through the normal gates (auditors from Phase 9, publishing from Phase 12) and the owner's explicit choice. First discovery: the owner chose "let TubeForge suggest" (2026-11-10); the roadmap demo still uses "English, personal finance for students" as a test case.
+
+**Plan (from IMPLEMENTATION_ROADMAP Phase 6), in four steps:**
+- **P6-A Research fetcher and sources** ✅ — built (2026-11-10):
+  - `research/{net,fetcher,sanitize,sources,wikipedia,rss,trends}.py`, `api/v1/research.py` (5 routes), migration 0009 (registry seed), job `mnt.retention.purge_research_docs`;
+  - tests: 61 unit (address rules, IP forms, redirects re-checked, size/time/type caps, peer re-check, sanitiser, safe feed parsing) and 7 integration (seed, pageviews stored as evidence, Emergency Stop and switched-off sources fetch nothing, RSS items, 90-day purge, API with re-auth approval, anti-scraping, roles);
+  - the owner chose **"let TubeForge suggest"** for the first discovery (no fixed language or audience);
+  - open: Wikimedia's terms and User-Agent policy pages could not be opened from the build machine, so the owner confirms them on the Sources page (step D), and may add a contact to the User-Agent (`research_contact`).
+- **Plan for P6-A:**
+  - one fetcher behind the allowlist, with an SSRF guard, sanitiser and untrusted-text wrapper;
+  - a source registry and its API;
+  - adapters for Wikipedia pageviews and RSS;
+  - a Trends adapter that stays off unless the owner approves it.
+- **P6-B Discovery agents and scoring** ✅ — built (2026-11-10):
+  - agents A02, A03, A05, A06 and A07 (prompt v1.0 and schema each) and the pipelines: discovery, trend scan, keywords and blueprint;
+  - scoring, rescore, weight profiles (migration 0010), the evidence rule, the forbidden-phrase scan, pageview signals and the blueprint checks, all in code;
+  - API: `/niches/*` (9 routes) and `/strategies` (3 routes, 5 after step D);
+  - jobs: `research.discover`, `research.blueprint`, `research.keywords`, and `a03.trend_scan` daily at 06:00 PKT;
+  - the shared schema `packages/shared/schemas/channel_blueprint.json`;
+  - tests: 57 unit tests (score formula, LOW penalty and band, a property test for deterministic rescore, the evidence rule, 30 forbidden and 6 clean phrases, signals, contrast and similarity, calendar limits, fenced prompts with an injection attempt, the ADR-0015 static check) and 7 integration tests with a scripted model ("let TubeForge suggest" end to end, Emergency Stop, waiting for quota, blueprint draft, trend strength and expiry, keywords, API and roles);
+  - fix: migration 0008's downgrade now clears blueprint links to agent runs first.
+- **Plan for P6-B:**
+  - agents A02, A03, A05, A06 and A07 on the Gateway;
+  - deterministic scoring and rescore, with weight profiles;
+  - evidence on every candidate;
+  - a forbidden-phrase scan.
+- **P6-C Competitor lookup (A04)** ✅ — built (2026-11-10):
+  - `youtube/lookup.py` and `api/v1/lookups.py` (2 routes);
+  - one channel, one video or one search (at most 10 snippets) per lookup, started by the owner;
+  - only the allowed public fields are stored, cached for at most 30 days (enforced by the database), purged hourly, and metered in the quota ledger;
+  - calls use the owner's own connected channel with read-only access, and Emergency Stop blocks them;
+  - the static check (step B) confirms that no module both reads this data and writes scores;
+  - tests: 7 integration tests (parsing ids, handles and links; channel, video and search with a fake YouTube; dropped fields; cache hit without a call; quota buckets and a failed call metered; expiry and purge; the database refusing more than 30 days; Emergency Stop; quota used up; roles).
+- **Plan for P6-C:**
+  - one public item per lookup, kept for 30 days;
+  - a policy banner;
+  - no aggregation and nothing fed into scores (ADR-0015), enforced by a static check and a test.
+- **P6-D Web and report** ✅ — built (2026-11-11):
+  - pages 2 (Channel Discovery with the research-source registry), 5 (Niche Research), 6 (Trends), 7 (Competitor Research) and 8 (Branding Studio) run on the real API;
+  - API: blueprint edit (If-Match) and commands propose / approve (creates the channel) / reject / new version; trends list, scan and dismiss; keywords list, add and delete;
+  - a11y fix found by axe: the scrolling ideas and calendar lists are now keyboard-focusable regions;
+  - visual snapshot: Discovery (now live data) is replaced by Calendar, a still-mocked page; CI renders the new baselines.
+- **Plan for P6-D:**
+  - Discovery, Research, Trends, Strategies and Branding Studio (blueprint editor) on the real API;
+  - approving a blueprint creates the channel;
+  - e2e tests, docs, phase report.
+
+**Phase 6 report (TESTING_AND_QA §7)**
+
+1. **Modules implemented**
+   - **Research fetcher** (`research/net.py`, `fetcher.py`, `sanitize.py`), the only way TubeForge reads the web for research:
+     - an exact-host allowlist per source, https only, no IP addresses;
+     - YouTube and Google pages are never fetched;
+     - public addresses only, re-checked after connecting;
+     - at most 3 redirects, 2 MB and 15 s per fetch;
+     - plain-text sanitising; feeds are parsed without document type declarations.
+   - **Sources:** a registry (Wikipedia pageviews on; Google Trends alpha off pending approval; your RSS feeds and web hosts start off). Documents are stored as evidence for 90 days.
+   - **Discovery:**
+     - agents A02, A03, A05, A06 and A07;
+     - scoring, rescore, weight profiles, the evidence rule and the forbidden-phrase scan, all in code;
+     - blueprint composition and checks (licensed fonts, contrast, 50 ideas without near-duplicates, calendar limits);
+     - the trend scan (strength computed in code) and keyword suggestions (no invented volumes).
+   - **Competitor lookup (A04):** one public channel, video or search at a time. Only allowed fields are kept, for at most 30 days, the calls are metered, and nothing is combined or scored.
+   - **Blueprint approval → channel:** the channel is created as APPROVED, as a test channel by default and not monetised, and onboarding opens next.
+   - **Web:** five pages on the real API, plus the research-source panel.
+2. **Files created/modified:**
+   - Backend: `apps/api/tubeforge/research/*`, `youtube/lookup.py`, `api/v1/{research,niches,lookups,trends}.py`, `config.py`, `db/models`, and migrations 0009–0010 (plus the 0008 downgrade fix).
+   - Workers: `workers/tubeforge_agents/{discovery_agents,discovery}.py`, `prompts/A02…A07/*`, `workers/tubeforge_workers/{maintenance,tasks}.py`.
+   - Shared: `packages/shared/schemas/channel_blueprint.json`, `openapi.json`, `openapi.stub.json` (now-real paths removed).
+   - Web: `apps/web/src/pages/research/*`, `mocks/researchApi.ts`, `lib/api/client.ts`, `pages/registry.ts`, `app/routes.tsx`, `i18n/en.json`, and e2e (`fixtures.ts`, `helpers.ts`, `global-setup.ts`, `a11y.spec.ts`, `stateful.spec.ts`, `visual.spec.ts`).
+   - Docs: CHANNEL_DISCOVERY_SPEC, BACKEND_SPECIFICATION, OAUTH_SECURITY, YOUTUBE_API_INTEGRATION, AGENT_PROMPTS, DEPLOYMENT_GUIDE, CLAUDE.md.
+3. **Database changes:**
+   - 0009 seeds `research_sources`.
+   - 0010 seeds `score_weight_profiles`.
+   - ORM models were added for the Phase 3 tables `research_sources`, `source_documents`, `niche_reports`, `niche_candidates`, `score_weight_profiles`, `trend_items`, `keywords` and `channel_strategies`. There were no schema-document changes.
+4. **APIs implemented:** 27 new routes.
+   - `/research-sources` (5)
+   - `/niches/*` (9)
+   - `/strategies` (5)
+   - `/lookups/youtube` (2)
+   - `/trends` (3)
+   - `/channels/{id}/keywords` (3)
+5. **Agents created:**
+   - A02 Niche Discovery, A03 Trend Intelligence, A05 Keyword Research, A06 Channel Strategy and A07 Channel Branding (prompt v1.0 each, running through the Gateway).
+   - A04 Competitor Research (deterministic, owner-started).
+6. **Tests executed (Linux, this session):**
+   - **Python: 426 passed** (+292 contract subtests). New: 119 unit tests and 24 integration tests across steps A–D.
+   - The tests found 3 bugs, all fixed:
+     - provider-route clash (Phase 5 follow-up);
+     - a migration downgrade blocked by blueprint links;
+     - an axe finding on the scrolling lists.
+   - **Web unit: 38 passed.**
+   - **Playwright, local run against the real API:**
+     - **206 passed** on desktop and mobile: routes × 4 states, axe light and dark, mobile.
+     - **7/7 stateful**, including the new "Channel Discovery, research sources and Competitor Research on the real backend".
+     - 6 visual snapshots differ only by local fonts; CI renders the baselines, including the new Calendar one.
+   - **Checks:** ruff, mypy --strict, eslint, tsc, `api:check`, traceability, pre-commit (gitleaks), pip-audit and the licence check are all green.
+7. **Free-tier services used:**
+   - Wikimedia pageviews API (free; pageview data CC0).
+   - Your own RSS feeds (free).
+   - YouTube Data API read calls on your own quota (1 unit per lookup; searches use the SEARCH bucket).
+   - Gemini free tier, Groq free plan or local Ollama for the agents.
+   - Google Trends API alpha stays off.
+   - No new dependencies.
+   - **This phase introduces no paid dependency: ✔**
+8. **Resource consumption:**
+   - Discovery is a background job on the light worker. It makes up to 24 Wikipedia requests and one AI call (A02 is about 8k input tokens) per run.
+   - A blueprint is two AI calls (A07 and A06, up to about 12k output tokens).
+   - The trend scan runs once a day per active channel.
+   - Lookups make one YouTube call each, and none when the saved copy is used.
+   - No new processes; RAM is unchanged.
+9. **Known limitations:**
+   - **Wikimedia terms:** they could not be opened from the build machine. You confirm them on the Sources panel. Wikimedia may also want contact details in requests (`research_contact`, optional).
+   - **"Let TubeForge suggest"** uses a fixed English topic list. Other languages need your interests given as Wikipedia titles in that language.
+   - **Google Trends alpha** is off until you are invited and approve it.
+   - **Lookups** need one connected channel, because they use its read-only access.
+   - **"Turn into idea"** for trends arrives with Ideas in Phase 7.
+   - **Real discovery needs an AI key** (Gemini or Groq, free) or Ollama installed. Without one, a run ends as "Failed — no provider available".
+10. **Remaining tasks for Phase 6 acceptance:**
+   - CI green, including the new Calendar screenshots.
+   - The owner runs the demo below and replies "approved".
+   - Then the owner creates the YouTube channel for the approved blueprint and does the open Phase 4 test with it: connect with Google, then one private test upload.
+
+**Demo script (owner, Windows):**
+1. Get the update, then start TubeForge:
+   ```
+   git -C "D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE\app" pull
+   ```
+   Then run `tubeforge.ps1 setup` and `tubeforge.ps1 start`.
+2. **Free AI access** (needed for real suggestions): on **Cost & Usage**, save a Gemini key from a Google Cloud project with no billing, or install Ollama.
+3. **Channel Discovery › Research sources:** open **Terms** for Wikipedia pageviews, read it, and press **I checked the terms**. Optional: add a trusted news feed (it starts off; switching it on asks for your password).
+4. Press **Run discovery**, leave interests empty ("let TubeForge suggest"), and add anything to avoid. Wait a few minutes: the run turns **Done** and lists niche candidates with scores. Open one to see its evidence links.
+5. Try the **weights**: press **Originality-first**. The scores change instantly, without AI.
+6. **Shortlist** the niche you like and press **Generate blueprint**. When it is ready, open it from the niche page under **Blueprints**.
+7. **Branding Studio:** read the names, colours, pillars, 50 ideas and calendar. Edit the description if you like and press **Save draft**. Fix anything listed under "things to fix". Then press **Propose**, then **Approve**, choose the channel name and keep "Start as my test channel" ticked.
+8. TubeForge creates the channel and opens its **onboarding**. Create the channel on YouTube with that name, then follow the 10 steps: connect with Google and run one private test upload. This also completes the open Phase 4 test.
+9. **Competitor Research:** look up one public channel by its @handle. You see one card with the "not combined" notice. Looking it up again uses the saved copy.
 
 ## Resource consumption
 

@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     log_json: bool = True
     web_dist_dir: Path = REPO_ROOT / "apps" / "web" / "dist"
+    # Contact shown in the User-Agent of research requests (Wikimedia asks API users for one, e.g. a
+    # web page or e-mail address). Optional and owner-chosen; empty means no contact is sent.
+    research_contact: str = Field(default="", max_length=200, pattern=r"^[^\r\n\x00]*$")
 
     @field_validator("host")
     @classmethod

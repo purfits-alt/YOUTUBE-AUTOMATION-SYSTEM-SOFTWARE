@@ -19,9 +19,37 @@
 
 Fetcher rules: OAUTH_SECURITY §6–7 (allowlist, SSRF guard, 2 MB cap, sanitising, untrusted wrapper). Documents expire after 90 days.
 
+**Implemented in Phase 6 step A** (`apps/api/tubeforge/research/`, migration 0009):
+- **Registry.** The four built-in sources are seeded. `WIKIPEDIA_PAGEVIEWS` (on) uses `wikimedia.org/api/rest_v1/metrics/pageviews`, with human traffic and all access methods. It provides daily pageviews per article and a daily top list without Main_Page or Special:, Wikipedia:, Portal:, Help:, File: and Talk: pages.
+- **Terms check.** Its terms page could not be opened from the build machine on 2026-11-10, so `terms_verified_at` stays empty until the owner presses "I checked the terms".
+- **RSS.** Each feed item is stored as its own document, and item links are never fetched.
+- **Trends alpha.** `TRENDS_API_ALPHA` refuses every call: it is off, needs approval, and its adapter is added once the owner has alpha access.
+- **Retention.** Hourly job `mnt.retention.purge_research_docs` (minute 50) deletes documents past `expires_at`. Fetching an identical document again refreshes its expiry.
+
+**Implemented in Phase 6 step B** (`research/{scoring,niches,forbidden,signals,blueprint}.py`, `workers/tubeforge_agents/{discovery_agents,discovery}.py`, migration 0010):
+- **Collecting evidence.** Discovery collects up to 40 documents:
+  - one-year Wikipedia pageview series for up to 24 seed topics. With no interests ("let TubeForge suggest"), a fixed list of broad, advertiser-friendly topics that can be produced on H-LITE is used. This list is English only; other languages need interests given as Wikipedia titles in that language;
+  - items from the owner's enabled RSS feeds.
+- **Metrics.** Demand, growth and steadiness hints are computed in code and passed to A02. The model only reads them.
+- **Checks on A02's answer:**
+  - citations of unknown documents are removed, and a criterion that is not LOW but has no evidence left is downgraded to LOW with a note;
+  - candidates that match the avoid list, contain a forbidden phrase or use a language that was not requested are dropped, with the reason shown in the report.
+- **Storage.** Scores are stored to two decimals. The model's originality angles are kept in a side record `{"code": "_ORIGINALITY_ANGLES"}` inside `criteria`.
+- **Report status.** `niche_reports.status` is one of QUEUED, RUNNING, DONE, FAILED, WAITING_QUOTA or STOPPED. The outcome (documents, candidates, dropped, skipped, error) is stored in `params.result`.
+- **Blueprint generation (A07, then A06).**
+  - Near-duplicate ideas (similarity ≥ 0.85) are removed and the calendar is re-pointed to the remaining ideas. Code picks the palette contrast pair and adds font licences.
+  - A blueprint that breaks the schema or contains a forbidden phrase is not saved.
+  - Otherwise it is saved as a DRAFT `channel_strategies` row (`channel_id` empty, version per candidate). Any remaining rule problems are returned with it and block approval (step D).
+- **Trend scan (A03).**
+  - Runs daily at 06:00 PKT for ACTIVE channels with an approved blueprint.
+  - Signals: for each pillar, the 7-day vs 28-day pageview z-score and the feed frequency (matching items ÷ 2, capped at 5).
+  - Only signals of at least 1.0 are sent to A03.
+  - The stored strength is always the code value; expiry is clamped to 3–60 days; items citing no real document are dropped.
+- **Keywords (A05).** Phrases that claim a search volume without a cited document are dropped. Phrases are upserted per channel.
+
 ## 2. Channel Opportunity Score
 
-Score per candidate = **Σ (wᵢ × vᵢ) / Σ wᵢ**, where vᵢ ∈ [0, 100] is the criterion value and wᵢ ∈ [0, 10] is the owner-adjustable weight. A criterion with `confidence = LOW` and no evidence counts at **50 % weight** (an uncertainty penalty). Recalculating with new weights is done in code without calling an LLM (`POST /niches/rescore`).
+Score per candidate = **Σ (wᵢ × vᵢ) / Σ wᵢ**, where vᵢ ∈ [0, 100] is the criterion value and wᵢ is the owner-adjustable weight. Owner weights are 0–10. Weights up to 15 are accepted because the built-in profiles multiply some defaults by 1.5 (decided in Phase 6). A criterion with `confidence = LOW` and no evidence counts at **50 % weight** (an uncertainty penalty). Recalculating with new weights is done in code without calling an LLM (`POST /niches/rescore`).
 
 | Code | Meaning (higher = better for the owner) | Default weight | Evidence typically from |
 |---|---|---|---|
@@ -88,6 +116,28 @@ Logo and banner: TubeForge produces **briefs** and simple procedural drafts (tex
 - Results show only that item's public metadata: title, published date, view count as of fetch time, duration, description excerpt, channel name, subscriber count if public.
 - **Not allowed:** tables comparing several channels, averages, rankings, "competitor pattern" analytics, automatic background lookups, or use in scoring.
 - Cache ≤ 30 days (`youtube_api_cache.expires_at` CHECK). Purged hourly.
+
+**Implemented in Phase 6 step C** (`youtube/lookup.py`, `api/v1/lookups.py`):
+- **What the owner can enter.** A channel ID (UC…), a @handle, a youtube.com or youtu.be link (only parsed, never opened), or a search of 2–100 characters showing at most 10 results.
+- **What is kept.** Only the listed public fields; everything else Google returns is dropped before storage. Searches keep the search snippets only, with no per-result statistics calls.
+- **Cache.** 30 days, shared by identical queries. A cached answer makes no call and uses no quota. Expired entries are never shown and are purged hourly.
+- **Which access is used.** Calls use the owner's first connected channel (`youtube.readonly`) and are metered in the quota ledger (searches in the SEARCH bucket). Emergency Stop blocks new calls.
+- **Every answer** carries the notice "Public info about one channel or video — not combined with others. Kept for 30 days at most."
+
+**Phase 6 step D (screens):**
+- **Channel Discovery** (page 2):
+  - runs: "let TubeForge suggest" when no interests are given, or your interests, plus the avoid list and weight profile;
+  - candidates with score ± band, risk and difficulty;
+  - shortlist, dismiss and generate blueprint;
+  - weights and profiles (rescore without AI), and the list of what was left out and why;
+  - the research-source registry: switch on/off with the password for new sources, "I checked the terms", test fetch, and add feed.
+- **Niche Research** (5): the breakdown with evidence links and quotes, originality angles, and links to the candidate's blueprints.
+- **Trend Intelligence** (6): scan now; dismiss. Turning a trend into an idea arrives in Phase 7.
+- **Competitor Research** (7): policy banner; one result per lookup, each with the notice; recent lookups shown one by one.
+- **Channel Branding Studio** (8):
+  - shows the blueprint and the problems that must be fixed;
+  - you can edit the description, positioning and idea titles;
+  - Propose, Approve (choose the name; it starts as the test channel; it creates the channel and opens its onboarding), Reject and New version.
 
 ## 8. Onboarding (manual channel creation + connection)
 Steps are stored in `onboarding_steps`, and each shows official help links (verified when Phase 4 starts):

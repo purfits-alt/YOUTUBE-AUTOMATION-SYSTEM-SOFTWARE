@@ -5,7 +5,7 @@ const KEY_PAGES = [
   ["overview", "/"],
   ["approvals", "/approvals"],
   ["script", "/projects/p-101/script"],
-  ["discovery", "/discovery"],
+  ["calendar", "/calendar"], // Discovery became a real page in Phase 6 (live data)
 ] as const;
 
 for (const scheme of ["light", "dark"] as const) {

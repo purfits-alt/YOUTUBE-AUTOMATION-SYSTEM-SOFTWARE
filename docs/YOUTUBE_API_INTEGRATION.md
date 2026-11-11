@@ -134,6 +134,14 @@ Every refusal → `audit_log` + `security_events` (WARNING) + a notification. Un
 - Results are shown individually. **No** combined statistics, rankings or charts across channels. Cached in `youtube_api_cache` ≤ 30 days, then purged.
 - These results are **not** fed into niche scores or agent analyses. Agents may receive a lookup only when the owner explicitly attaches it to a project as a reference note. The UI labels it "public info about one channel/video — not combined".
 
+*Implemented in Phase 6 (`youtube/lookup.py`):*
+- **Which token.** There is no API key. Lookups use the OAuth access of one of the owner's connected channels (base scope `youtube.readonly`). Without a connected channel the API answers 409 `NO_CONNECTED_CHANNEL`.
+- **API calls:**
+  - channels: `channels.list part=snippet,statistics` with `id` or `forHandle`;
+  - videos: `videos.list part=snippet,statistics,contentDetails`;
+  - search: `search.list part=snippet type=video,channel maxResults=10 safeSearch=moderate`, with no follow-up calls.
+- **Quota.** Quota is reserved before each call, with purpose `owner_lookup`. A call that finds nothing is still recorded in the ledger.
+
 ## 11. Compliance task list (feeds COMPLIANCE_CHECKLIST.md, Step 0.7)
 
 - [ ] Privacy policy and terms published (GitHub Pages) before the first OAuth connect.

@@ -153,6 +153,49 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 | GET | `/lookups/youtube` | recent lookups (non-aggregated list) | `research.lookup` |
 | GET/POST/DELETE | `/channels/{id}/keywords` | keyword list with evidence | `research.run` |
 | GET/POST/PATCH | `/research-sources` | source registry. Enabling a `REQUIRES_OWNER_APPROVAL` source needs 🔐 | `settings.manage` |
+| POST | `/research-sources/{id}/test` | fetch the source once now; returns the stored documents | `research.run` |
+| GET | `/research-sources/{id}/documents?limit=` | recent stored documents (title, URL, 300-character excerpt, expiry) | `research.view` |
+
+*`/research-sources` implemented in Phase 6 (`api/v1/research.py`).* GET needs `research.view`; POST and PATCH need `settings.manage`.
+- POST `{kind: RSS|WEB_ALLOWLISTED, slug, url, terms_url?}` creates `RSS:<slug>` or `WEB:<slug>`. The allowlist is exactly the URL's host. The source starts switched off as `REQUIRES_OWNER_APPROVAL`.
+- POST rejects (422 `INVALID_URL`) anything that is not https on port 443, an IP literal, or a YouTube/Google host.
+- PATCH `{enabled?, terms_verified?: true}`. Switching on an unapproved source needs re-auth and makes it `APPROVED`. `BLOCKED` sources cannot be switched on (409).
+- Test-fetch errors:
+  - 409 for `STOPPED`, `NOT_APPROVED`, `SOURCE_OFF` and `NOT_FETCHABLE`;
+  - 422 `FETCH_BLOCKED` for an outbound-policy breach;
+  - 502 `FETCH_FAILED` or `FEED_UNREADABLE` when the site fails.
+
+*`/niches/*` and `/strategies` (POST, GET) implemented in Phase 6 step B (`api/v1/niches.py`):*
+- **Starting work.** `POST /niches/reports` and `POST /strategies` need an `Idempotency-Key`. They answer 202 and queue `research.discover` or `research.blueprint` on the `agents` queue. While Emergency Stop is on they answer 409 `STOPPED`.
+- **Blueprint precondition.** `POST /strategies` needs a SHORTLISTED candidate (409 `NOT_SHORTLISTED`). Its body is `{niche_candidate_id, owner_notes?}`, and it returns `{job_id, status}`.
+- **Candidate responses** carry `footer` (the fixed estimate disclaimer), `band` (±10 or null), the criteria with weights and evidence links, and `originality_angles`.
+- **Rescore.** `/niches/rescore` takes `weights` or `weight_profile_id` (exactly one). It stores the new scores; unknown criteria or weights outside 0–15 get 422 `INVALID_WEIGHTS`.
+- **Weight profiles.** `PUT /niches/weight-profiles/{id}` takes `{name?, weights?, is_default?: true}`; one default at a time.
+- **Reading blueprints.** `GET /strategies/{id}` returns the blueprint with `problems`, re-checked on every read. PATCH and the approval commands come in step D.
+
+*`/lookups/youtube` implemented in Phase 6 step C (`api/v1/lookups.py`):*
+- **POST** `{kind, query, channel_id?}` needs an `Idempotency-Key` and returns `{id, kind, query_key, items[], cached, fetched_at, expires_at, notice}`.
+- **POST errors:**
+  - 422 `INVALID_QUERY`;
+  - 404 `NOT_FOUND_ON_YOUTUBE`;
+  - 409 `STOPPED`, `NO_CONNECTED_CHANNEL`, `NEEDS_REAUTH` or `WAITING_QUOTA` (with `resets_at`);
+  - 502 `YOUTUBE_ERROR`.
+- **GET** lists the unexpired lookups, newest first, each on its own.
+- Successful lookups are audited (`youtube.lookup`: kind, query key and whether the cache answered).
+
+*Phase 6 step D:*
+- **Editing a blueprint.** `PATCH /strategies/{id}` needs If-Match with the `etag` (428/412) and works on a DRAFT only (409 `NOT_EDITABLE`). The saved blueprint must match the schema (422 `BLUEPRINT_INVALID`). `niche` and `footer` cannot be edited; other rule problems may stay in a draft.
+- **Commands** — `POST /strategies/{id}/commands/{propose|approve|reject|new-version}`:
+  - `propose` and `approve` need zero problems (409 `BLUEPRINT_HAS_PROBLEMS`);
+  - `approve` needs `{channel_name, is_test_channel = true}` and `channel.manage`. It creates the channel (APPROVED, publishing rules, not monetised, language from the niche), links the blueprint, marks the candidate CONVERTED and the candidate's other drafts SUPERSEDED;
+  - `new-version` copies the blueprint into a new DRAFT.
+- **Trends.**
+  - `GET /trends?channel_id=&include_inactive=`: expired items are hidden by default, and shown as EXPIRED when included.
+  - `POST /trends/scan` (Idempotency-Key) queues `research.trend_scan`.
+  - `POST /trends/{id}/commands/{dismiss|to-idea}`: `to-idea` answers 409 `NOT_AVAILABLE_YET` until Phase 7.
+- **Keywords** — `GET`, `POST` and `DELETE /channels/{id}/keywords`:
+  - POST `{phrase}` adds the phrase now (201, 409 `DUPLICATE_KEYWORD`, 422 `FORBIDDEN_PHRASE`);
+  - POST `{seeds}` queues A05 (202, Idempotency-Key).
 
 ### 4.6 Ideas & calendar
 

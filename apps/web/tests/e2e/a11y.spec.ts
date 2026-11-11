@@ -9,16 +9,20 @@ for (const scheme of ["light", "dark"] as const) {
     // (mid-fade opacity would be reported as low contrast).
     test.use({ colorScheme: scheme, reducedMotion: "reduce" });
     for (const def of PAGES) {
-      test(`${String(def.num).padStart(2, "0")} ${en.pages[def.id].title}`, async ({ page }) => {
-        await openPage(page, def);
-        await expect(page.getByTestId("state-success")).toBeVisible();
-        const results = await new AxeBuilder({ page })
-          .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-          .analyze();
-        const serious = results.violations
-          .filter((v) => v.impact === "serious" || v.impact === "critical")
-          .map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
-        expect(serious).toEqual([]);
+      // Real pages: block the MSW service worker so the e2e fixtures (helpers.ts) can answer.
+      test.describe(() => {
+        test.use({ serviceWorkers: def.real ? "block" : "allow" });
+        test(`${String(def.num).padStart(2, "0")} ${en.pages[def.id].title}`, async ({ page }) => {
+          await openPage(page, def);
+          await expect(page.getByTestId("state-success")).toBeVisible();
+          const results = await new AxeBuilder({ page })
+            .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+            .analyze();
+          const serious = results.violations
+            .filter((v) => v.impact === "serious" || v.impact === "critical")
+            .map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
+          expect(serious).toEqual([]);
+        });
       });
     }
   });

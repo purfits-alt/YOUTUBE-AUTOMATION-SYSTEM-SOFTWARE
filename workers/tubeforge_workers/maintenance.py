@@ -11,12 +11,16 @@ from contextlib import contextmanager
 from dataclasses import asdict
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from tubeforge.config import get_settings
 from tubeforge.db.session import get_engine
+from tubeforge.gateway.core import Gateway
 from tubeforge.logging import get_logger
+from tubeforge.notifications import notify_owners
 from tubeforge.orchestrator import approvals, reconciler
+from tubeforge.research.fetcher import ResearchFetcher
 from tubeforge.secrets import SecretBox, default_store
 from tubeforge.youtube import oauth, retention, uploads
 from tubeforge.youtube.client import SafeYouTubeClient
@@ -29,6 +33,8 @@ PENDING_FLOWS_CRON = "*/10 * * * *"
 RECONCILE_CRON = "*/2 * * * *"
 APPROVALS_CRON = "5 * * * *"
 A32_CRON = "*/15 * * * *"
+RESEARCH_PURGE_CRON = "50 * * * *"
+TREND_SCAN_CRON = "0 1 * * *"  # 06:00 PKT (UTC+5), CHANNEL_DISCOVERY_SPEC §5
 
 log = get_logger("tubeforge.jobs")
 
@@ -81,6 +87,13 @@ def purge_pending_flows(timestamp: int) -> int:
     return _run("mnt.retention.oauth_pending_cleanup", lambda db, *_: retention.purge_pending_flows(db))
 
 
+def purge_research_documents(timestamp: int) -> int:
+    """mnt.retention.purge_research_docs: research documents older than 90 days are deleted."""
+    from tubeforge.research.sources import purge_expired
+
+    return _run("mnt.retention.purge_research_docs", lambda db, *_: purge_expired(db))
+
+
 def reconcile(timestamp: int) -> dict[str, Any]:
     """orch.reconcile: re-enqueue lost or stalled jobs exactly once (WORKFLOW_STATE_MACHINE rule 3)."""
     return asdict(_run("orch.reconcile", lambda db, *_: reconciler.reconcile(db)))
@@ -120,6 +133,84 @@ def run_agent(
         status = outcome.run.status
     log.info("agent.run", agent=agent_code, status=status)
     return status
+
+
+@contextmanager
+def _research() -> Iterator[tuple[Session, Gateway, ResearchFetcher]]:
+    settings = get_settings()
+    with (
+        Session(get_engine(settings.database_url), expire_on_commit=False) as db,
+        ResearchFetcher() as fetcher,
+    ):
+        yield db, Gateway(SecretBox(default_store(settings.env))), fetcher
+
+
+def discover(report_id: str) -> str:
+    """research.discover: one niche discovery report (A02)."""
+    from tubeforge_agents.discovery import run_discovery
+
+    with _research() as (db, gateway, fetcher):
+        status = run_discovery(db, gateway, fetcher, uuid.UUID(report_id)).status
+    log.info("research.discover", report_id=report_id, status=status)
+    return status
+
+
+def blueprint(candidate_id: str, owner_notes: str = "") -> str:
+    """research.blueprint: A07 + A06 → blueprint DRAFT for a shortlisted candidate."""
+    from tubeforge_agents.discovery import PipelineError, generate_blueprint
+
+    with _research() as (db, gateway, _fetcher):
+        try:
+            result = generate_blueprint(db, gateway, uuid.UUID(candidate_id), owner_notes=owner_notes)
+        except PipelineError as exc:
+            notify_owners(
+                db,
+                event_type="research.blueprint_failed",
+                severity="WARNING",
+                title="The blueprint could not be made",
+                body=exc.message[:300],
+                dedup_key=f"blueprint:{candidate_id}:{exc.status}",
+                link="/strategies",
+            )
+            db.commit()
+            log.info("research.blueprint", candidate_id=candidate_id, status=exc.status)
+            return exc.status
+        status = f"DRAFT v{result.strategy.version} ({len(result.problems)} problems)"
+    log.info("research.blueprint", candidate_id=candidate_id, status=status)
+    return status
+
+
+def keywords(channel_id: str, seeds: list[str]) -> int:
+    """research.keywords: A05 keyword suggestions for one channel."""
+    from tubeforge_agents.discovery import run_keywords
+
+    with _research() as (db, gateway, _fetcher):
+        return len(run_keywords(db, gateway, uuid.UUID(channel_id), seeds))
+
+
+def trend_scan_one(channel_id: str) -> int:
+    """research.trend_scan: the owner pressed "Scan now" for one channel."""
+    from tubeforge_agents.discovery import run_trend_scan
+
+    with _research() as (db, gateway, fetcher):
+        return len(run_trend_scan(db, gateway, fetcher, uuid.UUID(channel_id)))
+
+
+def trend_scan(timestamp: int) -> dict[str, int]:
+    """a03.trend_scan: daily at 06:00 PKT for every ACTIVE channel with an approved blueprint."""
+    from tubeforge_agents.discovery import PipelineError, run_trend_scan
+
+    from tubeforge.db.models import Channel
+
+    found: dict[str, int] = {}
+    with _research() as (db, gateway, fetcher):
+        for channel in db.scalars(select(Channel).where(Channel.state == "ACTIVE")).all():
+            try:
+                found[str(channel.id)] = len(run_trend_scan(db, gateway, fetcher, channel.id))
+            except PipelineError as exc:
+                log.info("a03.trend_scan.skipped", channel_id=str(channel.id), status=exc.status)
+    log.info("a03.trend_scan", channels=len(found), items=sum(found.values()))
+    return found
 
 
 def upload(upload_job_id: str) -> str:

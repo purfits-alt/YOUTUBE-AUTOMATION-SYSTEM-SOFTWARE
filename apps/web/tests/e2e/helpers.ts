@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, type Page } from "@playwright/test";
+import { SUCCESS_FIXTURES } from "./fixtures";
 import { SEED_FILE } from "./global-setup";
 import en from "../../src/i18n/en.json" with { type: "json" };
 import { PAGES, pageHref } from "../../src/pages/registry";
@@ -16,10 +17,10 @@ export function seed(): { channelId: string } {
 }
 
 /** Real pages whose main endpoint returns a plain array (not a cursor page). */
-const ARRAY_PAGES = new Set(["agents", "usage"]);
+const ARRAY_PAGES = new Set(["agents", "usage", "discovery", "trends", "lookup"]);
 
 /** Pages with no empty state (FRONTEND_SPECIFICATION: "Empty state: N/A" / steps always exist). */
-export const NO_EMPTY_STATE = new Set(["settings", "onboarding"]);
+export const NO_EMPTY_STATE = new Set(["settings", "onboarding", "niche", "branding"]);
 
 /** URL of a page: real channel pages open the seeded channel, mock pages keep the sample IDs. */
 export function hrefFor(def: PageDef): string {
@@ -57,6 +58,12 @@ const SHELL_STUB = {
   unread_notifications: 2,
 };
 
+/** The id in a real page's main API path: the seeded channel, or the sample id in the page URL. */
+function apiId(def: PageDef): string {
+  if (def.path.startsWith("/channels/")) return seed().channelId;
+  return hrefFor(def).split("/").pop() ?? "";
+}
+
 async function interceptRealPage(page: Page, def: PageDef, state: State): Promise<void> {
   if (!def.real) return;
   // These tests block the MSW service worker (see routes.spec.ts), so answer its one mocked call here.
@@ -65,9 +72,22 @@ async function interceptRealPage(page: Page, def: PageDef, state: State): Promis
     (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(SHELL_STUB) }),
   );
-  if (state === "success") return;
-  if (NO_EMPTY_STATE.has(def.id) && state === "empty") return;
-  const path = `/api/v1${def.api.replace("{id}", seed().channelId)}`;
+  const fixtures = SUCCESS_FIXTURES[def.id];
+  const showsData = state === "success" || (NO_EMPTY_STATE.has(def.id) && state === "empty");
+  if (fixtures && showsData) {
+    await page.route(
+      (url) => url.pathname in fixtures,
+      (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(fixtures[new URL(route.request().url()).pathname]),
+        }),
+    );
+    return;
+  }
+  if (showsData) return;
+  const path = `/api/v1${def.api.replace("{id}", apiId(def))}`;
   await page.route(
     (url) => url.pathname === path,
     async (route) => {
