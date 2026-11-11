@@ -150,7 +150,9 @@ test("Agent Control Center and Cost & Usage on the real backend", async ({ page 
 });
 
 test.describe("signed out", () => {
-  test.use({ storageState: { cookies: [], origins: [] } });
+  // Reduced motion: axe must measure the finished page, not the sign-in card halfway through its
+  // 0.4 s fade-in (a mid-fade colour reads as low contrast, as in a11y.spec.ts).
+  test.use({ storageState: { cookies: [], origins: [] }, reducedMotion: "reduce" });
 
   test("sign-in screen: wrong password, then sign in and out", async ({ page }) => {
     // 401 = the wrong-password attempt and the initial "not signed in" check (expected).
