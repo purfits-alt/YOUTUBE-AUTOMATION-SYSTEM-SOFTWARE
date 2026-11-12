@@ -8,6 +8,7 @@
 - `prompt_version` is recorded on every `agent_runs` row. Changing a prompt means a new file, a minor version bump, golden tests updated and reviewed in PR, and the version activated in `agent_configurations`.
 - Rendering: Jinja2 templates with **strict undefined**. Untrusted content is inserted **only** through the `untrusted()` filter, which wraps it in `<untrusted_source id=… url=…>…</untrusted_source>` and escapes closing tags.
 - Output: the Gateway requests JSON mode or structured output where the provider supports it, then always validates against `schema.json`. On failure it makes **one repair call** ("Your previous output failed validation: <errors>. Return corrected JSON only.") and otherwise fails.
+- The output schema (with the refusal branch) is appended to every system prompt verbatim, after the agent prompt, so the model sees the exact field names. Validation errors name the field paths of the branch the answer was aiming for (the refusal branch only if the answer has a "refusal" key), never just "not valid under any of the given schemas"; the repair call lists up to 10 of them.
 - Temperature defaults: 0.2 for extraction and audit agents, 0.7 for creative agents (A07, A08, A11, A18). Fixed `seed` where the provider supports it (golden tests).
 
 ## 0a. Agents without a text prompt (rules defined elsewhere)

@@ -8,11 +8,18 @@ import pytest
 
 from tubeforge.config import Settings, get_settings
 from tubeforge.queue import ensure_windows_event_loop_policy
+from tubeforge.research import fetcher as research_fetcher
 
 # psycopg's async mode needs the selector event loop on Windows (same as the worker CLI).
 ensure_windows_event_loop_policy()
 
 TEST_DB_ENV = "TUBEFORGE_TEST_DATABASE_URL"
+
+
+@pytest.fixture(autouse=True)
+def _no_polite_waits(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The research fetcher spaces requests to one host; tests never wait for real."""
+    monkeypatch.setattr(research_fetcher, "_sleep", lambda _s: None)
 
 
 @pytest.fixture(autouse=True)

@@ -3,6 +3,10 @@
 2 MB maximum body, 15 s for the whole fetch, at most 3 redirects (each re-checked against the
 allowlist and the address rules), and only HTML, XML/feeds or JSON responses. System proxy
 settings are ignored so the address check sees the real server.
+
+Politeness: requests to the same host are spaced at least ``MIN_INTERVAL_S`` apart, and when a
+site answers 429/503 ("slow down") the fetch waits as asked (``Retry-After``, at most
+``MAX_RETRY_WAIT_S``) and tries again, at most ``RETRIES`` times.
 """
 
 from __future__ import annotations
@@ -38,11 +42,36 @@ FEED_TYPES = (
 )
 JSON_TYPES = ("application/json",)
 ALL_TYPES = HTML_TYPES + FEED_TYPES + JSON_TYPES
+MIN_INTERVAL_S = 1.0
+RETRY_STATUSES = {429, 503}
+RETRIES = 2
+DEFAULT_RETRY_WAIT_S = 5.0
+MAX_RETRY_WAIT_S = 30.0
 _now = time.monotonic  # replaced in tests
+_sleep = time.sleep  # replaced in tests
+_pace_now = time.monotonic  # replaced in tests
 
 
 class FetchError(Exception):
     """The server could not give us the page (HTTP error, timeout, too big, wrong type). May be retried."""
+
+
+class SlowDownError(FetchError):
+    """The site asked us to slow down (HTTP 429 or 503)."""
+
+    def __init__(self, status: int, wait_s: float) -> None:
+        super().__init__(
+            f"The site answered HTTP {status} (too many requests) and still did after waiting; "
+            "try again later."
+        )
+        self.status = status
+        self.wait_s = wait_s
+
+
+def _retry_after(header: str | None) -> float:
+    if header and header.strip().isdigit():
+        return min(float(header.strip()), MAX_RETRY_WAIT_S)
+    return DEFAULT_RETRY_WAIT_S
 
 
 @dataclass(frozen=True)
@@ -89,6 +118,7 @@ class ResearchFetcher:
         contact: str | None = None,
     ) -> None:
         self._resolver = resolver
+        self._last: dict[str, float] = {}
         self._http = httpx.Client(
             transport=transport,
             timeout=httpx.Timeout(TIMEOUT_S),
@@ -108,10 +138,29 @@ class ResearchFetcher:
 
     def get(self, url: str, allowed_hosts: Iterable[str], *, accept: tuple[str, ...] = ALL_TYPES) -> Fetched:
         hosts = list(allowed_hosts)
+        for attempt in range(RETRIES + 1):
+            try:
+                return self._get_once(url, hosts, accept)
+            except SlowDownError as exc:
+                if attempt == RETRIES:
+                    raise
+                _sleep(exc.wait_s)
+        raise AssertionError("unreachable")  # pragma: no cover
+
+    def _pace(self, host: str) -> None:
+        last = self._last.get(host)
+        if last is not None:
+            gap = _pace_now() - last
+            if gap < MIN_INTERVAL_S:
+                _sleep(MIN_INTERVAL_S - gap)
+        self._last[host] = _pace_now()
+
+    def _get_once(self, url: str, hosts: list[str], accept: tuple[str, ...]) -> Fetched:
         deadline = _now() + TIMEOUT_S
         for _hop in range(MAX_REDIRECTS + 1):
             checked = check_url(url, hosts)
             check_resolution(checked.host, self._resolver)
+            self._pace(checked.host)
             try:
                 with self._http.stream("GET", checked.url, headers={"Accept": ", ".join(accept)}) as resp:
                     check_peer(resp)
@@ -121,6 +170,8 @@ class ResearchFetcher:
                             raise FetchError(f"Redirect without a target (HTTP {resp.status_code}).")
                         url = str(httpx.URL(checked.url).join(location))
                         continue
+                    if resp.status_code in RETRY_STATUSES:
+                        raise SlowDownError(resp.status_code, _retry_after(resp.headers.get("retry-after")))
                     if resp.status_code != 200:
                         raise FetchError(f"The site answered HTTP {resp.status_code}.")
                     media, charset = _media_type(resp.headers.get("content-type", ""))

@@ -129,6 +129,7 @@ Implementation rules (Phase 4, `youtube/oauth.py`):
 - System proxy settings are ignored.
 - The 15 s limit covers the whole fetch, and a slow, dripping response is cut off at that limit.
 - RSS/Atom documents with a `<!DOCTYPE` or `<!ENTITY` are refused before XML parsing, so entities never expand.
+- Requests to the same host are spaced at least 1 s apart. A 429 or 503 answer is retried at most twice, after the wait the site asks for (`Retry-After`, at most 30 s; 5 s if not given).
 - The User-Agent is `TubeForge/<version> (self-hosted research tool)`. The owner may add contact details (`research_contact` in `tubeforge.toml`), as Wikimedia asks of API users. Nothing personal is sent by default.
 
 ## 7. Untrusted-content handling (prompt-injection defence)

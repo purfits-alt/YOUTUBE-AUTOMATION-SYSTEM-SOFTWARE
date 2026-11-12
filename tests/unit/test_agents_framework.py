@@ -3,17 +3,21 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from datetime import date
 from pathlib import Path
 from types import ModuleType
 
 import jinja2
+import jsonschema_rs
 import pytest
+from tubeforge_agents import prompting
 from tubeforge_agents.base import redact
 from tubeforge_agents.catalogue import AGENTS, BY_CODE
 from tubeforge_agents.prompting import PREAMBLE, output_schema, render_system, render_user, untrusted
 
 from tubeforge.db.models import ProviderRegistry
+from tubeforge.gateway import core as gateway_core
 from tubeforge.gateway import indicators, paid
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -72,6 +76,29 @@ def test_prompts_use_strict_variables_and_the_shared_preamble() -> None:
     assert "Never promise or predict revenue" in PREAMBLE
     schema = output_schema("T00_HELLO")
     assert schema["oneOf"][1]["required"] == ["refusal"]
+
+
+@pytest.mark.parametrize(
+    "code", sorted(d.name for d in (Path(prompting.__file__).parent / "prompts").iterdir() if d.is_dir())
+)
+def test_every_system_prompt_spells_out_the_output_schema(code: str) -> None:
+    version = sorted(p.stem for p in (prompting.PROMPTS / code).glob("v*.md"))[-1]
+    context = {"hardware_profile": "H-LITE", "licensed_fonts": "Inter", "pillars": "a, b"}
+    system = render_system(code, "Agent", version, context)
+    assert json.dumps(output_schema(code), ensure_ascii=False, separators=(",", ":")) in system
+    assert "use exactly these field names" in system
+
+
+def test_schema_errors_name_the_fields_to_fix() -> None:
+    validator = jsonschema_rs.validator_for(output_schema("A02_NICHE_DISCOVERY"))
+    answer = {"candidates": [{"criteria": [{"code": "X", "confidence": "LOW", "evidence": [], "score": 3}]}]}
+    _data, errors = gateway_core._check(validator, json.dumps(answer))
+    assert 'candidates/0/criteria/0: "value" is a required property' in errors
+    assert 'candidates/0: "name" is a required property' in errors
+    assert not any("not valid under" in e for e in errors)
+    _data, errors = gateway_core._check(validator, '{"refusal": {"code": "POLICY"}}')
+    assert errors == ['refusal: "reason" is a required property']
+    assert gateway_core._check(validator, '{"refusal": {"code": "POLICY", "reason": "r"}}')[1] == []
 
 
 def test_agent_logs_mask_secrets_emails_and_phones() -> None:
