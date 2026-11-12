@@ -1,4 +1,4 @@
-"""docs/agents/ job descriptions are generated from AI_AGENT_ARCHITECTURE §4 and must stay current."""
+"""agents/ job descriptions are generated from AI_AGENT_ARCHITECTURE §4 and must stay current."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def _generator():  # type: ignore[no-untyped-def]
 
 def test_agent_docs_are_current_and_complete() -> None:
     expected = _generator().expected_files()
-    on_disk = {p for p in (ROOT / "docs" / "agents").glob("*.md")}
+    on_disk = {p for p in (ROOT / "agents").glob("*.md")}
     assert on_disk == set(expected), "run: uv run python tools/gen_agent_docs.py"
     for path, content in expected.items():
         assert path.read_text(encoding="utf-8") == content, (
