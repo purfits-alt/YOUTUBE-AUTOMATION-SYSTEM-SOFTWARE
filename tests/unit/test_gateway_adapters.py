@@ -8,7 +8,13 @@ from datetime import UTC, datetime
 import httpx
 import pytest
 
-from tubeforge.gateway.adapters import AdapterError, Message, TextRequest
+from tubeforge.gateway.adapters import (
+    ANSWER_TIMEOUT_S,
+    CONNECT_TIMEOUT_S,
+    AdapterError,
+    Message,
+    TextRequest,
+)
 from tubeforge.gateway.adapters.gemini import GeminiAdapter
 from tubeforge.gateway.adapters.groq import GroqAdapter
 from tubeforge.gateway.adapters.ollama import OllamaAdapter
@@ -116,3 +122,18 @@ def test_period_keys_and_resets_follow_pacific_time() -> None:
     assert period_key("MONTH", "America/Los_Angeles", now) == "2026-11"
     assert next_reset("DAY", "America/Los_Angeles", now) == datetime(2026, 11, 9, 8, 0, tzinfo=UTC)
     assert next_reset("MONTH", "America/Los_Angeles", now) == datetime(2026, 12, 1, 8, 0, tzinfo=UTC)
+
+
+def test_long_answers_are_waited_for_but_connecting_is_quick() -> None:
+    for adapter in (GeminiAdapter(), GroqAdapter(), OllamaAdapter()):
+        timeout = adapter._http.timeout
+        assert timeout.read == ANSWER_TIMEOUT_S >= 300
+        assert timeout.connect == CONNECT_TIMEOUT_S <= 15
+        adapter.close()
+
+    def slow(req: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout("slow", request=req)
+
+    with pytest.raises(AdapterError, match="did not answer in time") as exc:
+        GeminiAdapter(httpx.MockTransport(slow)).text(REQ, "k")
+    assert exc.value.kind == "TRANSIENT" and exc.value.status is None

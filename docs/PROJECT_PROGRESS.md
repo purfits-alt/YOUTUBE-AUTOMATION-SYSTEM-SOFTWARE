@@ -627,6 +627,8 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 - Ollama is not running on the PC (ConnectError). That is not retried.
 - Introduces no paid dependency ✔.
 
+**Third discovery run (owner report, 2026-11-12):** all 24 sources were read. Gemini then "did not answer in time". The adapters waited at most 120 s for an answer. Providers send nothing until the whole answer is written, and A02's answer (up to 15 niches × 11 criteria with quotes) can take longer on a busy free tier. They now wait up to 300 s for the answer. Connecting is still limited to 15 s, so a stopped Ollama is skipped at once. Introduces no paid dependency ✔.
+
 ## Resource consumption
 
 | Resource | Used |
