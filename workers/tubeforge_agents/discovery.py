@@ -37,8 +37,9 @@ from tubeforge.db.models import (
     TrendItem,
 )
 from tubeforge.gateway.core import Gateway
+from tubeforge.logging import get_logger
 from tubeforge.research import blueprint as bp
-from tubeforge.research import rss, wikipedia
+from tubeforge.research import forbidden, rss, wikipedia
 from tubeforge.research.fetcher import FetchError, ResearchFetcher
 from tubeforge.research.forbidden import scan
 from tubeforge.research.net import FetchBlockedError
@@ -52,8 +53,10 @@ from tubeforge.research.scoring import (
 )
 from tubeforge.research.signals import series_metrics, zscore_7d
 from tubeforge.research.sources import SourceUnavailableError
-from tubeforge_agents.base import RunOutcome, run_agent
+from tubeforge_agents.base import AgentTask, RunOutcome, run_agent
 from tubeforge_agents.discovery_agents import A02, A03, A05, A06, A07, DocIn
+
+log = get_logger("tubeforge.discovery")
 
 MAX_DOCS = 40
 MAX_SEEDS = 24
@@ -467,6 +470,26 @@ def _dedupe_ideas(strategy: dict[str, Any]) -> dict[str, Any]:
     return {**strategy, "ideas": [ideas[i] for i in keep], "calendar_30d": calendar}
 
 
+def _run_clean(
+    db: Session, gateway: Gateway, agent: AgentTask, data: dict[str, Any], now: datetime | None
+) -> RunOutcome:
+    """Run A06/A07. If the answer uses a forbidden phrase (e.g. "guaranteed" in one of 50 ideas), ask
+    once more and say exactly where; the scan in ``bp.problems`` still rejects a second offence."""
+    outcome = run_agent(db, gateway, agent, data, idempotent=False, now=now)
+    if outcome.data is None:
+        raise _outcome_error(outcome)
+    hits = forbidden.scan(outcome.data)
+    if not hits:
+        return outcome
+    log.info("blueprint.forbidden_phrase_retry", agent=agent.code, hits=len(hits))
+    retry = run_agent(
+        db, gateway, agent, {**data, "fix_notes": forbidden.describe(hits)}, idempotent=False, now=now
+    )
+    if retry.data is None:
+        raise _outcome_error(retry)
+    return retry
+
+
 def generate_blueprint(
     db: Session,
     gateway: Gateway,
@@ -487,14 +510,8 @@ def generate_blueprint(
         "language": cand.language,
         "originality_angles": angles,
     }
-    branding = run_agent(db, gateway, A07, {"niche": niche}, idempotent=False, now=now)
-    if branding.data is None:
-        raise _outcome_error(branding)
-    strategy = run_agent(
-        db, gateway, A06, {"niche": niche, "owner_notes": owner_notes}, idempotent=False, now=now
-    )
-    if strategy.data is None:
-        raise _outcome_error(strategy)
+    branding = _run_clean(db, gateway, A07, {"niche": niche}, now)
+    strategy = _run_clean(db, gateway, A06, {"niche": niche, "owner_notes": owner_notes}, now)
     blueprint = bp.compose(
         {"candidate_id": str(cand.id), "name": cand.name, "language": cand.language},
         _dedupe_ideas(strategy.data),

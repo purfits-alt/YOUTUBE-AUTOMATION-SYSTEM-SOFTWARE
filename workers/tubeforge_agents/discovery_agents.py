@@ -9,11 +9,12 @@ pipelines in ``tubeforge_agents.discovery`` check and score the answers.
 from __future__ import annotations
 
 import json
-from typing import Any, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import BaseModel, Field
 
 from tubeforge.db.models import Channel
+from tubeforge.research import forbidden
 from tubeforge.research.blueprint import LICENSED_FONTS
 from tubeforge_agents.base import AgentTask
 from tubeforge_agents.prompting import render_user
@@ -148,10 +149,25 @@ class NicheBrief(BaseModel):
     originality_angles: list[str] = Field(default_factory=list, max_length=5)
 
 
+# Set by the pipeline (never by users) when an earlier answer broke the forbidden-phrase rules.
+FixNotes = Annotated[str, Field(max_length=1500)]
+
+
+def _rules_and_fixes(fix_notes: str) -> str:
+    text = f"\nRules for every field: {forbidden.AVOID_TEXT}"
+    if fix_notes:
+        text += (
+            "\nYour previous answer was rejected because it broke these rules: "
+            f"{fix_notes}. Write the whole answer again and reword those fields."
+        )
+    return text
+
+
 class StrategyInput(BaseModel):
     niche: NicheBrief
     owner_notes: str = Field(default="", max_length=2000)
     hardware_profile: str = HARDWARE_PROFILE
+    fix_notes: FixNotes = ""
 
 
 class ChannelStrategyAgent(AgentTask):
@@ -169,13 +185,18 @@ class ChannelStrategyAgent(AgentTask):
         assert isinstance(data, StrategyInput)
         return render_user(
             "Shortlisted niche:\n{{ niche | untrusted('niche') }}\n"
-            "Owner notes:\n{{ notes | untrusted('owner_notes') }}",
-            {"niche": data.niche.model_dump_json(), "notes": data.owner_notes or "(none)"},
+            "Owner notes:\n{{ notes | untrusted('owner_notes') }}{{ rules }}",
+            {
+                "niche": data.niche.model_dump_json(),
+                "notes": data.owner_notes or "(none)",
+                "rules": _rules_and_fixes(data.fix_notes),
+            },
         )
 
 
 class BrandingInput(BaseModel):
     niche: NicheBrief
+    fix_notes: FixNotes = ""
 
 
 class ChannelBrandingAgent(AgentTask):
@@ -192,7 +213,8 @@ class ChannelBrandingAgent(AgentTask):
     def user_message(self, data: BaseModel) -> str:
         assert isinstance(data, BrandingInput)
         return render_user(
-            "Niche:\n{{ niche | untrusted('niche') }}", {"niche": data.niche.model_dump_json()}
+            "Niche:\n{{ niche | untrusted('niche') }}{{ rules }}",
+            {"niche": data.niche.model_dump_json(), "rules": _rules_and_fixes(data.fix_notes)},
         )
 
 
