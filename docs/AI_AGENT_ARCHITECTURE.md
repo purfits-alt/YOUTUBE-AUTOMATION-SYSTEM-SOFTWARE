@@ -108,7 +108,7 @@ flowchart LR
 | **Error handling / Retry** | Common rules |
 | **Logging** | Common rules |
 | **Performance metrics** | Common metrics + % candidates with ≥3 evidence items |
-| **Cost & usage limits** | 30 calls/day, 400k tokens/day (owner-adjustable in Agent Control Center; Gateway-enforced) |
+| **Cost & usage limits** | 30 calls/day, 300k tokens/day (owner-adjustable in Agent Control Center; Gateway-enforced) |
 | **Human approval gates** | Owner shortlists/dismisses; blueprint only on owner action |
 | **Testing requirements** | Golden tests with fixed source fixtures; forbidden-phrase test ('guaranteed', 'will earn'); no-YouTube-aggregation test |
 
@@ -256,7 +256,7 @@ flowchart LR
 | **Error handling / Retry** | Common rules |
 | **Logging** | Common rules |
 | **Performance metrics** | Common metrics |
-| **Cost & usage limits** | 40 calls/day, 600k tokens/day (owner-adjustable in Agent Control Center; Gateway-enforced) |
+| **Cost & usage limits** | 40 calls/day, 300k tokens/day (owner-adjustable in Agent Control Center; Gateway-enforced) |
 | **Human approval gates** | RESEARCH_REVIEW (owner) |
 | **Testing requirements** | Prompt-injection adversarial set; citation coverage ≥ 95 % |
 

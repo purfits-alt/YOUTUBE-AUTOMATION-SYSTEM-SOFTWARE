@@ -634,6 +634,11 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 - A 5xx error now shows the provider's own reason, e.g. "provider error 503 (The model is overloaded…)".
 - Introduces no paid dependency ✔ (all four Gemini models are free-tier rows, tier F).
 
+**Agent job descriptions (owner request, 2026-11-12):** `docs/agents/` now has one file per agent (A01–A32) and an index. Each has the owner's sections: Agent Role, Actions, TubeForge Instructions, Mission, Context, Input, Responsibilities, Process, Output, Handoff Instructions, and Constraints — Security & Misuse Guardrails.
+- `tools/gen_agent_docs.py` generates them. The facts come from AI_AGENT_ARCHITECTURE §4 and the agent catalogue, so they cannot drift; a test fails if the files are stale.
+- They document the agents. The prompts the agents run stay in `workers/tubeforge_agents/prompts/`.
+- The spec's token limits for A02 (400k) and A09 (600k) were corrected to the seeded 300k per day.
+
 ## Resource consumption
 
 | Resource | Used |
