@@ -94,6 +94,17 @@ def render_system(agent_code: str, agent_name: str, version: str, context: dict[
         ENV.from_string(PREAMBLE).render(variables)
         + "\n"
         + ENV.from_string(prompt_source(agent_code, version)).render(variables)
+        + "\n"
+        + schema_block(agent_code)
+    )
+
+
+def schema_block(agent_code: str) -> str:
+    """The output schema, spelled out, so the model knows the exact field names (rule 1 of the preamble)."""
+    schema = json.dumps(output_schema(agent_code), ensure_ascii=False, separators=(",", ":"))
+    return (
+        "Output schema (JSON Schema). Your answer must be one JSON object that validates against it; "
+        f"use exactly these field names:\n{schema}\n"
     )
 
 

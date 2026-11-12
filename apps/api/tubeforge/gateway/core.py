@@ -289,7 +289,7 @@ class Gateway:
                     messages=(
                         *request.messages,
                         Message("assistant", response.text[:4000]),
-                        Message("user", REPAIR_PROMPT.format(errors="; ".join(errors[:5]))),
+                        Message("user", REPAIR_PROMPT.format(errors="; ".join(errors[:10]))),
                     ),
                     system=request.system,
                     max_output_tokens=request.max_output_tokens,
@@ -469,7 +469,28 @@ def _check(validator: Any, text: str) -> tuple[Any, list[str]]:
         data = json.loads(candidate)
     except json.JSONDecodeError as exc:
         return None, [f"not JSON ({exc.msg})"]
-    errors = [
-        f"{'/'.join(map(str, e.instance_path)) or '(root)'}: {e.message}" for e in validator.iter_errors(data)
-    ]
-    return data, errors
+    return data, [_describe(e) for e in _leaf_errors(validator.iter_errors(data), data)]
+
+
+def _leaf_errors(errors: Any, data: Any) -> list[Any]:
+    """Specific errors instead of "<the whole answer> is not valid under any of the given schemas".
+
+    Agent schemas are ``oneOf: [task schema, refusal]``. When an answer fails both, report the
+    errors of the branch it was aiming for (the refusal branch only if it has a "refusal" key), so
+    the repair request can name the fields to fix.
+    """
+    out: list[Any] = []
+    for e in errors:
+        branches = getattr(e.kind, "context", None) if e.kind.name in ("oneOf", "anyOf") else None
+        if branches:
+            wants_refusal = isinstance(data, dict) and "refusal" in data
+            out += _leaf_errors(branches[-1] if wants_refusal else branches[0], data)
+        else:
+            out.append(e)
+    return out
+
+
+def _describe(e: Any) -> str:
+    where = "/".join(map(str, e.instance_path)) or "(root)"
+    message = str(e.message)
+    return f"{where}: {message if len(message) <= 200 else message[:197] + '...'}"

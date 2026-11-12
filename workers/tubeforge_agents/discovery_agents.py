@@ -46,7 +46,7 @@ class NicheDiscoveryAgent(AgentTask):
     code: ClassVar[str] = "A02_NICHE_DISCOVERY"
     task_type: ClassVar[str] = "research"
     temperature: ClassVar[float] = 0.2
-    max_output_tokens: ClassVar[int] = 6000
+    max_output_tokens: ClassVar[int] = 10000
     input_model: ClassVar[type[BaseModel]] = NicheInput
 
     def context(self, data: BaseModel, channel: Channel | None) -> dict[str, Any]:

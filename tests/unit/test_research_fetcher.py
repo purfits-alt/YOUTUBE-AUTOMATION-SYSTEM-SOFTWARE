@@ -29,6 +29,13 @@ def resolver(mapping: dict[str, list[str]] | None = None) -> Callable[[str, int]
     return resolve
 
 
+@pytest.fixture(autouse=True)
+def no_real_sleep(monkeypatch: pytest.MonkeyPatch) -> list[float]:
+    slept: list[float] = []
+    monkeypatch.setattr(fetcher_mod, "_sleep", slept.append)
+    return slept
+
+
 def make(handler: Callable[[httpx.Request], httpx.Response], **kw: object) -> ResearchFetcher:
     return ResearchFetcher(transport=httpx.MockTransport(handler), resolver=resolver(**kw), contact="")  # type: ignore[arg-type]
 
@@ -202,6 +209,44 @@ def test_slow_drip_body_is_cut_at_the_deadline(monkeypatch: pytest.MonkeyPatch) 
 
     with pytest.raises(FetchError, match="15 seconds"), make(drip) as f:
         f.get("https://example.org/", HOSTS)
+
+
+def test_requests_to_one_host_are_spaced(monkeypatch: pytest.MonkeyPatch, no_real_sleep: list[float]) -> None:
+    monkeypatch.setattr(fetcher_mod, "_pace_now", lambda: 100.0)
+    ok = httpx.Response(200, headers={"content-type": "text/html"}, content=b"ok")
+    with make(lambda _r: ok) as f:
+        f.get("https://example.org/a", HOSTS)
+        f.get("https://example.org/b", HOSTS)
+    assert no_real_sleep == [fetcher_mod.MIN_INTERVAL_S]
+
+
+@pytest.mark.parametrize(
+    ("status", "retry_after", "wait"), [(429, "7", 7.0), (503, None, 5.0), (429, "999", 30.0)]
+)
+def test_slow_down_answers_are_retried_after_the_asked_wait(
+    no_real_sleep: list[float], status: int, retry_after: str | None, wait: float
+) -> None:
+    answers = iter(
+        [
+            httpx.Response(status, headers={"retry-after": retry_after} if retry_after else {}),
+            httpx.Response(200, headers={"content-type": "text/html"}, content=b"ok"),
+        ]
+    )
+    with make(lambda _r: next(answers)) as f:
+        assert f.get("https://example.org/", HOSTS).body == b"ok"
+    assert wait in no_real_sleep
+
+
+def test_slow_down_gives_up_after_the_retries(no_real_sleep: list[float]) -> None:
+    calls: list[int] = []
+
+    def busy(_r: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        return httpx.Response(429, headers={"retry-after": "2"})
+
+    with pytest.raises(fetcher_mod.SlowDownError, match="HTTP 429"), make(busy) as f:
+        f.get("https://example.org/", HOSTS)
+    assert len(calls) == fetcher_mod.RETRIES + 1
 
 
 class _Stream:

@@ -614,6 +614,13 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 
 **After the merge (owner request, 2026-11-11):** placeholder pages said "queued (mock — no real action in Phase 2)", which read as if something had happened. The message now says "preview only — this page is built in a later phase, so nothing was done". A unit test pins the wording.
 
+**First real discovery run (owner report, 2026-11-12):** it failed with "gemini … returned invalid JSON twice" and 14 Wikipedia topics "HTTP 429". Causes and fixes:
+- The prompts said "match the provided schema", but the schema was never sent. Gemini guessed field names (`score`, `document_id`). The output schema is now appended to every agent's system prompt (a test checks all agents).
+- The error said only "(root): <whole answer> is not valid…", so the repair call could not help. Errors now name each field to fix (for example `candidates/0/criteria/0: "value" is a required property`). The repair call lists up to 10.
+- A02's answer limit went from 6,000 to 10,000 tokens, so 15 candidates with evidence are not cut off.
+- Wikipedia: TubeForge asked for pages back-to-back and gave up on the first "slow down". The research fetcher now spaces requests to one site at least 1 s apart, and retries 429/503 twice after the wait the site asks for (at most 30 s). Adding contact details (`research_contact`) also helps with Wikimedia.
+- Introduces no paid dependency ✔.
+
 ## Resource consumption
 
 | Resource | Used |
