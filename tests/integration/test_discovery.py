@@ -296,6 +296,24 @@ def test_blueprint_draft_from_a06_and_a07(db: Session, env: Env, gw: Gateway, mo
         pipe.generate_blueprint(db, gw, _shortlisted(db, env, status="NEW").id, now=NOW)
 
 
+def test_blueprint_retries_once_when_an_idea_uses_a_forbidden_phrase(
+    db: Session, env: Env, gw: Gateway, model: ScriptedModel
+) -> None:
+    bad = fx.strategy()
+    bad["ideas"][27] = {**bad["ideas"][27], "angle": "A guaranteed method for better notes"}
+    answers = iter([bad, fx.strategy()])
+    model.replies["A07_CHANNEL_BRANDING"] = lambda _r, _ids: fx.branding()
+    model.replies["A06_CHANNEL_STRATEGY"] = lambda _r, _ids: next(answers)
+    result = pipe.generate_blueprint(db, gw, _shortlisted(db, env, name="Note taking").id, now=NOW)
+    assert result.strategy.status == "DRAFT" and result.problems == []
+    a06 = [r for a, r in model.calls if a == "A06_CHANNEL_STRATEGY"]
+    assert len(a06) == 2
+    assert "Never use these words" in a06[0].messages[-1].content
+    retry = a06[1].messages[-1].content
+    assert "'guaranteed' at $.ideas[27].angle" in retry and "previous answer was rejected" in retry
+    assert "A guaranteed method" not in retry  # model text is not echoed back
+
+
 def _active_channel(db: Session, pillars: list[str]) -> Channel:
     ch = Channel(id=uuid7(), name="Budget Lab", state="ACTIVE", content_language="en")
     db.add(ch)

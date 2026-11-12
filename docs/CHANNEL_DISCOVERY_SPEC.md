@@ -39,6 +39,7 @@ Fetcher rules: OAUTH_SECURITY §6–7 (allowlist, SSRF guard, 2 MB cap, sanitisi
 - **Blueprint generation (A07, then A06).**
   - Near-duplicate ideas (similarity ≥ 0.85) are removed and the calendar is re-pointed to the remaining ideas. Code picks the palette contrast pair and adds font licences.
   - A blueprint that breaks the schema or contains a forbidden phrase is not saved.
+  - A06 and A07 are told the forbidden phrases up front. If an answer still uses one (e.g. "guaranteed" in one of 50 ideas), that agent is asked once more, with the rule name and field path (never the model's own text). A second offence fails the blueprint as before.
   - Otherwise it is saved as a DRAFT `channel_strategies` row (`channel_id` empty, version per candidate). Any remaining rule problems are returned with it and block approval (step D).
 - **Trend scan (A03).**
   - Runs daily at 06:00 PKT for ACTIVE channels with an approved blueprint.

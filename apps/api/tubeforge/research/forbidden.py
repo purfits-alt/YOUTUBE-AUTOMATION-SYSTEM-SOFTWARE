@@ -28,6 +28,21 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 ]  # fmt: skip
 
 
+# The same rules in words, for prompts: tell the model up front what the scan rejects.
+AVOID_TEXT = (
+    "Never use these words or claims anywhere in the answer: guarantee / guaranteed / guarantees; "
+    "'will earn', 'will make you', 'will pay you'; 'get rich'; 'make/earn money fast'; any income per "
+    "day/week/month/year; 'fully' or '100%' monetised; easy, instant, quick or sure monetisation; "
+    "sure-fire, can't fail, risk-free, no risk; 'will go viral'; promises of a number of views or "
+    "subscribers. Say 'may', 'aims to' or 'evidence suggests' instead."
+)
+
+
+def describe(hits: list[Hit]) -> str:
+    """Where the answer broke the rules (paths and rule names only; no model text is echoed back)."""
+    return "; ".join(f"'{h.phrase}' at {h.path}" for h in hits[:10])
+
+
 @dataclass(frozen=True)
 class Hit:
     path: str

@@ -639,6 +639,12 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 - They document the agents. The prompts the agents run stay in `workers/tubeforge_agents/prompts/`.
 - The spec's token limits for A02 (400k) and A09 (600k) were corrected to the seeded 300k per day.
 
+**First blueprint (owner report, 2026-11-12):** discovery succeeded (AI concepts 71.8, chess 71.1, history 67.6). Generate blueprint then failed: "Forbidden phrase 'guaranteed' at $.ideas[27].angle". The scan is right to reject it. But the prompts never listed the phrases, and one word in one of 50 ideas threw the whole blueprint away. Fixes:
+- A06 and A07 now get the forbidden-phrase list in their request.
+- An offending agent is asked once more, with the rule and the field path only.
+- A second offence still fails.
+- Integration test added. Introduces no paid dependency ✔.
+
 ## Resource consumption
 
 | Resource | Used |
