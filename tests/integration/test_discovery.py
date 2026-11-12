@@ -398,9 +398,11 @@ def test_niches_api(env: Env, db: Session) -> None:
         assert detail["candidates_list"][0]["footer"].startswith("Estimates based on cited sources")
         profiles = {p["name"]: p for p in client.get("/api/v1/niches/weight-profiles").json()}
         assert (
-            profiles["Balanced"]["is_default"]
+            profiles["Evergreen ad revenue"]["is_default"]
+            and not profiles["Balanced"]["is_default"]
             and profiles["Originality-first"]["weights"]["INAUTHENTIC_RISK_INVERSE"] == 15
         )
+        assert isinstance(detail["candidates_list"][0]["remarks"], list)
         r = client.post(
             "/api/v1/niches/rescore",
             json={"report_id": str(cand.report_id), "weights": {"AUDIENCE_DEMAND": 3}},

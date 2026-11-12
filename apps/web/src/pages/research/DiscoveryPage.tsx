@@ -23,6 +23,7 @@ import {
   CandidateStatus,
   LANGUAGES,
   LEVEL_TONE,
+  Remarks,
   ScoreFooter,
   ScoreText,
   splitList,
@@ -261,6 +262,8 @@ function Candidates({ reportId, profiles }: { reportId: string; profiles: Profil
     return <ProblemDisplay problem={asProblem(detail.error)} onRetry={() => void detail.refetch()} />;
   const r = detail.data;
   const list = r.candidates_list;
+  // The list is sorted by score; the best one the owner has not dismissed is the recommendation.
+  const recommended = list.find((c) => c.status !== "DISMISSED")?.id;
   return (
     <div className="space-y-3" data-testid="report-detail">
       <p className="text-sm">
@@ -294,9 +297,15 @@ function Candidates({ reportId, profiles }: { reportId: string; profiles: Profil
                     <Link className="font-medium text-accent underline" to={`/research/niches/${c.id}`}>
                       {c.name}
                     </Link>
+                    {c.id === recommended && (
+                      <span className="ml-2" data-testid="recommended">
+                        <Badge tone="ok">{t("researchPage.recommended")}</Badge>
+                      </span>
+                    )}
                     <p className="text-xs text-muted">
                       {c.language} · {c.summary}
                     </p>
+                    <Remarks c={c} />
                   </td>
                   <td className="py-2 pr-3">
                     <ScoreText c={c} />

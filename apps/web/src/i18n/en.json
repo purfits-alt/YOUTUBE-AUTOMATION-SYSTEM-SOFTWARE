@@ -1020,7 +1020,11 @@
     "feedName": "Feed name",
     "feedUrl": "Feed address (https)",
     "addFeed": "Add feed",
-    "feedAdded": "Feed added. Switch it on when you trust it."
+    "feedAdded": "Feed added. Switch it on when you trust it.",
+    "recommended": "Recommended",
+    "strengths": "Strengths:",
+    "watch": "Watch:",
+    "lowEvidence": "little evidence"
   },
   "trendsPage": {
     "scan": "Scan now",

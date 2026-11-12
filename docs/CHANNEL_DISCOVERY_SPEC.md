@@ -73,6 +73,19 @@ Display rules:
 
 **Weight profiles:** "Balanced" (defaults), "Originality-first" (ORIGINALITY ×1.5, INAUTHENTIC ×1.5), "Low effort on H-LITE" (FEASIBILITY ×1.5). The owner can save custom profiles.
 
+**"Evergreen ad revenue" (default since migration 0012, owner request 2026-11-12):** the owner's goal is steady ad income from long-lasting views.
+- Weights: EVERGREEN 15, ADVERTISER_SUITABILITY 14, AUDIENCE_DEMAND 12, INAUTHENTIC_RISK_INVERSE 12, SEARCH_INTEREST 11, LONG_FORM_POTENTIAL 11, ORIGINALITY 9, FEASIBILITY 8, RISING_TOPICS 6, COMPETITION 6, SHORTS 5.
+- The inauthentic-content guard stays heavy: ad income needs YPP, and reused or inauthentic content is the main reason channels are refused.
+- Shorts and rising topics help early reach, but long-form earns most ad income, so they weigh less.
+- 0012 moves the default only if it was still "Balanced"; its downgrade restores it.
+
+**Remarks (deterministic, no AI):** every candidate lists up to 3 strengths and up to 2 things to watch.
+- A strength is a criterion with value ≥ 65, ranked by weight × value.
+- A thing to watch is a criterion with weight ≥ 8 that has value < 50 or LOW confidence.
+- Remarks follow the weights in use, so they change on rescore.
+- The best candidate the owner has not dismissed is marked "Recommended".
+- Remarks name criteria and values only. Like every score, they are an estimate, not a prediction of views or earnings.
+
 ## 3. Discovery flow
 
 1. The owner starts discovery (languages, interests, niches to avoid).
