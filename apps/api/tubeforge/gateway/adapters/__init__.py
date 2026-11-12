@@ -74,13 +74,26 @@ def classify(status: int, body: str, headers: httpx.Headers) -> AdapterError:
     return AdapterError("INVALID", status, f"request refused ({status})")
 
 
+# Providers send nothing until the whole answer is written, and a long structured answer (A02:
+# 15 niches x 11 scored criteria with quotes) can take minutes on a busy free tier. Connecting is
+# quick or nothing is listening (e.g. Ollama not started), so that limit stays short.
+ANSWER_TIMEOUT_S = 300.0
+CONNECT_TIMEOUT_S = 15.0
+
+
 class HttpAdapter:
     family = ""
     hosts: frozenset[str] = frozenset()
     needs_key = True
 
-    def __init__(self, transport: httpx.BaseTransport | None = None, timeout: float = 120.0) -> None:
-        self._http = httpx.Client(transport=transport, timeout=timeout, follow_redirects=False)
+    def __init__(
+        self, transport: httpx.BaseTransport | None = None, timeout: float = ANSWER_TIMEOUT_S
+    ) -> None:
+        self._http = httpx.Client(
+            transport=transport,
+            timeout=httpx.Timeout(timeout, connect=min(CONNECT_TIMEOUT_S, timeout)),
+            follow_redirects=False,
+        )
 
     def close(self) -> None:
         self._http.close()
