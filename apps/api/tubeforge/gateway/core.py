@@ -57,6 +57,9 @@ DEFAULT_CHAINS: dict[str, list[str]] = {
     "classify": ["gemini:gemini-3.5-flash-lite", "groq:openai/gpt-oss-20b", LOCAL],
     "hello": ["gemini:gemini-3.5-flash-lite", "groq:openai/gpt-oss-20b", LOCAL],
 }
+TRANSIENT_WAITS_S = (5.0, 15.0)
+_sleep = time.sleep  # replaced in tests
+
 REPAIR_PROMPT = (
     "Your previous answer was not valid JSON for the required schema. Problems: {errors}. "
     "Answer again with ONLY the corrected JSON object, nothing else."
@@ -199,7 +202,7 @@ class Gateway:
                 log.info("gateway.cache_hit", provider=code, task=task)
                 return GatewayResult(code, hit["text"], hit.get("data"), 0, 0, True, False, 0, skipped)
             try:
-                return self._call(
+                return self._call_retrying(
                     db,
                     adapter,
                     provider,
@@ -241,6 +244,20 @@ class Gateway:
         if limit_resets:
             raise GatewayLimitError(min(limit_resets), skipped)
         raise GatewayUnavailableError(skipped)
+
+    def _call_retrying(self, db: Session, adapter: TextAdapter, *args: Any) -> GatewayResult:
+        """A provider that answered "busy" (5xx, e.g. Gemini's 503 "model overloaded") gets
+        ``len(TRANSIENT_WAITS_S)`` more tries after short waits before the next provider is used.
+        Connection errors (nothing listening, e.g. Ollama not running) are not retried."""
+        for wait in (*TRANSIENT_WAITS_S, None):
+            try:
+                return self._call(db, adapter, *args)
+            except AdapterError as exc:
+                if wait is None or exc.kind != "TRANSIENT" or exc.status is None or exc.status < 500:
+                    raise
+                log.info("gateway.transient_retry", provider=args[0].code, status=exc.status, wait_s=wait)
+                _sleep(wait)
+        raise AssertionError("unreachable")  # pragma: no cover
 
     @staticmethod
     def _paid_block(

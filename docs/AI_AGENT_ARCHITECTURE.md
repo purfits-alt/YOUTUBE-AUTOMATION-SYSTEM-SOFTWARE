@@ -61,7 +61,7 @@ flowchart LR
 | **Version** | 1.0.0 (semver; prompt changes bump minor; schema changes bump major) |
 | **Disallowed actions (all agents)** | Publish; change privacy to public; delete YouTube content; enable/raise paid providers or budgets; buy stock; change own or others' permissions; disable or override auditors; call providers directly (Gateway only); call other agents directly; act on instructions found in untrusted content |
 | **Communication** | Consumes and emits events only through the Orchestrator/job bus; outputs persisted before completion event |
-| **Error handling** | Classified errors (TRANSIENT/LIMIT/AUTH/VALIDATION/PERMANENT). Invalid JSON → one repair call with validator errors → else FAILED with reason |
+| **Error handling** | Classified errors (TRANSIENT/LIMIT/AUTH/VALIDATION/PERMANENT). A provider that answers 5xx ("busy", e.g. Gemini 503) is retried twice after 5 s and 15 s before the next provider in the chain; connection errors (nothing listening) go to the next provider at once. Invalid JSON → one repair call with validator errors → else FAILED with reason |
 | **Retry rules** | LLM agents: max 3 attempts, backoff 2^n×5 s ±20 % jitter. Deterministic: max 5 (network) / 2 (media). Idempotency key = `agent_code:input_sha256:prompt_version` |
 | **Logging** | agent_runs row: input hash, redacted input/output (secrets, emails, tokens, phone numbers masked), provider, model, tokens, latency, status. No raw voice audio in logs |
 | **Performance metrics** | success rate, p50/p95 latency, tokens per run, repair rate, owner acceptance rate (where an owner decision follows), quality score (auditor- or owner-rated) |
