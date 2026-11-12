@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from tubeforge.config import Settings, get_settings
+from tubeforge.gateway import core as gateway_core
 from tubeforge.queue import ensure_windows_event_loop_policy
 from tubeforge.research import fetcher as research_fetcher
 
@@ -18,8 +19,9 @@ TEST_DB_ENV = "TUBEFORGE_TEST_DATABASE_URL"
 
 @pytest.fixture(autouse=True)
 def _no_polite_waits(monkeypatch: pytest.MonkeyPatch) -> None:
-    """The research fetcher spaces requests to one host; tests never wait for real."""
+    """The research fetcher and the AI Gateway wait politely in real use; tests never wait for real."""
     monkeypatch.setattr(research_fetcher, "_sleep", lambda _s: None)
+    monkeypatch.setattr(gateway_core, "_sleep", lambda _s: None)
 
 
 @pytest.fixture(autouse=True)

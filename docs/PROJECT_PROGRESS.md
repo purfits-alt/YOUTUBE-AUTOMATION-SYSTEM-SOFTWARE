@@ -621,6 +621,12 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 - Wikipedia: TubeForge asked for pages back-to-back and gave up on the first "slow down". The research fetcher now spaces requests to one site at least 1 s apart, and retries 429/503 twice after the wait the site asks for (at most 30 s). Adding contact details (`research_contact`) also helps with Wikimedia.
 - Introduces no paid dependency ✔.
 
+**Second discovery run (owner report, 2026-11-12):** Wikipedia worked. All three AI providers failed:
+- Gemini answered 503 ("model overloaded", Google's side). The Gateway used to move on at once. Now a provider that answers 5xx gets two more tries, after 5 s and 15 s.
+- The Groq provider has a kill switch on (the owner's choice; it stays off).
+- Ollama is not running on the PC (ConnectError). That is not retried.
+- Introduces no paid dependency ✔.
+
 ## Resource consumption
 
 | Resource | Used |

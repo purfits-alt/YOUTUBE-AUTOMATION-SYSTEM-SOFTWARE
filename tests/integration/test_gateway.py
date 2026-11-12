@@ -24,6 +24,7 @@ from tubeforge.db.models import (
     UsageLimit,
     UsageRecord,
 )
+from tubeforge.gateway import core as gateway_core
 from tubeforge.gateway import limits, registry
 from tubeforge.gateway.adapters import AdapterError, Message, TextRequest, TextResponse
 from tubeforge.gateway.core import (
@@ -297,13 +298,29 @@ def test_one_repair_then_failure(gw: Gateway, db: Session, fakes: dict[str, Fake
 
 
 def test_provider_errors_fall_back(gw: Gateway, db: Session, fakes: dict[str, FakeProvider]) -> None:
-    fakes["gemini"].replies = [AdapterError("TRANSIENT", 503, "overloaded")]
+    fakes["gemini"].replies = [AdapterError("TRANSIENT", 503, "overloaded")] * 3
     fakes["groq"].replies = [AdapterError("AUTH", 401, "the API key was not accepted")]
     res = call(gw, db, [GEMINI, GROQ, LOCAL])
     assert res.provider_code == LOCAL and len(res.skipped) == 2
+    assert len(fakes["gemini"].calls) == 3 and len(fakes["groq"].calls) == 1
     assert (
         db.scalars(select(Notification).where(Notification.event_type == "provider.auth")).first() is not None
     )
+
+
+def test_busy_provider_is_retried_after_a_wait(
+    gw: Gateway, db: Session, fakes: dict[str, FakeProvider], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    waits: list[float] = []
+    monkeypatch.setattr(gateway_core, "_sleep", waits.append)
+    fakes["gemini"].replies = [AdapterError("TRANSIENT", 503, "overloaded")]
+    res = call(gw, db, [GEMINI, LOCAL])
+    assert res.provider_code == GEMINI and not res.skipped and waits == [gateway_core.TRANSIENT_WAITS_S[0]]
+    waits.clear()
+    fakes["ollama"].replies = [AdapterError("TRANSIENT", None, "ConnectError")]
+    with pytest.raises(GatewayUnavailableError, match="ConnectError"):
+        call(gw, db, [LOCAL])
+    assert waits == [] and len(fakes["ollama"].calls) == 1
 
 
 def test_paid_indicator_switches_the_provider_off(
