@@ -629,6 +629,11 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 
 **Third discovery run (owner report, 2026-11-12):** all 24 sources were read. Gemini then "did not answer in time". The adapters waited at most 120 s for an answer. Providers send nothing until the whole answer is written, and A02's answer (up to 15 niches × 11 criteria with quotes) can take longer on a busy free tier. They now wait up to 300 s for the answer. Connecting is still limited to 15 s, so a stopped Ollama is skipped at once. Introduces no paid dependency ✔.
 
+**Fourth discovery run (owner report, 2026-11-12):** all 24 sources were read. Gemini 3.8-flash answered 503 three times, including both retries. Groq stays off (its console asked the owner for payment, so it is not used). Fixes:
+- Each free Gemini model has its own capacity, but agents only tried one. Chains now try a second free Gemini model on the same key before Groq: REASONING 3.8-flash → 3.6-flash; LIGHT 3.5-flash-lite → 3.1-flash-lite. Migration 0011 updates chains the owner has not edited and leaves edited ones alone. It has a downgrade and an integration test.
+- A 5xx error now shows the provider's own reason, e.g. "provider error 503 (The model is overloaded…)".
+- Introduces no paid dependency ✔ (all four Gemini models are free-tier rows, tier F).
+
 ## Resource consumption
 
 | Resource | Used |

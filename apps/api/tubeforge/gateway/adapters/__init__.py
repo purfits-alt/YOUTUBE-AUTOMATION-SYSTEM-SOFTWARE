@@ -70,7 +70,10 @@ def classify(status: int, body: str, headers: httpx.Headers) -> AdapterError:
     if status in (401, 403) or "api_key_invalid" in lowered or "invalid api key" in lowered:
         return AdapterError("AUTH", status, "the API key was not accepted")
     if status >= 500:
-        return AdapterError("TRANSIENT", status, f"provider error {status}")
+        reason = _provider_message(body)
+        return AdapterError(
+            "TRANSIENT", status, f"provider error {status}" + (f" ({reason})" if reason else "")
+        )
     return AdapterError("INVALID", status, f"request refused ({status})")
 
 
@@ -79,6 +82,17 @@ def classify(status: int, body: str, headers: httpx.Headers) -> AdapterError:
 # quick or nothing is listening (e.g. Ollama not started), so that limit stays short.
 ANSWER_TIMEOUT_S = 300.0
 CONNECT_TIMEOUT_S = 15.0
+
+
+def _provider_message(body: str) -> str:
+    """The provider's own short reason, e.g. Gemini's "The model is overloaded. Please try again later."."""
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError:
+        return ""
+    error = data.get("error") if isinstance(data, dict) else None
+    message = error.get("message") if isinstance(error, dict) else error if isinstance(error, str) else None
+    return " ".join(str(message).split())[:150] if message else ""
 
 
 class HttpAdapter:

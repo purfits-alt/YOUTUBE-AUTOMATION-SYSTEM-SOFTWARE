@@ -48,13 +48,16 @@ log = get_logger("tubeforge.gateway")
 
 LOCAL = "ollama:qwen2.5:1.5b"
 # Fallback chains per task type (owner-editable in Settings › provider_chains; agents may override).
+# A second free Gemini model before Groq: each model has its own capacity (migration 0011).
+REASONING = ["gemini:gemini-3.8-flash", "gemini:gemini-3.6-flash", "groq:openai/gpt-oss-120b", LOCAL]
+LIGHT = ["gemini:gemini-3.5-flash-lite", "gemini:gemini-3.1-flash-lite", "groq:openai/gpt-oss-20b", LOCAL]
 DEFAULT_CHAINS: dict[str, list[str]] = {
-    "default": ["gemini:gemini-3.8-flash", "groq:openai/gpt-oss-120b", LOCAL],
-    "script_draft": ["gemini:gemini-3.8-flash", "groq:openai/gpt-oss-120b", LOCAL],
-    "research": ["gemini:gemini-3.8-flash", "groq:openai/gpt-oss-120b", LOCAL],
-    "ideas": ["gemini:gemini-3.6-flash", "groq:openai/gpt-oss-120b", LOCAL],
-    "seo": ["gemini:gemini-3.5-flash-lite", "groq:openai/gpt-oss-20b", LOCAL],
-    "classify": ["gemini:gemini-3.5-flash-lite", "groq:openai/gpt-oss-20b", LOCAL],
+    "default": REASONING,
+    "script_draft": REASONING,
+    "research": REASONING,
+    "ideas": ["gemini:gemini-3.6-flash", "gemini:gemini-3.8-flash", "groq:openai/gpt-oss-120b", LOCAL],
+    "seo": LIGHT,
+    "classify": LIGHT,
     "hello": ["gemini:gemini-3.5-flash-lite", "groq:openai/gpt-oss-20b", LOCAL],
 }
 TRANSIENT_WAITS_S = (5.0, 15.0)

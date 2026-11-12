@@ -1,7 +1,8 @@
 """The 32 agents of AI_AGENT_ARCHITECTURE §2 (+ the HELLO test agent) and their default settings.
 
-Migration 0008 seeds ``agent_configurations`` from a frozen copy of this table; a unit test keeps
-the two equal. The owner changes chains and limits later in the Agent Control Center.
+Migration 0008 seeds ``agent_configurations`` from a frozen copy of this table and 0011 adds a
+second Gemini model to the default chains; a unit test keeps the result equal to this table.
+The owner changes chains and limits later in the Agent Control Center.
 """
 
 from __future__ import annotations
@@ -11,8 +12,9 @@ from typing import Any, Literal
 
 Kind = Literal["LLM", "HYBRID", "DETERMINISTIC", "ADAPTER", "TEST"]
 LOCAL = "ollama:qwen2.5:1.5b"
-REASONING = ["gemini:gemini-3.8-flash", "groq:openai/gpt-oss-120b", LOCAL]
-LIGHT = ["gemini:gemini-3.5-flash-lite", "groq:openai/gpt-oss-20b", LOCAL]
+# A second free Gemini model before Groq: each model has its own capacity (migration 0011).
+REASONING = ["gemini:gemini-3.8-flash", "gemini:gemini-3.6-flash", "groq:openai/gpt-oss-120b", LOCAL]
+LIGHT = ["gemini:gemini-3.5-flash-lite", "gemini:gemini-3.1-flash-lite", "groq:openai/gpt-oss-20b", LOCAL]
 
 
 @dataclass(frozen=True)
