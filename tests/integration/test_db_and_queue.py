@@ -120,6 +120,42 @@ def test_migration_0006_rebuilds_truncated_tables(migrated: str) -> None:
     test_database_columns_match_the_generated_schema(migrated)
 
 
+def test_migration_0011_adds_a_second_gemini_model_but_keeps_owner_chains(migrated: str) -> None:
+    cfg = alembic_config()
+    command.downgrade(cfg, "0010")
+    engine = create_engine(migrated)
+    with engine.begin() as conn:  # the owner edited one chain before updating
+        conn.execute(
+            text(
+                "UPDATE agent_configurations SET provider_chain = '[\"ollama:qwen2.5:1.5b\"]'::jsonb"
+                " WHERE agent_code = 'A06_CHANNEL_STRATEGY'"
+            )
+        )
+    command.upgrade(cfg, "head")
+
+    def chain(code: str) -> list[str]:
+        with engine.connect() as conn:
+            value = conn.scalar(
+                text("SELECT provider_chain FROM agent_configurations WHERE agent_code = :c"), {"c": code}
+            )
+        return list(value)
+
+    assert chain("A02_NICHE_DISCOVERY")[:2] == ["gemini:gemini-3.8-flash", "gemini:gemini-3.6-flash"]
+    assert chain("A03_TREND_INTELLIGENCE")[:2] == [
+        "gemini:gemini-3.5-flash-lite",
+        "gemini:gemini-3.1-flash-lite",
+    ]
+    assert chain("A06_CHANNEL_STRATEGY") == ["ollama:qwen2.5:1.5b"]
+    command.downgrade(cfg, "0010")
+    assert chain("A02_NICHE_DISCOVERY") == [
+        "gemini:gemini-3.8-flash",
+        "groq:openai/gpt-oss-120b",
+        "ollama:qwen2.5:1.5b",
+    ]
+    command.upgrade(cfg, "head")
+    engine.dispose()
+
+
 def test_readyz_ok_with_real_database(
     migrated: str, settings: Settings, monkeypatch: pytest.MonkeyPatch
 ) -> None:

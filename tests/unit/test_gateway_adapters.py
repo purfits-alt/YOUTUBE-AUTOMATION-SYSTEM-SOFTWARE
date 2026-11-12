@@ -14,6 +14,7 @@ from tubeforge.gateway.adapters import (
     AdapterError,
     Message,
     TextRequest,
+    classify,
 )
 from tubeforge.gateway.adapters.gemini import GeminiAdapter
 from tubeforge.gateway.adapters.groq import GroqAdapter
@@ -137,3 +138,14 @@ def test_long_answers_are_waited_for_but_connecting_is_quick() -> None:
     with pytest.raises(AdapterError, match="did not answer in time") as exc:
         GeminiAdapter(httpx.MockTransport(slow)).text(REQ, "k")
     assert exc.value.kind == "TRANSIENT" and exc.value.status is None
+
+
+def test_busy_errors_carry_the_providers_reason() -> None:
+    body = (
+        '{"error": {"code": 503, "message": "The model is overloaded.\\n Please try again later.",'
+        ' "status": "UNAVAILABLE"}}'
+    )
+    err = classify(503, body, httpx.Headers())
+    assert err.kind == "TRANSIENT"
+    assert err.detail == "provider error 503 (The model is overloaded. Please try again later.)"
+    assert classify(502, "<html>bad gateway</html>", httpx.Headers()).detail == "provider error 502"

@@ -65,7 +65,7 @@ flowchart LR
 | **Retry rules** | LLM agents: max 3 attempts, backoff 2^n×5 s ±20 % jitter. Deterministic: max 5 (network) / 2 (media). Idempotency key = `agent_code:input_sha256:prompt_version` |
 | **Logging** | agent_runs row: input hash, redacted input/output (secrets, emails, tokens, phone numbers masked), provider, model, tokens, latency, status. No raw voice audio in logs |
 | **Performance metrics** | success rate, p50/p95 latency, tokens per run, repair rate, owner acceptance rate (where an owner decision follows), quality score (auditor- or owner-rated) |
-| **Model chains** | REASONING = gemini-flash (F) → groq gpt-oss-120b (F) → ollama ≤3B (L, degraded quality flag); LIGHT = gemini-flash-lite (F) → groq gpt-oss-20b (F) → ollama ≤3B (L); channels marked local-only drop providers with `data_use_training=true` |
+| **Model chains** | REASONING = gemini-3.8-flash (F) → gemini-3.6-flash (F) → groq gpt-oss-120b (F) → ollama ≤3B (L, degraded quality flag); LIGHT = gemini-3.5-flash-lite (F) → gemini-3.1-flash-lite (F) → groq gpt-oss-20b (F) → ollama ≤3B (L). Two Gemini models come first because each model has its own capacity, so one overloaded model does not stop a run (migration 0011 updates chains the owner has not edited); channels marked local-only drop providers with `data_use_training=true` |
 | **Testing** | Unit + golden-output tests with mocked Gateway (fixed seeds, recorded fixtures); schema tests; adversarial tests for agents reading untrusted text |
 
 ## 4. Agent specifications
@@ -108,7 +108,7 @@ flowchart LR
 | **Error handling / Retry** | Common rules |
 | **Logging** | Common rules |
 | **Performance metrics** | Common metrics + % candidates with ≥3 evidence items |
-| **Cost & usage limits** | 30 calls/day, 400k tokens/day (owner-adjustable in Agent Control Center; Gateway-enforced) |
+| **Cost & usage limits** | 30 calls/day, 300k tokens/day (owner-adjustable in Agent Control Center; Gateway-enforced) |
 | **Human approval gates** | Owner shortlists/dismisses; blueprint only on owner action |
 | **Testing requirements** | Golden tests with fixed source fixtures; forbidden-phrase test ('guaranteed', 'will earn'); no-YouTube-aggregation test |
 
@@ -256,7 +256,7 @@ flowchart LR
 | **Error handling / Retry** | Common rules |
 | **Logging** | Common rules |
 | **Performance metrics** | Common metrics |
-| **Cost & usage limits** | 40 calls/day, 600k tokens/day (owner-adjustable in Agent Control Center; Gateway-enforced) |
+| **Cost & usage limits** | 40 calls/day, 300k tokens/day (owner-adjustable in Agent Control Center; Gateway-enforced) |
 | **Human approval gates** | RESEARCH_REVIEW (owner) |
 | **Testing requirements** | Prompt-injection adversarial set; citation coverage ≥ 95 % |
 
