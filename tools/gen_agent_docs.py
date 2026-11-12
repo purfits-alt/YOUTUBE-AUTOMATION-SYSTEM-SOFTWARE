@@ -1,4 +1,4 @@
-"""Generate one job description per agent: ``docs/agents/<code>.md`` + ``docs/agents/README.md``.
+"""Generate one job description per agent: ``agents/<code>.md`` + ``agents/README.md`` (top-level folder).
 
 Facts (purpose, inputs, outputs, permissions, limits, gates…) come from the agent tables in
 ``docs/AI_AGENT_ARCHITECTURE.md`` §4, and the provider chain from ``workers/tubeforge_agents/catalogue.py``,
@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = ROOT / "docs" / "AI_AGENT_ARCHITECTURE.md"
-OUT = ROOT / "docs" / "agents"
+OUT = ROOT / "agents"
 sys.path.insert(0, str(ROOT / "workers"))
 
 from tubeforge_agents.catalogue import AGENTS  # noqa: E402
