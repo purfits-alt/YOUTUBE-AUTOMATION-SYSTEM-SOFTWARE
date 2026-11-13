@@ -27,6 +27,32 @@ export function ScoreText({ c }: { c: Pick<CandidateOut, "opportunity_score" | "
   );
 }
 
+/** Why a niche scored as it did: its strongest criteria and what to watch (computed in the API, no AI). */
+export function Remarks({ c }: { c: Pick<CandidateOut, "remarks"> }) {
+  const items = c.remarks ?? [];
+  const strengths = items.filter((r) => r.kind === "STRENGTH");
+  const watch = items.filter((r) => r.kind === "WATCH");
+  if (items.length === 0) return null;
+  const label = (r: (typeof items)[number]) =>
+    `${t(`criteria.${r.code}`)} ${r.value}` +
+    (r.confidence === "LOW" ? ` (${t("researchPage.lowEvidence")})` : "");
+  return (
+    <div className="mt-1 space-y-0.5 text-xs" data-testid="remarks">
+      {strengths.length > 0 && (
+        <p className="text-ok-text">
+          <span className="font-medium">{t("researchPage.strengths")}</span>{" "}
+          {strengths.map(label).join(" · ")}
+        </p>
+      )}
+      {watch.length > 0 && (
+        <p className="text-warn-text">
+          <span className="font-medium">{t("researchPage.watch")}</span> {watch.map(label).join(" · ")}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function CandidateStatus({ status }: { status: CandidateOut["status"] }) {
   const tone: Tone = status === "SHORTLISTED" ? "ok" : status === "CONVERTED" ? "info" : "neutral";
   return <Badge tone={tone}>{t(`researchPage.candidateStatus.${status}`)}</Badge>;

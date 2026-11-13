@@ -733,6 +733,13 @@
             "title": "Production Difficulty",
             "type": "string"
           },
+          "remarks": {
+            "items": {
+              "$ref": "#/components/schemas/RemarkOut"
+            },
+            "title": "Remarks",
+            "type": "array"
+          },
           "report_id": {
             "format": "uuid",
             "title": "Report Id",
@@ -3027,6 +3034,43 @@
           "recovery_codes"
         ],
         "title": "RecoveryCodesOut",
+        "type": "object"
+      },
+      "RemarkOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "confidence": {
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH"
+            ],
+            "title": "Confidence",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "STRENGTH",
+              "WATCH"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "code",
+          "value",
+          "confidence"
+        ],
+        "title": "RemarkOut",
         "type": "object"
       },
       "ReportDetail": {

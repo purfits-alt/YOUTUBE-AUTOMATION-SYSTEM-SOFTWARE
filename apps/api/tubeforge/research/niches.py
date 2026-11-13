@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from tubeforge.db.models import NicheCandidate, ScoreWeightProfile
-from tubeforge.research.scoring import PROFILES, apply_weights, check_weights, score
+from tubeforge.research.scoring import DEFAULT_PROFILE, PROFILES, apply_weights, check_weights, score
 
 SIDE_PREFIX = "_"  # stored next to the criteria, e.g. {"code": "_ORIGINALITY_ANGLES", "angles": [...]}
 
@@ -24,7 +24,7 @@ def side_records(criteria: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def default_weights(db: Session) -> dict[str, float]:
     row = db.scalar(select(ScoreWeightProfile).where(ScoreWeightProfile.is_default))
-    return check_weights(row.weights if row is not None else PROFILES["Balanced"])
+    return check_weights(row.weights if row is not None else PROFILES[DEFAULT_PROFILE])
 
 
 def profile_weights(db: Session, profile_id: uuid.UUID | str | None) -> dict[str, float]:

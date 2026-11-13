@@ -54,6 +54,10 @@ function candidate(overrides: Partial<CandidateOut> = {}): CandidateOut {
     inauthentic_risk: "MEDIUM",
     production_difficulty: "LOW",
     status: "NEW",
+    remarks: [
+      { kind: "STRENGTH", code: "AUDIENCE_DEMAND", value: 70, confidence: "MEDIUM" },
+      { kind: "WATCH", code: "PRODUCTION_FEASIBILITY", value: 90, confidence: "LOW" },
+    ],
     footer: FOOTER,
     ...overrides,
   };

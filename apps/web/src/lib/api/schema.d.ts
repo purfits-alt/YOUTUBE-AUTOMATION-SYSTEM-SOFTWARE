@@ -1756,6 +1756,8 @@ export interface components {
              * @enum {string}
              */
             production_difficulty: "LOW" | "MEDIUM" | "HIGH";
+            /** Remarks */
+            remarks?: components["schemas"]["RemarkOut"][];
             /**
              * Report Id
              * Format: uuid
@@ -2555,6 +2557,23 @@ export interface components {
         RecoveryCodesOut: {
             /** Recovery Codes */
             recovery_codes: string[];
+        };
+        /** RemarkOut */
+        RemarkOut: {
+            /** Code */
+            code: string;
+            /**
+             * Confidence
+             * @enum {string}
+             */
+            confidence: "LOW" | "MEDIUM" | "HIGH";
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "STRENGTH" | "WATCH";
+            /** Value */
+            value: number;
         };
         /** ReportDetail */
         ReportDetail: {

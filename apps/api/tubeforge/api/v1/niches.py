@@ -37,7 +37,7 @@ from tubeforge.orchestrator.controls import stop_reason
 from tubeforge.queue import defer_in_transaction
 from tubeforge.research import blueprint as bp
 from tubeforge.research.niches import criteria_only, profile_weights, rescore, side_records
-from tubeforge.research.scoring import CRITERIA, FOOTER, MAX_WEIGHT, check_weights, score
+from tubeforge.research.scoring import CRITERIA, FOOTER, MAX_WEIGHT, check_weights, remarks, score
 
 router = APIRouter(tags=["research"])
 View = Annotated[Principal, Depends(require("research.view"))]
@@ -93,6 +93,13 @@ class CriterionOut(BaseModel):
     note: str | None
 
 
+class RemarkOut(BaseModel):
+    kind: Literal["STRENGTH", "WATCH"]
+    code: str
+    value: int
+    confidence: Level
+
+
 class CandidateOut(BaseModel):
     id: uuid.UUID
     report_id: uuid.UUID
@@ -106,6 +113,7 @@ class CandidateOut(BaseModel):
     inauthentic_risk: Level
     production_difficulty: Level
     status: Literal["NEW", "SHORTLISTED", "DISMISSED", "CONVERTED"]
+    remarks: list[RemarkOut] = Field(default_factory=list)
     footer: str = FOOTER
 
 
@@ -237,6 +245,7 @@ def _candidate_out(row: NicheCandidate, weights: dict[str, float] | None = None)
         inauthentic_risk=row.inauthentic_risk,
         production_difficulty=row.production_difficulty,
         status=row.status,
+        remarks=[RemarkOut(**r) for r in remarks(crit, w)],
     )
 
 

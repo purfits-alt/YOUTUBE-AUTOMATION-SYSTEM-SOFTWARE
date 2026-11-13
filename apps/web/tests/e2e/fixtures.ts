@@ -36,6 +36,10 @@ const candidate = {
   inauthentic_risk: "MEDIUM",
   production_difficulty: "LOW",
   status: "SHORTLISTED",
+  remarks: [
+    { kind: "STRENGTH", code: "AUDIENCE_DEMAND", value: 70, confidence: "MEDIUM" },
+    { kind: "WATCH", code: "PRODUCTION_FEASIBILITY", value: 90, confidence: "LOW" },
+  ],
   footer: FOOTER,
 };
 

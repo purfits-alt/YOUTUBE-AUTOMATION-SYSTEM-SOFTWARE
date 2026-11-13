@@ -645,6 +645,14 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 - A second offence still fails.
 - Integration test added. Introduces no paid dependency ✔.
 
+**Niche scoring for long-term ad revenue (owner request, 2026-11-12):** the owner wants niches that bring steady AdSense income from evergreen, long-lasting views, with remarks and a clear recommendation.
+- New default weight profile "Evergreen ad revenue" (migration 0012, with a downgrade).
+- Deterministic per-niche remarks: strengths and what to watch.
+- A "Recommended" badge on Channel Discovery.
+- See CHANNEL_DISCOVERY_SPEC §2 for the weights and why the YPP guard stays heavy.
+- No score can promise views, virality or earnings; the footer and forbidden-phrase rules still apply.
+- Introduces no paid dependency ✔.
+
 ## Resource consumption
 
 | Resource | Used |

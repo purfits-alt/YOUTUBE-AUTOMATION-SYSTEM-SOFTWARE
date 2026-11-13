@@ -42,8 +42,26 @@ PROFILES: dict[str, dict[str, float]] = {
         **CRITERIA,
         "PRODUCTION_FEASIBILITY": CRITERIA["PRODUCTION_FEASIBILITY"] * 1.5,
     },
+    # Owner goal (2026-11-12): steady ad income from long-lasting views. Ad income needs YPP, so the
+    # inauthentic-content guard stays heavy; Shorts and rising topics help early reach but earn less.
+    "Evergreen ad revenue": {
+        "AUDIENCE_DEMAND": 12,
+        "SEARCH_INTEREST": 11,
+        "RISING_TOPICS": 6,
+        "EVERGREEN": 15,
+        "COMPETITION_LEVEL": 6,
+        "ADVERTISER_SUITABILITY": 14,
+        "PRODUCTION_FEASIBILITY": 8,
+        "ORIGINALITY_OPPORTUNITY": 9,
+        "LONG_FORM_POTENTIAL": 11,
+        "SHORTS_POTENTIAL": 5,
+        "INAUTHENTIC_RISK_INVERSE": 12,
+    },
 }
-DEFAULT_PROFILE = "Balanced"
+DEFAULT_PROFILE = "Evergreen ad revenue"
+STRENGTH_MIN = 65
+WATCH_MAX = 50
+WATCH_MIN_WEIGHT = 8.0
 MAX_WEIGHT = 15.0
 LOW_PENALTY = 0.5
 BAND_SHARE = 0.30
@@ -104,6 +122,40 @@ def score(criteria: list[dict[str, Any]], weights: Mapping[str, float]) -> Score
     value = Decimal(str(weighted / total)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     share = low / total
     return Score(value, BAND if share > BAND_SHARE else None, round(share, 4))
+
+
+def remarks(criteria: list[dict[str, Any]], weights: Mapping[str, float]) -> list[dict[str, Any]]:
+    """Why a niche scored as it did, under the current weights (deterministic, no AI).
+
+    Up to 3 strengths (value >= 65, ranked by weight x value) and up to 2 things to watch: an
+    important criterion (weight >= 8) that is weak (< 50) or rests on little evidence (LOW).
+    """
+
+    def w(c: Mapping[str, Any]) -> float:
+        return float(weights.get(str(c["code"]), CRITERIA.get(str(c["code"]), 0)))
+
+    strong = sorted(
+        (c for c in criteria if int(c["value"]) >= STRENGTH_MIN and w(c) > 0),
+        key=lambda c: (-w(c) * int(c["value"]), str(c["code"])),
+    )[:3]
+    weak = sorted(
+        (
+            c
+            for c in criteria
+            if w(c) >= WATCH_MIN_WEIGHT and (int(c["value"]) < WATCH_MAX or c.get("confidence") == "LOW")
+        ),
+        key=lambda c: (-w(c), int(c["value"]), str(c["code"])),
+    )[:2]
+    return [
+        {
+            "kind": kind,
+            "code": str(c["code"]),
+            "value": int(c["value"]),
+            "confidence": c.get("confidence", "LOW"),
+        }
+        for kind, group in (("STRENGTH", strong), ("WATCH", weak))
+        for c in group
+    ]
 
 
 def apply_weights(criteria: list[dict[str, Any]], weights: Mapping[str, float]) -> list[dict[str, Any]]:

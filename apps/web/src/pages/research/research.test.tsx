@@ -19,6 +19,10 @@ describe("Channel Discovery (real API)", () => {
     expect(table).toHaveTextContent("72.5 ± 10");
     expect(screen.getByTestId("score-footer")).toHaveTextContent("Not a prediction of views");
     expect(screen.getByTestId("safety-note")).toBeInTheDocument();
+    expect(within(table).getByTestId("recommended")).toHaveTextContent("Recommended");
+    const remarks = within(table).getByTestId("remarks");
+    expect(remarks).toHaveTextContent("Strengths: Audience demand 70");
+    expect(remarks).toHaveTextContent("Watch: Doable on this PC 90 (little evidence)");
     fireEvent.click(within(table).getByRole("button", { name: "Shortlist" }));
     const generate = await within(screen.getByTestId("candidates-table")).findByRole("button", {
       name: "Generate blueprint",

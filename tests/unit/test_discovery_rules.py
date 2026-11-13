@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import importlib.util
 from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -19,14 +20,25 @@ from tubeforge.research import blueprint as bp
 from tubeforge.research.forbidden import scan
 from tubeforge.research.scoring import (
     CRITERIA,
+    DEFAULT_PROFILE,
     PROFILES,
     DocRef,
     check_weights,
     normalise_code,
+    remarks,
     score,
     validate_criteria,
 )
 from tubeforge.research.signals import demand_value, series_metrics, zscore_7d
+
+
+def _migration(name: str):  # type: ignore[no-untyped-def]
+    path = next((REPO_ROOT / "apps/api/migrations/versions").glob(f"{name}_*.py"))
+    spec = importlib.util.spec_from_file_location(path.stem, path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def crit(code: str, value: int, confidence: str = "HIGH", evidence: bool = True) -> dict[str, object]:
@@ -80,6 +92,33 @@ def test_weights_validation_and_profiles() -> None:
     assert PROFILES["Originality-first"]["INAUTHENTIC_RISK_INVERSE"] == 15
     assert PROFILES["Low effort on H-LITE"]["PRODUCTION_FEASIBILITY"] == 13.5
     assert normalise_code("production_feasibility_h-lite") == "PRODUCTION_FEASIBILITY"
+    evergreen = PROFILES["Evergreen ad revenue"]
+    assert DEFAULT_PROFILE == "Evergreen ad revenue" and check_weights(evergreen) == evergreen
+    assert set(evergreen) == set(CRITERIA)
+    top = sorted(evergreen, key=lambda k: -evergreen[k])[:3]
+    assert top == ["EVERGREEN", "ADVERTISER_SUITABILITY", "AUDIENCE_DEMAND"]
+    assert evergreen["INAUTHENTIC_RISK_INVERSE"] >= CRITERIA["INAUTHENTIC_RISK_INVERSE"]  # YPP guard kept
+    seeded = _migration("0012")
+    assert evergreen == seeded.WEIGHTS and seeded.NAME == DEFAULT_PROFILE
+
+
+def test_remarks_name_strengths_and_what_to_watch() -> None:
+    crit = [
+        {"code": "EVERGREEN", "value": 82, "confidence": "HIGH"},
+        {"code": "ADVERTISER_SUITABILITY", "value": 78, "confidence": "MEDIUM"},
+        {"code": "AUDIENCE_DEMAND", "value": 75, "confidence": "MEDIUM"},
+        {"code": "SHORTS_POTENTIAL", "value": 90, "confidence": "MEDIUM"},
+        {"code": "SEARCH_INTEREST", "value": 70, "confidence": "LOW"},
+        {"code": "LONG_FORM_POTENTIAL", "value": 40, "confidence": "MEDIUM"},
+        {"code": "COMPETITION_LEVEL", "value": 30, "confidence": "LOW"},
+    ]
+    out = remarks(crit, PROFILES["Evergreen ad revenue"])
+    strengths = [r["code"] for r in out if r["kind"] == "STRENGTH"]
+    watch = [r["code"] for r in out if r["kind"] == "WATCH"]
+    assert strengths == ["EVERGREEN", "ADVERTISER_SUITABILITY", "AUDIENCE_DEMAND"]
+    # weight >= 8 and weak or thin evidence; COMPETITION_LEVEL (weight 6) is not important enough
+    assert watch == ["LONG_FORM_POTENTIAL", "SEARCH_INTEREST"]  # same weight: the weaker one first
+    assert remarks([], PROFILES["Balanced"]) == []
 
 
 def test_evidence_rule_downgrades_uncited_claims_and_keeps_real_citations() -> None:
