@@ -62,9 +62,9 @@ describe("Menu entries for pages that need an ID", () => {
   it("lists blueprints and niches, and opens the chosen one", async () => {
     const router = renderAt("/strategies");
     const blueprints = await screen.findByTestId("blueprint-list");
-    const link = within(blueprints).getAllByRole("link")[0];
-    expect(link).toBeDefined();
-    fireEvent.click(link!);
+    const [link] = within(blueprints).getAllByRole("link");
+    if (!link) throw new Error("no blueprint link");
+    fireEvent.click(link);
     await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/strategies\/.+/));
   });
 
