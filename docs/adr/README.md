@@ -29,3 +29,4 @@
 | [ADR-0025](ADR-0025-channel-trending-own-outliers.md) | Channel Trending: own-channel outliers and replicating own winners | Accepted |
 | [ADR-0026](ADR-0026-youtube-rest-via-httpx.md) | YouTube and Google OAuth REST via httpx (no Google client libraries) | Accepted |
 | [ADR-0027](ADR-0027-local-llm-qwen2.5-1.5b.md) | Local LLM fallback: Qwen2.5-1.5B-Instruct on Ollama (Apache-2.0) | Accepted |
+| [ADR-0028](ADR-0028-product-site-on-semrs-subdomain.md) | Product site at tubeforge.semrs.com (web address and static hosting only) | Accepted |

@@ -653,6 +653,11 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 - No score can promise views, virality or earnings; the footer and forbidden-phrase rules still apply.
 - Introduces no paid dependency ✔.
 
+**Going live and selling (owner request, 2026-11-14):** the owner wants to sell TubeForge, possibly as white-label software, under semrs.com, a brand they own.
+- ADR-0028: the static product site is allowed at `tubeforge.semrs.com`, on the owner's existing Hostinger plan. Nothing else from SEMRS is shared.
+- Advised: sell after Phase 12 at the earliest; prefer the self-hosted white-label model; decide the licence soon, because the repo is public under MIT today; check the "TubeForge" trademark; never promise views or earnings.
+- Open questions for the owner: the selling model (self-hosted vs SaaS) and the licence for future versions.
+
 ## Resource consumption
 
 | Resource | Used |

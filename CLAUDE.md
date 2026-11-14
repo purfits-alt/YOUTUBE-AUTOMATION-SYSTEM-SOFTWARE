@@ -1,7 +1,7 @@
 # CLAUDE.md — TubeForge (YOUTUBE-AUTOMATION-SYSTEM-SOFTWARE)
 
 ## What this is
-TubeForge is a **local-first, free-to-run, AI-assisted YouTube production and channel-management platform** for one owner, running natively on Windows. The owner directs and approves the work. It is a **standalone project**: never use, import, copy or connect to SEMRS OS or any other product's code, database, auth, APIs, agents, notifications, infrastructure or deployment.
+TubeForge is a **local-first, free-to-run, AI-assisted YouTube production and channel-management platform** for one owner, running natively on Windows. The owner directs and approves the work. It is a **standalone project**: never use, import, copy or connect to SEMRS OS or any other product's code, database, auth, APIs, agents, notifications, infrastructure or deployment. One owner-approved exception (ADR-0028): the static product site may live at `tubeforge.semrs.com` (web address + static hosting only; no app, API, data or logins there).
 
 Planning docs live in `docs/` (start with `docs/PROJECT_PROGRESS.md`, then `docs/IMPLEMENTATION_ROADMAP.md`). Accepted decisions are in `docs/adr/`.
 
