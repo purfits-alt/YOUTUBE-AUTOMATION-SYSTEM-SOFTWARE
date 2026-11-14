@@ -658,6 +658,13 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 - Advised: sell after Phase 12 at the earliest; prefer the self-hosted white-label model; decide the licence soon, because the repo is public under MIT today; check the "TubeForge" trademark; never promise views or earnings.
 - Open questions for the owner: the selling model (self-hosted vs SaaS) and the licence for future versions.
 
+**Product site (2026-11-14):** the owner created the subdomain `tubeforge.semrs.com`. `site/product/` holds its first pages:
+- `index.html`: features (available and coming) plus an e-mail waitlist;
+- `privacy.html`: website privacy;
+- `style.css`.
+
+The pages use no cookies, trackers or outside scripts and make no promises; `tests/unit/test_product_site.py` checks both. The owner fills `[CONTACT E-MAIL]`, `[OWNER NAME]`, `[YEAR]` and `[DATE]`, then uploads the files to `public_html/tubeforge` with Hostinger File Manager.
+
 ## Resource consumption
 
 | Resource | Used |
