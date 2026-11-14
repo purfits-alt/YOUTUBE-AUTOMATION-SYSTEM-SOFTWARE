@@ -33,6 +33,30 @@
 | Human voice | Conversational, varied sentences, rhetorical questions, emotional beats, callbacks, no AI filler phrases, owner stories in `[[OWNER: …]]` slots | A11 + owner | Banned-phrase scan; owner rating |
 | Retention data loop | After publish, A27 compares audience-retention dips (Analytics, own channel) to hook/re-hook positions and suggests improvements | A27 | Owner accepts |
 
+## 1b. Craft validators and value-add score (implemented in Phase 7, `tubeforge/content/`)
+**Craft validators** (`content/craft.py`) run on every script version, from the agent or the owner. Durations are measured from the words at the channel's speaking rate (default 150 wpm), never taken from the model.
+
+| Code | Rule | Severity |
+|---|---|---|
+| HOOK_LENGTH | Long-form hook 10–15 s; Short hook ≤ 10 words (1–3 s) | ERROR |
+| HOOK_GREETING | No greeting ("hi", "hello", "welcome") before the hook | ERROR |
+| PROMISE_MISSING / PROMISE_LATE | Packaging promise addressed by 15 s (Shorts 3 s) | ERROR |
+| REHOOK_MISSING | Long-form re-hooks in the 20–30 %, 45–55 % and 70–80 % bands | ERROR |
+| REHOOK_SPARSE | Videos over 8 min: no gap over 120 s (+10 %) without a re-hook | WARNING |
+| OPEN_LOOP_UNCLOSED | Every open loop closed in a later, existing section | ERROR |
+| BANNED_PHRASE | AI filler and pressure phrases, plus the channel's recent script phrases | ERROR |
+| FORBIDDEN_PROMISE | Forbidden-phrase rules (no promises of money, views or virality) | ERROR |
+| DURATION / SHORT_TOO_LONG | Within ±10 % of the target; Shorts ≤ 180 s | ERROR |
+| OWNER_SLOTS | ≥ 2 `[[OWNER: …]]` slots long-form, ≥ 1 Short | ERROR |
+| FACT_REF_UNKNOWN | Every `fact_refs` id is a claim of the approved brief | ERROR |
+
+An agent draft with ERROR findings gets one repair call. For owner edits the findings are shown in Script Studio.
+
+**Owner value-add score (0–100)** (`content/value_add.py`): it measures what the owner adds that AI cannot.
+- Points: own experience 25, own opinion 20, own data 20, own examples 15 (each text counts from 30 characters); own footage 12, own photos 8.
+- Voice is scored in the originality score, not here.
+- The SCRIPT_REVIEW → STORYBOARDING guard needs at least `min_value_add_fields` filled fields (default 1).
+
 ## 2. Render profiles (defaults; per project in `render_profile`)
 
 | Profile | Resolution | FPS | Video codec | Audio | Loudness target | Notes |

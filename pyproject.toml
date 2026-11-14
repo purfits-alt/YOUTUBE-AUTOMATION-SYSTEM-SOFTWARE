@@ -25,6 +25,7 @@ dependencies = [
     "tzdata>=2025.2",
     "jsonschema-rs>=0.60,<0.61",
     "jinja2>=3.1,<4",
+    "model2vec>=0.10,<0.11",  # local static embeddings for idea/script similarity (ADR-0029, MIT)
 ]
 
 [project.scripts]

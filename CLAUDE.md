@@ -24,7 +24,7 @@ Owner install root: `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE` (the path has spaces
 | Install deps | `uv sync` · `pnpm -C apps/web install` |
 | Database migrations | `uv run tubeforge-db upgrade` · `uv run tubeforge-db downgrade -1` · `uv run tubeforge-db current` |
 | Schema DDL (from the doc) | `uv run python tools/gen_schema_sql.py` (after editing DATABASE_SCHEMA.md; a test fails if stale) — ADR-0024 |
-| Admin (one-time) | `uv run tubeforge-admin init-keys` · `create-owner --email E --name N` · `has-owner` · `reset-password --email E` (dev/CI: `TUBEFORGE_MASTER_KEY`, `TUBEFORGE_OWNER_PASSWORD`) |
+| Admin (one-time) | `uv run tubeforge-admin init-keys` · `create-owner --email E --name N` · `has-owner` · `reset-password --email E` · `fetch-models` (local similarity model, ADR-0029) · `similarity-check` (dev/CI: `TUBEFORGE_MASTER_KEY`, `TUBEFORGE_OWNER_PASSWORD`) |
 | Run API (dev) | `uv run tubeforge-api --reload` → http://127.0.0.1:8765 (`/healthz`, `/readyz`, `/api/docs`) |
 | Run workers (dev) | `uv run tubeforge-worker --queues light` · `uv run tubeforge-worker --queues heavy` (`--once` = drain and exit) |
 | Run web (dev) | `pnpm -C apps/web dev` → http://127.0.0.1:5173 (proxies the API) |
