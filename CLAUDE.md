@@ -28,7 +28,7 @@ Owner install root: `D:\YOUTUBE AUTOMATION SYSTEM SOFTWARE` (the path has spaces
 | Run API (dev) | `uv run tubeforge-api --reload` → http://127.0.0.1:8765 (`/healthz`, `/readyz`, `/api/docs`) |
 | Run workers (dev) | `uv run tubeforge-worker --queues light` · `uv run tubeforge-worker --queues heavy` (`--once` = drain and exit) |
 | Run web (dev) | `pnpm -C apps/web dev` → http://127.0.0.1:5173 (proxies the API) |
-| Build web | `pnpm -C apps/web build` (the API serves `apps/web/dist`) |
+| Build web | `pnpm -C apps/web build` (the API serves `apps/web/dist`) · public demo: `pnpm -C apps/web build:demo` → `apps/web/dist-demo/` (sample data in the browser, for `tubeforge.semrs.com/demo`, ADR-0028) |
 | Lint & types | `uv run ruff check . && uv run ruff format --check . && uv run mypy` · `pnpm -C apps/web lint && pnpm -C apps/web typecheck` |
 | Python tests | `TUBEFORGE_TEST_DATABASE_URL=postgresql+psycopg://…/tubeforge_test uv run pytest` (integration tests wipe that DB) · unit only: `uv run pytest -m "not integration"` |
 | Web tests | `pnpm -C apps/web test` · e2e (API running with built web, migrated DB, master key and an owner: e2e signs in as `TUBEFORGE_E2E_EMAIL`/`TUBEFORGE_E2E_PASSWORD`, defaults in `tests/e2e/global-setup.ts`): `pnpm -C apps/web e2e` (routes×states, axe, mobile, visual) · visual baselines come from CI: push a commit whose message contains `[update-snapshots]` (non-main branch) and CI commits refreshed screenshots |

@@ -1,6 +1,6 @@
 /**
- * Unit tests only (Vitest + msw/node): imitates the real Phase 3 endpoints so components can be tested
- * without a server. The browser never loads this file; it talks to the real FastAPI backend.
+ * Unit tests (Vitest + msw/node) and the public demo build (`build:demo`, mocks/demo.ts): imitates the
+ * real endpoints so components can run without a server. The normal build talks to the real backend.
  * Contract tests (Python + Playwright e2e) cover the real implementation.
  */
 import { http, HttpResponse, type HttpHandler } from "msw";

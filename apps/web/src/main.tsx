@@ -11,6 +11,16 @@ applyTheme(readTheme());
  * Phase 3 replaces them with the real backend (set VITE_MOCKS=off).
  */
 async function startMocks(): Promise<void> {
+  if (import.meta.env.VITE_DEMO === "on") {
+    // Public demo: sample data for every page, served from a sub-folder (vite base "/demo/").
+    const { demoWorker } = await import("./mocks/demo");
+    await demoWorker.start({
+      serviceWorker: { url: `${import.meta.env.BASE_URL}mockServiceWorker.js` },
+      onUnhandledRequest: "bypass",
+      quiet: true,
+    });
+    return;
+  }
   if (import.meta.env.VITE_MOCKS === "off") return;
   const { worker } = await import("./mocks/browser");
   await worker.start({ onUnhandledRequest: "bypass", quiet: true });

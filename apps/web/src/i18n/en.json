@@ -72,7 +72,8 @@
     "privateOnly": "Private-only mode is ON for {channel}: uploads stay private; you publish in YouTube Studio.",
     "tokenExpiring": "The Google sign-in for {channel} expires within 24 hours. Re-authorise to keep uploads working.",
     "offline": "The TubeForge backend is not responding. Data may be out of date.",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "demo": "Demo with sample data: nothing is saved or sent anywhere, and reloading the page resets it. The real TubeForge runs on your own PC."
   },
   "search": {
     "title": "Search",

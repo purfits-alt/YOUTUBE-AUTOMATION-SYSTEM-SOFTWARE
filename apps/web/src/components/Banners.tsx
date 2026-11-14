@@ -45,6 +45,7 @@ export function Banners() {
   const estop = controls.data?.emergency_stop;
   return (
     <div data-testid="banners">
+      {import.meta.env.VITE_DEMO === "on" && <Banner tone="info">{t("banners.demo")}</Banner>}
       {estop?.active && <Banner tone="danger">{t("banners.estop", { reason: estop.reason ?? "—" })}</Banner>}
       {controls.data?.publishing_kill_switch && <Banner tone="danger">{t("banners.killSwitch")}</Banner>}
       {channel?.private_only_mode && (

@@ -32,7 +32,7 @@ export function Layout() {
           </main>
         </div>
         <MobileNav />
-        <ScenarioSwitcher />
+        {import.meta.env.VITE_DEMO !== "on" && <ScenarioSwitcher />}
       </div>
     </ChannelProvider>
   );

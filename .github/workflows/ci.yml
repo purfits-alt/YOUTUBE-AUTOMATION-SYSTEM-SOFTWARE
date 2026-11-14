@@ -93,6 +93,8 @@ jobs:
       - run: pnpm -C apps/web typecheck
       - run: pnpm -C apps/web test
       - run: pnpm -C apps/web build
+      - name: Public demo build (tubeforge.semrs.com/demo, ADR-0028)
+        run: pnpm -C apps/web build:demo
       - name: Dependency audit (web)
         run: pnpm -C apps/web audit --audit-level high
       - name: Licence check (web)

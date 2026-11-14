@@ -665,6 +665,14 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 
 The pages use no cookies, trackers or outside scripts and make no promises; `tests/unit/test_product_site.py` checks both. The owner fills `[CONTACT E-MAIL]`, `[OWNER NAME]`, `[YEAR]` and `[DATE]`, then uploads the files to `public_html/tubeforge` with Hostinger File Manager.
 
+**Live demo of Phases 1–6 (owner request, 2026-11-14):** the owner asked for everything built so far on `tubeforge.semrs.com`. The real app can't run on that static hosting (Python, PostgreSQL, workers) and must not hold YouTube sign-ins there (ADR-0028), so it is published as a demo instead.
+- `pnpm -C apps/web build:demo` builds the full dashboard into `dist-demo/` for `/demo/`.
+- Every page answers from the unit-test sample data in the browser (`src/mocks/demo.ts`). A demo banner is shown; the live-update stream and the dev scenario switcher are off.
+- An `.htaccess` file makes app routes load on Apache.
+- Checked in Chromium: 8 main pages, no console errors.
+- CI builds the demo as well. The product page links to it.
+- Introduces no paid dependency ✔.
+
 ## Resource consumption
 
 | Resource | Used |

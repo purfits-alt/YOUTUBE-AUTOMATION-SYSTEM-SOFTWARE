@@ -11,6 +11,7 @@ CLAUDE.md says TubeForge is a standalone project: it must never use, copy or con
 - `tubeforge.semrs.com` is TubeForge's **public product site**. It is static pages only: product page, waitlist, guides, privacy policy and terms.
 - It is hosted on the owner's existing Hostinger plan for semrs.com, so it needs no new paid service.
 - What the exception allows: the **web address and static web hosting**, nothing else.
+- **Live demo at `/demo/`** (owner request, 2026-11-14): the dashboard built with `pnpm build:demo`. Every Phase 1–6 page answers from sample data in the visitor's browser (MSW), with no server, no real logins, no live connection to a server, and nothing saved or sent. A banner says so.
 - Still forbidden:
   - The TubeForge app, its API, database, logins or any customer or channel data on that hosting, or in any SEMRS system.
   - SEMRS OS code, accounts, auth, APIs, agents or notifications in TubeForge.
