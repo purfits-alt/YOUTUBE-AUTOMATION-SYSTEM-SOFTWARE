@@ -141,6 +141,32 @@ def has_owner() -> int:
         return 0 if _owner_exists(db) else 1
 
 
+def fetch_models() -> int:
+    """One-time download of the local similarity model (ADR-0029). Safe to re-run."""
+    from tubeforge.content import similarity
+
+    try:
+        path = similarity.fetch_model()
+    except Exception as exc:
+        print(f"Could not download the similarity model: {exc}")
+        print("TubeForge still works: it uses a simpler similarity check until the model is installed.")
+        return 1
+    print(f"Similarity model installed in {path}")
+    return 0
+
+
+def similarity_check() -> int:
+    """Print how the installed similarity method scores fixed example pairs."""
+    from tubeforge.content import similarity
+
+    method = similarity.get_similarity()
+    limits = f"duplicate ≥ {similarity.IDEA_DUPLICATE}, variation ≤ {similarity.VARIATION_MAX}"
+    print(f"Method: {method.method}  ({limits})")
+    for label, score in similarity.self_test(method):
+        print(f"  {score:5.2f}  {label}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="tubeforge-admin")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -151,7 +177,13 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("has-owner")
     reset = sub.add_parser("reset-password")
     reset.add_argument("--email", required=True)
+    sub.add_parser("fetch-models")
+    sub.add_parser("similarity-check")
     args = parser.parse_args(argv)
+    if args.cmd == "fetch-models":
+        sys.exit(fetch_models())
+    if args.cmd == "similarity-check":
+        sys.exit(similarity_check())
     if args.cmd == "init-keys":
         sys.exit(init_keys())
     if args.cmd == "create-owner":

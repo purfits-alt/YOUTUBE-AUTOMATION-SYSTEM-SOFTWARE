@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router";
 import { t } from "../i18n";
 import { useSelectedChannel } from "../lib/channel";
-import { GROUP_ORDER, PAGES, pageHref, getPage } from "../pages/registry";
+import { GROUP_ORDER, PAGES, navHref, getPage } from "../pages/registry";
 import type { GroupKey, PageDef } from "../pages/types";
 import { Dialog } from "./Dialog";
 import { Icon, LogoMark, type IconName } from "./icons";
@@ -54,8 +54,8 @@ function NavItem({
   const { channelId } = useSelectedChannel();
   return (
     <NavLink
-      to={pageHref(page, channelId)}
-      end // exact match: "/channels" must not also light up on "/channels/:id/trending"
+      to={navHref(page, channelId)}
+      end={page.id !== "branding" && page.id !== "niche"} // exact match, except list → detail pages
       onClick={onNavigate}
       title={rail ? title : undefined}
       className={({ isActive }) => itemClass(isActive, onDark, rail)}
@@ -180,7 +180,7 @@ export function MobileNav() {
           {tabs.map(({ key, page }) => (
             <li key={key}>
               <NavLink
-                to={pageHref(page)}
+                to={navHref(page)}
                 end
                 className={({ isActive }) =>
                   `flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs ${

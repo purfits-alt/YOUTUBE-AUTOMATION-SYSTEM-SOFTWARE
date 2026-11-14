@@ -305,6 +305,9 @@ class VideoProject(Base):
     packaging_promise: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     target_duration_s: Mapped[int] = mapped_column(Integer)
     render_profile: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    locked_script_version_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    originality_score: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))
+    inauthentic_risk: Mapped[str | None] = mapped_column(Text)
     youtube_video_id: Mapped[str | None] = mapped_column(Text, unique=True)
     is_test: Mapped[bool] = mapped_column(Boolean, default=False)
     version: Mapped[int] = mapped_column(Integer, default=1)
@@ -518,6 +521,77 @@ class VideoIdea(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+# --------------------------------------------------------------- Phase 7: research, scripts, claims
+class OwnerValueAdd(Base):
+    """What the owner adds to a video (their own opinion, experience, data, voice…): the F3 defence."""
+
+    __tablename__ = "owner_value_add"
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    own_opinion: Mapped[str | None] = mapped_column(Text)
+    own_experience: Mapped[str | None] = mapped_column(Text)
+    own_data: Mapped[str | None] = mapped_column(Text)
+    own_examples: Mapped[str | None] = mapped_column(Text)
+    owner_voice: Mapped[str] = mapped_column(Text, default="NONE")
+    owner_footage: Mapped[bool] = mapped_column(Boolean, default=False)
+    owner_photos: Mapped[bool] = mapped_column(Boolean, default=False)
+    score: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=Decimal(0))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class ResearchBrief(Base):
+    __tablename__ = "research_briefs"
+    id: Mapped[uuid.UUID] = _id()
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    channel_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    version: Mapped[int] = mapped_column(Integer)
+    content: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    agent_run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    status: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class Script(Base):
+    __tablename__ = "scripts"
+    id: Mapped[uuid.UUID] = _id()
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), unique=True)
+    channel_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class ScriptVersion(Base):
+    __tablename__ = "script_versions"
+    id: Mapped[uuid.UUID] = _id()
+    script_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    version: Mapped[int] = mapped_column(Integer)
+    author_type: Mapped[str] = mapped_column(Text)
+    author_id: Mapped[str] = mapped_column(Text)
+    body: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    plain_text: Mapped[str] = mapped_column(Text)
+    word_count: Mapped[int] = mapped_column(Integer)
+    est_duration_s: Mapped[int] = mapped_column(Integer)
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    locked: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class FactCheckClaim(Base):
+    __tablename__ = "fact_check_claims"
+    id: Mapped[uuid.UUID] = _id()
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    channel_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    subject_type: Mapped[str] = mapped_column(Text)
+    subject_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    claim_text: Mapped[str] = mapped_column(Text)
+    verdict: Mapped[str] = mapped_column(Text)
+    source_document_ids: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), default=list)
+    explanation: Mapped[str] = mapped_column(Text)
+    owner_override_reason: Mapped[str | None] = mapped_column(Text)
+    overridden_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    overridden_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    agent_run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
 
 
 class RenderJob(Base):

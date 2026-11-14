@@ -16,7 +16,7 @@ def _text(html: str) -> str:
 
 def test_product_pages_exist_and_make_no_promises() -> None:
     pages = sorted(SITE.glob("*.html"))
-    assert [p.name for p in pages] == ["index.html", "privacy.html"]
+    assert [p.name for p in pages] == ["app-privacy.html", "app-terms.html", "index.html", "privacy.html"]
     for page in pages:
         html = page.read_text(encoding="utf-8")
         assert scan(_text(html)) == [], page.name
@@ -27,5 +27,6 @@ def test_product_site_has_no_trackers_or_outside_scripts() -> None:
     for page in SITE.glob("*.html"):
         html = page.read_text(encoding="utf-8").lower()
         assert "<script" not in html and "<iframe" not in html, page.name
-        assert not re.search(r"""(?:src|href)=["']https?://(?!github\.com/)""", html), page.name
+        assert not re.search(r"""src=["']https?://""", html), page.name  # no outside scripts/images
+        assert not re.search(r"""<link[^>]+href=["']https?://""", html), page.name  # no outside styles
         assert '<link rel="stylesheet" href="style.css"' in html

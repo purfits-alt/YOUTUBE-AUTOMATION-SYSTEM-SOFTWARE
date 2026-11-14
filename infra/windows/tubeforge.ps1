@@ -281,6 +281,12 @@ function Invoke-Setup {
         Write-Check 'Master key' 'OK' 'Windows Credential Manager: TubeForge / master-key-v1'
         Initialize-Owner
 
+        # Local similarity model for ideas and scripts (ADR-0029): one-time ~512 MB download, checked.
+        # Optional: without it TubeForge uses a simpler similarity check, so a failure only warns.
+        & (Join-Path $VenvScripts 'tubeforge-admin.exe') fetch-models
+        if ($LASTEXITCODE -eq 0) { Write-Check 'Similarity model' 'OK' 'data\models\potion-multilingual-128M' }
+        else { Write-Check 'Similarity model' 'WARN' 'not downloaded; run setup again later (TubeForge still works)' }
+
         if (Get-Command pnpm -ErrorAction SilentlyContinue) {
             & pnpm -C (Join-Path $AppDir 'apps\web') install --frozen-lockfile
             & pnpm -C (Join-Path $AppDir 'apps\web') build

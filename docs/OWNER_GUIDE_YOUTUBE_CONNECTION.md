@@ -46,8 +46,16 @@ In the same project: **APIs & Services › Library**. Search for and **Enable**:
 4. In TubeForge, step 7 of the setup: paste them, plus the Project ID from step 4 › **Save OAuth client**.
    They are stored encrypted on your PC. Never paste them into chat or into a file in the repository.
 
-## Step 8 — Privacy policy on GitHub Pages
+## Step 8 — Privacy policy (on your site or on GitHub Pages)
 Google needs a public privacy policy for the consent screen.
+
+**Easiest, using your own site (ADR-0028):**
+1. Upload `site/product/app-privacy.html` and `site/product/app-terms.html` to `public_html/tubeforge` in Hostinger File Manager.
+2. Edit each one and fill in **[OWNER NAME]**, **[CONTACT E-MAIL]** and **[DATE]**.
+3. Your links are `https://tubeforge.semrs.com/app-privacy.html` and `https://tubeforge.semrs.com/app-terms.html`.
+4. Paste the privacy link into TubeForge step 8 › **Save**, and into the consent screen (step 6).
+
+**Alternative, GitHub Pages:**
 1. In GitHub, open the repository › `site/privacy.html` › edit (pencil icon). Replace
    **[OWNER NAME]**, **[CONTACT E-MAIL]** and **[DATE]**. For AI providers, keep "None" for now.
    Do the same in `site/terms.html`. Commit to `main`.

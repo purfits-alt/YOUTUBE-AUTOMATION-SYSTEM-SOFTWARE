@@ -679,6 +679,46 @@ The pages use no cookies, trackers or outside scripts and make no promises; `tes
 - The selling features (licence, installer, branding settings, payments) are listed in IMPLEMENTATION_ROADMAP under "After completion".
 - Introduces no paid dependency ✔.
 
+## Phase 7 — Ideas, research, fact-check & scripts (started 2026-11-14)
+**Plan (four steps, each committed and reported):**
+- **A — Content core (no AI):**
+  - ORM models for research briefs, scripts, script versions, fact-check claims and owner value-add;
+  - the similarity service (ADR-0029);
+  - script craft validators and the value-add score.
+- **B — Agents:**
+  - A08 ideas (packaging promise, variation mode), A09 research, A10 fact-check, A11 scripts v1.1;
+  - pipelines: ideas → project → research + fact-check → RESEARCH_REVIEW → script + fact-check → SCRIPT_REVIEW;
+  - golden, injection and craft test sets.
+- **C — API:**
+  - ideas, calendar, projects and commands, value-add, research, claims and overrides;
+  - script versions, diff and regenerate; replicate (own videos only);
+  - OpenAPI and integration and transition tests.
+- **D — Web:**
+  - Idea Generator, Content Calendar, Script Studio (hook timer, re-hook markers, owner slots, claims);
+  - Channel Trending Replicate and New Ideas tabs;
+  - e2e, phase report and demo.
+
+**Step A (done):**
+- `tubeforge/content/`:
+  - `similarity.py`: model2vec, falling back to trigrams; pinned, checked download; `fetch-models` and `similarity-check`.
+  - `craft.py`: 11 rule codes.
+  - `value_add.py`: score 0–100.
+  - `scripts.py`: fingerprint, unified diff and summary.
+- ORM models for the five Phase 7 tables (they already existed in the schema since Phase 3).
+- `tubeforge.ps1 setup` downloads the model; a failure only warns.
+- Tests: 23 new unit tests, covering the 15-case craft golden set, the similarity methods, and the download host, size and checksum checks.
+- The model's scores could not be measured on the build machine (its network blocks the Hugging Face CDN). The owner runs `similarity-check` at the Phase 7 demo.
+- Introduces no paid dependency ✔.
+
+**Owner request (2026-11-14): finish the real channel before Phase 7 step B.** The owner picks a niche, approves the blueprint, which creates the test channel, and completes onboarding: OAuth plus one private test upload. That also closes the open Phase 4 manual test.
+- The app's privacy and terms pages for the Google consent screen are now in `site/product/app-privacy.html` and `app-terms.html`, for `tubeforge.semrs.com`.
+- OWNER_GUIDE step 8 updated.
+
+**Bug fix (owner report, 2026-11-14):** the menu entry "Channel Branding Studio" showed "Invalid request — some fields are not valid".
+- Cause: the menu opened `/strategies/st-1`, a Phase 2 sample ID, which the real API rightly rejects. "Niche Research" had the same problem with `/research/niches/nc-1`.
+- Fix: menu entries for pages that need a real ID now open new list pages, `/strategies` (your blueprints) and `/research/niches` (niches of the latest discovery run). The detail pages are unchanged.
+- Tests: 3 new web tests. Full e2e suite passes locally (204); the 8 screenshot tests always differ here because their baselines come from CI.
+
 ## Resource consumption
 
 | Resource | Used |
