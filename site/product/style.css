@@ -26,3 +26,4 @@ ul.checks { padding-left: 1.2rem; } ul.checks li { margin: .3rem 0; }
 footer { border-top: 1px solid var(--line); margin-top: 3rem; padding: 1.5rem 0 3rem; color: var(--muted); font-size: .9rem; }
 footer a { color: var(--muted); }
 article { max-width: 46rem; padding: 2rem 0; } article h2 { font-size: 1.2rem; border-top: 1px solid var(--line); padding-top: 1.25rem; }
+table { border-collapse: collapse; width: 100%; } td, th { border: 1px solid var(--line); padding: .4rem .6rem; text-align: left; vertical-align: top; }

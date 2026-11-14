@@ -710,6 +710,10 @@ The pages use no cookies, trackers or outside scripts and make no promises; `tes
 - The model's scores could not be measured on the build machine (its network blocks the Hugging Face CDN). The owner runs `similarity-check` at the Phase 7 demo.
 - Introduces no paid dependency ✔.
 
+**Owner request (2026-11-14): finish the real channel before Phase 7 step B.** The owner picks a niche, approves the blueprint, which creates the test channel, and completes onboarding: OAuth plus one private test upload. That also closes the open Phase 4 manual test.
+- The app's privacy and terms pages for the Google consent screen are now in `site/product/app-privacy.html` and `app-terms.html`, for `tubeforge.semrs.com`.
+- OWNER_GUIDE step 8 updated.
+
 ## Resource consumption
 
 | Resource | Used |
