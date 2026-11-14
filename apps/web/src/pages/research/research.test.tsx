@@ -58,6 +58,37 @@ describe("Channel Discovery (real API)", () => {
   });
 });
 
+describe("Menu entries for pages that need an ID", () => {
+  it("lists blueprints and niches, and opens the chosen one", async () => {
+    const router = renderAt("/strategies");
+    const blueprints = await screen.findByTestId("blueprint-list");
+    const link = within(blueprints).getAllByRole("link")[0];
+    expect(link).toBeDefined();
+    fireEvent.click(link!);
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/strategies\/.+/));
+  });
+
+  it("lists the niches of the latest discovery run", async () => {
+    renderAt("/research/niches");
+    const niches = await screen.findByTestId("niche-list");
+    expect(niches).toHaveTextContent("Student budgets with real numbers");
+    expect(within(niches).getAllByRole("link")[0]).toHaveAttribute(
+      "href",
+      expect.stringMatching(/^\/research\/niches\/.+/),
+    );
+  });
+
+  it("points the menu at the list pages, not at a sample ID", async () => {
+    renderAt("/");
+    const nav = await screen.findAllByRole("link", { name: /Channel Branding Studio/ });
+    expect(nav[0]).toHaveAttribute("href", "/strategies");
+    expect((await screen.findAllByRole("link", { name: /Niche Research/ }))[0]).toHaveAttribute(
+      "href",
+      "/research/niches",
+    );
+  });
+});
+
 describe("Competitor Research (real API)", () => {
   it("shows the policy banner and one result with the not-combined notice", async () => {
     renderAt("/research/lookup");

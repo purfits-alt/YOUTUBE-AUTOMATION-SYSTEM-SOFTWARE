@@ -390,6 +390,13 @@ export function pageHref(page: PageDef, channelId?: string): string {
   return page.path.replace(":candidateId", SAMPLE_IDS.candidate);
 }
 
+/** Menu link of a page. Detail pages that need a real ID open their list page instead. */
+export function navHref(page: PageDef, channelId?: string): string {
+  if (page.id === "branding") return "/strategies";
+  if (page.id === "niche") return "/research/niches";
+  return pageHref(page, channelId);
+}
+
 export function getPage(id: PageId): PageDef {
   const page = PAGES.find((p) => p.id === id);
   if (!page) throw new Error(`unknown page ${id}`);

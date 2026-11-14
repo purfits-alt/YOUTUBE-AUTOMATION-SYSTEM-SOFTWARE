@@ -1105,5 +1105,13 @@
     "day": "Day {d}",
     "risks": "Risks",
     "growth": "Growth (legitimate tactics only)"
+  },
+  "indexPages": {
+    "blueprints": "Your blueprints",
+    "noBlueprints": "No blueprints yet. Shortlist a niche in Channel Discovery and press Generate blueprint.",
+    "niches": "Niches from your latest discovery run",
+    "noNiches": "No niches yet. Run a discovery first.",
+    "toDiscovery": "Open Channel Discovery",
+    "version": "Version {v}"
   }
 }

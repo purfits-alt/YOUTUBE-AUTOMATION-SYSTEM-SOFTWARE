@@ -714,6 +714,11 @@ The pages use no cookies, trackers or outside scripts and make no promises; `tes
 - The app's privacy and terms pages for the Google consent screen are now in `site/product/app-privacy.html` and `app-terms.html`, for `tubeforge.semrs.com`.
 - OWNER_GUIDE step 8 updated.
 
+**Bug fix (owner report, 2026-11-14):** the menu entry "Channel Branding Studio" showed "Invalid request — some fields are not valid".
+- Cause: the menu opened `/strategies/st-1`, a Phase 2 sample ID, which the real API rightly rejects. "Niche Research" had the same problem with `/research/niches/nc-1`.
+- Fix: menu entries for pages that need a real ID now open new list pages, `/strategies` (your blueprints) and `/research/niches` (niches of the latest discovery run). The detail pages are unchanged.
+- Tests: 3 new web tests. Full e2e suite passes locally (204); the 8 screenshot tests always differ here because their baselines come from CI.
+
 ## Resource consumption
 
 | Resource | Used |

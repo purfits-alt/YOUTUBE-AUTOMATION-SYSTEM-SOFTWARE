@@ -14,6 +14,7 @@ import { UsagePage } from "../pages/usage/UsagePage";
 import { BrandingPage } from "../pages/research/BrandingPage";
 import { DiscoveryPage } from "../pages/research/DiscoveryPage";
 import { LookupPage } from "../pages/research/LookupPage";
+import { BlueprintsIndexPage, NichesIndexPage } from "../pages/research/IndexPages";
 import { NichePage } from "../pages/research/NichePage";
 import { TrendsPage } from "../pages/research/TrendsPage";
 import { AuthGate } from "./AuthGate";
@@ -50,6 +51,8 @@ export const routes: RouteObject[] = [
           ? { index: true, element: <OverviewPage /> }
           : { path: page.path, element: REAL_PAGES[page.id]?.() ?? <PageView key={page.id} page={page} /> },
       ),
+      { path: "/strategies", element: <BlueprintsIndexPage /> },
+      { path: "/research/niches", element: <NichesIndexPage /> },
       { path: "*", element: <NotFound /> },
     ],
   },
