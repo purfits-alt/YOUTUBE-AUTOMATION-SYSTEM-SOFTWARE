@@ -28,9 +28,18 @@ def test_login_me_logout(env: Env) -> None:
 def test_session_cookie_signature_is_checked(env: Env) -> None:
     with env.client() as c:
         login(c)
-        session_id = c.cookies["tf_session"].split(".")[0]
+        real = c.cookies["tf_session"]
+        session_id = real.split(".")[0]
+        # Send ONLY the forged cookie: clear the jar first (httpx2's jar would otherwise keep the real
+        # cookie next to the new one and send both).
+        c.cookies.clear()
         c.cookies.set("tf_session", f"{session_id}.forged")
-        assert c.get("/api/v1/auth/me").status_code == 401
+        r = c.get("/api/v1/auth/me")
+        assert r.request.headers["cookie"] == f"tf_session={session_id}.forged"
+        assert r.status_code == 401
+        c.cookies.clear()
+        c.cookies.set("tf_session", real)
+        assert c.get("/api/v1/auth/me").status_code == 200  # the genuine cookie still works
 
 
 def test_wrong_password_and_lockout(env: Env) -> None:
