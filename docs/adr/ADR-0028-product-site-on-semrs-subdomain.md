@@ -18,9 +18,8 @@ CLAUDE.md says TubeForge is a standalone project: it must never use, copy or con
   - Analytics or trackers from SEMRS on the site, unless the owner decides so separately.
 - TubeForge itself keeps running on the owner's PC (local-first).
 - A later hosted service (SaaS) would need its own ADR, with separate hosting.
-- Open, for the owner to decide:
-  - the selling model: self-hosted white-label (recommended) or SaaS;
-  - the licence for future versions: the repository is public under MIT today.
+- Selling model (owner, 2026-11-14): **self-hosted white-label**. Each client runs TubeForge on their own PC; the site carries the product page, the white-label and onboarding information, and the demo. The selling features come after completion (IMPLEMENTATION_ROADMAP, "After completion").
+- Still open: the licence for future versions. The repository is public under MIT today.
 
 ## Consequences
 - The privacy and terms pages can move from GitHub Pages to `tubeforge.semrs.com/privacy` and `/terms`. The Google OAuth consent screen then points to the new links.

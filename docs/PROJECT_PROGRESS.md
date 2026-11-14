@@ -673,6 +673,12 @@ The pages use no cookies, trackers or outside scripts and make no promises; `tes
 - CI builds the demo as well. The product page links to it.
 - Introduces no paid dependency ✔.
 
+**Selling direction (owner decision, 2026-11-14):**
+- The live demo goes on `tubeforge.semrs.com`, and the real app runs on the owner's PC. There is no VPS and no Vercel.
+- The product page now has: white label for agencies, client onboarding steps, plans ("price announced at launch"), FAQ and waitlist or white-label enquiry.
+- The selling features (licence, installer, branding settings, payments) are listed in IMPLEMENTATION_ROADMAP under "After completion".
+- Introduces no paid dependency ✔.
+
 ## Resource consumption
 
 | Resource | Used |
