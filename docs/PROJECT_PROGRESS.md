@@ -653,6 +653,32 @@ Page-specific editors, forms and charts (e.g. weight sliders, script editor, ana
 - No score can promise views, virality or earnings; the footer and forbidden-phrase rules still apply.
 - Introduces no paid dependency ✔.
 
+**Going live and selling (owner request, 2026-11-14):** the owner wants to sell TubeForge, possibly as white-label software, under semrs.com, a brand they own.
+- ADR-0028: the static product site is allowed at `tubeforge.semrs.com`, on the owner's existing Hostinger plan. Nothing else from SEMRS is shared.
+- Advised: sell after Phase 12 at the earliest; prefer the self-hosted white-label model; decide the licence soon, because the repo is public under MIT today; check the "TubeForge" trademark; never promise views or earnings.
+- Open questions for the owner: the selling model (self-hosted vs SaaS) and the licence for future versions.
+
+**Product site (2026-11-14):** the owner created the subdomain `tubeforge.semrs.com`. `site/product/` holds its first pages:
+- `index.html`: features (available and coming) plus an e-mail waitlist;
+- `privacy.html`: website privacy;
+- `style.css`.
+
+The pages use no cookies, trackers or outside scripts and make no promises; `tests/unit/test_product_site.py` checks both. The owner fills `[CONTACT E-MAIL]`, `[OWNER NAME]`, `[YEAR]` and `[DATE]`, then uploads the files to `public_html/tubeforge` with Hostinger File Manager.
+
+**Live demo of Phases 1–6 (owner request, 2026-11-14):** the owner asked for everything built so far on `tubeforge.semrs.com`. The real app can't run on that static hosting (Python, PostgreSQL, workers) and must not hold YouTube sign-ins there (ADR-0028), so it is published as a demo instead.
+- `pnpm -C apps/web build:demo` builds the full dashboard into `dist-demo/` for `/demo/`.
+- Every page answers from the unit-test sample data in the browser (`src/mocks/demo.ts`). A demo banner is shown; the live-update stream and the dev scenario switcher are off.
+- An `.htaccess` file makes app routes load on Apache.
+- Checked in Chromium: 8 main pages, no console errors.
+- CI builds the demo as well. The product page links to it.
+- Introduces no paid dependency ✔.
+
+**Selling direction (owner decision, 2026-11-14):**
+- The live demo goes on `tubeforge.semrs.com`, and the real app runs on the owner's PC. There is no VPS and no Vercel.
+- The product page now has: white label for agencies, client onboarding steps, plans ("price announced at launch"), FAQ and waitlist or white-label enquiry.
+- The selling features (licence, installer, branding settings, payments) are listed in IMPLEMENTATION_ROADMAP under "After completion".
+- Introduces no paid dependency ✔.
+
 ## Resource consumption
 
 | Resource | Used |

@@ -555,3 +555,21 @@ Phases 2 and 3 can run in parallel after Phase 1. Phase 14 can start any time af
 **Owner actions:** None
 
 **Free-tier check:** This phase introduces no paid dependency: ✔
+
+## After completion — White-label selling (owner decision 2026-11-14, not scheduled yet)
+**Goal:** sell TubeForge as self-hosted white-label software. Each client runs it on their own Windows PC. The public site is `tubeforge.semrs.com` (ADR-0028).
+
+**Now (done):** the product page with white label, client onboarding, plans and waitlist, and the live demo of the built phases at `/demo/`. The real app stays on the owner's PC.
+
+**Later, after Phase 16 (needs the owner's go-ahead and an ADR each):**
+- The licence for future versions. The repository is public under MIT today.
+- A "TubeForge" trademark check.
+- White-label branding settings: name, logo, colours.
+- A licence-key check.
+- A signed Windows installer.
+- Client onboarding guide.
+- Payments, refund terms, an end-user licence agreement and support.
+- Updating the demo to cover the newer phases.
+- A hosted online version is **not** planned. It would need a VPS, Google verification for YouTube upload access and its own ADR.
+
+**Free-tier check:** the product site and demo add no paid dependency ✔. Payment-provider fees are a selling-time decision for the owner.

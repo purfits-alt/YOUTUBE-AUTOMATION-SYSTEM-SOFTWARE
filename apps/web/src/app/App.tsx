@@ -13,7 +13,10 @@ type Router = ReturnType<typeof createBrowserRouter> | ReturnType<typeof createM
 
 export function App({ router, queryClient }: { router?: Router; queryClient?: QueryClient }) {
   const [client] = useState(() => queryClient ?? makeQueryClient());
-  const [r] = useState(() => router ?? createBrowserRouter(routes));
+  const [r] = useState(
+    () =>
+      router ?? createBrowserRouter(routes, { basename: import.meta.env.BASE_URL.replace(/\/$/, "") || "/" }),
+  );
   return (
     <QueryClientProvider client={client}>
       <ToastProvider>

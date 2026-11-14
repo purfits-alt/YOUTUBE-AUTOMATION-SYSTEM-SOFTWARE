@@ -44,7 +44,8 @@ export function applyEvent(queryClient: QueryClient, name: EventName, data: unkn
 export function useEventStream(enabled: boolean): void {
   const queryClient = useQueryClient();
   useEffect(() => {
-    if (!enabled || typeof EventSource === "undefined") return;
+    // The public demo has no server to stream from (sample data only).
+    if (!enabled || typeof EventSource === "undefined" || import.meta.env.VITE_DEMO === "on") return;
     const source = new EventSource(`${API_BASE}/events/stream`);
     const handlers = EVENT_NAMES.map((name) => {
       const handler = (e: MessageEvent<string>) => {

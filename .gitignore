@@ -15,6 +15,7 @@ dist/
 # Node / web
 node_modules/
 apps/web/dist/
+apps/web/dist-demo/
 apps/web/test-results/
 apps/web/playwright-report/
 *.tsbuildinfo
