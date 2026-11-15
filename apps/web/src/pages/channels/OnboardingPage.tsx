@@ -15,6 +15,7 @@ import {
   type ChannelOut,
   type StepOut,
   type UploadJobOut,
+  type YouTubeSetupOut,
 } from "../../lib/api/client";
 import { asProblem, LoadingSkeleton, PageTitle } from "../PageView";
 import { getPage } from "../registry";
@@ -510,6 +511,109 @@ function StepItem({
 }
 
 /** Page 4 — Channel Onboarding (real API since Phase 4). */
+function CopyRow({ label, value, testId }: { label: string; value: string; testId: string }) {
+  const toast = useToast();
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast(t("setupKit.copied", { what: label }));
+    } catch {
+      toast(t("setupKit.copyFailed"), "danger");
+    }
+  };
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-2" data-testid={testId}>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium text-muted">{label}</p>
+        <p className="text-sm break-words whitespace-pre-wrap" dir="auto">
+          {value}
+        </p>
+      </div>
+      <Button onClick={() => void copy()}>{t("setupKit.copy")}</Button>
+    </div>
+  );
+}
+
+/** Onboarding step 2: what to type into YouTube, from the approved blueprint (TubeForge never edits the channel). */
+function YouTubeSetupKit({ channelId }: { channelId: string }) {
+  const kit = useQuery<YouTubeSetupOut>({
+    queryKey: ["youtube-setup", channelId],
+    queryFn: () =>
+      call(() =>
+        api.GET("/api/v1/channels/{channel_id}/youtube-setup", {
+          params: { path: { channel_id: channelId } },
+        }),
+      ),
+  });
+  if (kit.isPending) return <LoadingSkeleton />;
+  if (kit.isError)
+    return <ProblemDisplay problem={asProblem(kit.error)} onRetry={() => void kit.refetch()} />;
+  const k = kit.data;
+  return (
+    <div className="mt-3 space-y-3 rounded-lg border border-line bg-surface-2 p-3" data-testid="setup-kit">
+      <p className="text-sm font-semibold">{t("setupKit.title")}</p>
+      <p className="text-xs text-muted">{t("setupKit.intro")}</p>
+      <CopyRow label={t("setupKit.name")} value={k.channel_name} testId="kit-name" />
+      {k.handles.length > 0 && (
+        <div data-testid="kit-handles">
+          <p className="text-xs font-medium text-muted">{t("setupKit.handles")}</p>
+          <ul className="mt-1 flex flex-wrap gap-2">
+            {k.handles.map((h) => (
+              <li key={h}>
+                <Badge tone="info">{h}</Badge>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1 text-xs text-muted">{t("setupKit.handlesHint")}</p>
+        </div>
+      )}
+      {k.description ? (
+        <CopyRow label={t("setupKit.description")} value={k.description} testId="kit-description" />
+      ) : (
+        <p className="text-xs text-muted">{t("setupKit.noBlueprint")}</p>
+      )}
+      {k.logo_brief && (
+        <CopyRow
+          label={`${t("setupKit.logo")} · ${k.art_sizes?.logo ?? ""}`}
+          value={k.logo_brief}
+          testId="kit-logo"
+        />
+      )}
+      {k.banner_brief && (
+        <CopyRow
+          label={`${t("setupKit.banner")} · ${k.art_sizes?.banner ?? ""}`}
+          value={k.banner_brief}
+          testId="kit-banner"
+        />
+      )}
+      {k.palette.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-muted">{t("setupKit.colours")}</p>
+          <ul className="mt-1 flex flex-wrap gap-2 text-xs">
+            {k.palette.map((c) => (
+              <li key={`${c.role}-${c.hex}`} className="flex items-center gap-1">
+                <span
+                  aria-hidden="true"
+                  className="size-4 rounded border border-line"
+                  style={{ background: c.hex }}
+                />
+                {c.hex} ({c.role})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {k.fonts.length > 0 && (
+        <p className="text-xs">
+          <span className="font-medium text-muted">{t("setupKit.fonts")}</span>{" "}
+          {k.fonts.map((f) => `${f.family} (${f.use}, ${f.licence})`).join(" · ")}
+        </p>
+      )}
+      <p className="text-xs text-muted">{t("setupKit.where")}</p>
+    </div>
+  );
+}
+
 export function OnboardingPage() {
   const page = getPage("onboarding");
   const { id = "" } = useParams();
@@ -587,6 +691,7 @@ export function OnboardingPage() {
           <ol className="space-y-3" aria-label={t("onboarding.stepsLabel")}>
             {list.map((s, i) => (
               <StepItem key={s.step_code} index={i} step={s} channelId={id} onChanged={refresh}>
+                {s.step_code === "CREATE_CHANNEL" && <YouTubeSetupKit channelId={id} />}
                 {s.step_code === "OAUTH_CLIENT" && <OAuthClientPanel onSaved={refresh} />}
                 {s.step_code === "PRIVACY_POLICY" && <PrivacyPanel channel={ch} onSaved={refresh} />}
                 {s.step_code === "CONNECT" && ch.state !== "APPROVED" && (

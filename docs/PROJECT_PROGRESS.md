@@ -719,6 +719,22 @@ The pages use no cookies, trackers or outside scripts and make no promises; `tes
 - Fix: menu entries for pages that need a real ID now open new list pages, `/strategies` (your blueprints) and `/research/niches` (niches of the latest discovery run). The detail pages are unchanged.
 - Tests: 3 new web tests. Full e2e suite passes locally (204); the 8 screenshot tests always differ here because their baselines come from CI.
 
+**YouTube setup kit (owner request, 2026-11-15):** after the blueprint is approved and the channel name chosen, onboarding step 2 shows what to type into YouTube:
+- the channel name;
+- suggested @handles (`tubeforge/channel_handles.py`, following YouTube's handle rules);
+- the blueprint description;
+- logo and banner briefs with the exact art sizes, brand colours and licensed fonts;
+- Copy buttons.
+
+Endpoint: `GET /channels/{id}/youtube-setup` (read-only).
+
+TubeForge never edits the YouTube channel:
+- YouTube has no API to create a channel or set or reserve a handle;
+- checking handle availability would mean scraping (ADR-0015);
+- the owner applies the kit in YouTube Studio.
+
+Tests: unit (handle rules), integration (kit after approval), web (kit in step 2). Introduces no paid dependency ✔.
+
 ## Resource consumption
 
 | Resource | Used |

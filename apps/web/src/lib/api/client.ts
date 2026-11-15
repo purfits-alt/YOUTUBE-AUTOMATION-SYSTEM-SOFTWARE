@@ -5,6 +5,7 @@ import type { components as stubComponents, paths as stubPaths } from "./stub-sc
 /** Real API types, generated from packages/shared/openapi.json (the committed FastAPI contract). */
 export type Schemas = components["schemas"];
 export type Controls = Schemas["ControlsOut"];
+export type YouTubeSetupOut = Schemas["YouTubeSetupOut"];
 export type Me = Schemas["MeOut"];
 export type SettingsOut = Schemas["SettingsOut"];
 export type SettingsIn = Schemas["SettingsIn"];

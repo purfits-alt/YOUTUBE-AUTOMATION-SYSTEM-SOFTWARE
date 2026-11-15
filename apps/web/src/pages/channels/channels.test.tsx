@@ -72,6 +72,18 @@ describe("Channel Onboarding (real API)", () => {
     ).toBeNull();
   });
 
+  it("step 2 shows the YouTube setup kit: name, suggested handles and the blueprint description", async () => {
+    resetTestApi({ channels: [testChannel({ state: "ONBOARDING", oauth_status: "NOT_CONNECTED" })] });
+    renderAt("/channels/ch-1/onboarding");
+    const step = await screen.findByTestId("step-CREATE_CHANNEL");
+    const kit = await within(step).findByTestId("setup-kit");
+    expect(within(kit).getByTestId("kit-name")).toHaveTextContent("Calm Science");
+    expect(within(kit).getByTestId("kit-handles")).toHaveTextContent("@CalmScience");
+    expect(within(kit).getByTestId("kit-description")).toHaveTextContent("Calm, clear science explainers");
+    expect(within(kit).getByTestId("kit-banner")).toHaveTextContent("1546 × 423");
+    expect(within(kit).getAllByRole("button", { name: "Copy" }).length).toBeGreaterThanOrEqual(3);
+  });
+
   it("runs the private test upload and shows progress until done", async () => {
     renderAt("/channels/ch-1/onboarding");
     const button = await screen.findByTestId("test-upload");

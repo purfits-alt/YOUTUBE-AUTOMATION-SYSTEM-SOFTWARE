@@ -21,10 +21,12 @@ from tubeforge.api.errors import ProblemError, not_found, problem_doc
 from tubeforge.api.idempotency import Idempotency
 from tubeforge.api.pagination import Cursor, Limit, Page, clamp_limit
 from tubeforge.audit import record, security_event
+from tubeforge.channel_handles import suggest_handles
 from tubeforge.db.ids import uuid7
 from tubeforge.db.models import (
     Channel,
     ChannelPublishingRules,
+    ChannelStrategy,
     DataDeletionTask,
     OAuthClient,
     OnboardingStep,
@@ -672,6 +674,73 @@ def _step_out(s: OnboardingStep) -> StepOut:
         completed_at=s.completed_at,
         notes=s.notes,
         system=s.step_code in SYSTEM_STEPS,
+    )
+
+
+class ColourOut(BaseModel):
+    hex: str
+    role: str
+
+
+class FontOut(BaseModel):
+    family: str
+    use: str
+    licence: str
+
+
+class YouTubeSetupOut(BaseModel):
+    """What the owner types into YouTube when creating the channel (onboarding step 2)."""
+
+    channel_name: str
+    handles: list[str]
+    description: str | None
+    logo_brief: str | None
+    banner_brief: str | None
+    palette: list[ColourOut]
+    fonts: list[FontOut]
+    tone: list[str]
+    blueprint_id: uuid.UUID | None
+    art_sizes: dict[str, str] = Field(
+        default_factory=lambda: {
+            "logo": "800 × 800 px (PNG or JPG, shown as a circle)",
+            "banner": "2560 × 1440 px; keep text and logo inside the centre 1546 × 423 px",
+        }
+    )
+
+
+@router.get("/channels/{channel_id}/youtube-setup", response_model=YouTubeSetupOut)
+def youtube_setup(channel_id: uuid.UUID, db: Db, _: ChannelView) -> YouTubeSetupOut:
+    """Suggested @handles plus the approved blueprint's description and brand briefs.
+
+    Read-only: TubeForge never changes the YouTube channel; the owner copies these into YouTube.
+    """
+    channel = get_channel(db, channel_id)
+    strategy = db.scalars(
+        select(ChannelStrategy)
+        .where(ChannelStrategy.channel_id == channel.id, ChannelStrategy.status == "APPROVED")
+        .order_by(ChannelStrategy.approved_at.desc().nulls_last())
+        .limit(1)
+    ).first()
+    bp: dict[str, Any] = strategy.blueprint if strategy is not None else {}
+    brand: dict[str, Any] = bp.get("brand") or {}
+    return YouTubeSetupOut(
+        channel_name=channel.name,
+        handles=suggest_handles(channel.name, str((bp.get("niche") or {}).get("name", ""))),
+        description=bp.get("description") or None,
+        logo_brief=brand.get("logo_brief") or None,
+        banner_brief=brand.get("banner_brief") or None,
+        palette=[
+            ColourOut(hex=str(c.get("hex", "")), role=str(c.get("role", "")))
+            for c in brand.get("palette", [])
+        ],
+        fonts=[
+            FontOut(
+                family=str(f.get("family", "")), use=str(f.get("use", "")), licence=str(f.get("licence", ""))
+            )
+            for f in brand.get("fonts", [])
+        ],
+        tone=[str(t) for t in brand.get("tone", [])],
+        blueprint_id=strategy.id if strategy is not None else None,
     )
 
 

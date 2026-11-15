@@ -1113,5 +1113,22 @@
     "noNiches": "No niches yet. Run a discovery first.",
     "toDiscovery": "Open Channel Discovery",
     "version": "Version {v}"
+  },
+  "setupKit": {
+    "title": "YouTube setup kit (from your approved blueprint)",
+    "intro": "Copy these into YouTube when you create the channel. TubeForge never changes your channel; you do.",
+    "name": "Channel name",
+    "handles": "Suggested @handles",
+    "handlesHint": "YouTube shows which handle is free when you choose it (YouTube Studio › Customization › Basic info). TubeForge cannot check or reserve handles.",
+    "description": "Channel description",
+    "noBlueprint": "This channel was not created from a blueprint, so there is no description to copy.",
+    "logo": "Logo brief",
+    "banner": "Banner brief",
+    "colours": "Brand colours",
+    "fonts": "Fonts (free licences):",
+    "where": "Where in YouTube: Studio › Customization › Basic info (name, handle, description) and › Branding (logo, banner).",
+    "copy": "Copy",
+    "copied": "Copied: {what}",
+    "copyFailed": "Could not copy. Select the text and copy it by hand."
   }
 }
