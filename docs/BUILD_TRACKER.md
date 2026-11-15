@@ -23,7 +23,7 @@ Each phase lists its steps and **your part** for that module.
 
 | | |
 |---|---|
-| **Current module** | **Gaps G2 and G3** (two quick checks, your part), then **Phase 7 step B** |
+| **Current module** | **Gap G3** (`similarity-check`, your part), then **Phase 7 step B** |
 | Your channel | **Open Node AI**, handle **@OpenNodeAIHQ**, https://www.youtube.com/@OpenNodeAIHQ (created 2026-11-15; name, description and handle set from the setup kit) |
 | Created in TubeForge | yes, from the approved blueprint, as a test channel (private uploads only) |
 | Connected | ✅ 2026-11-15: Google sign-in done; private test upload visible (private) in YouTube Studio |
@@ -33,7 +33,7 @@ Each phase lists its steps and **your part** for that module.
 | # | Gap | From | My part | Your part | Status |
 |---|---|---|---|---|---|
 | G1 | Real YouTube connection and one private test upload for Open Node AI | Phase 4 | ✅ built (onboarding, OAuth, setup kit, privacy pages) | Onboarding steps 3–10: phone verification; Google Cloud project (no billing); YouTube Data API v3; consent screen (Testing, yourself as test user); Desktop OAuth client pasted into TubeForge; privacy page on `tubeforge.semrs.com/app-privacy.html`; **Connect with Google**; **private test upload**. Then tell me the result. | ✅ 2026-11-15 |
-| G2 | Confirm Wikimedia's terms on the Research sources panel | Phase 6 | ✅ built | Open **Terms**, read them, press **I checked the terms** | 🟡 asked 2026-11-15 |
+| G2 | Confirm Wikimedia's terms on the Research sources panel | Phase 6 | ✅ built | Open **Terms**, read them, press **I checked the terms** | ✅ 2026-11-15 |
 | G3 | Check the similarity model's scores | Phase 7 step A | ✅ built (`fetch-models`, `similarity-check`) | Run `uv run tubeforge-admin similarity-check` once after `setup` and send me the output | 🟡 asked 2026-11-15 (its scores guide Phase 7 step B) |
 | G4 | Duplicate-upload guard after an expired upload session | Phase 4 → moved | deferred to Phase 12 (task 1, "duplicate guard via uploads playlist") | none | ⬜ (Phase 12) |
 | G5 | Friendlier password prompt in `setup` | Phase 1 | deferred to the Phase 15 installer | none | ⬜ (Phase 15) |
