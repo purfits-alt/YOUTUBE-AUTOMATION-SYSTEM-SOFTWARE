@@ -471,11 +471,16 @@ def _dedupe_ideas(strategy: dict[str, Any]) -> dict[str, Any]:
 
 
 def _run_clean(
-    db: Session, gateway: Gateway, agent: AgentTask, data: dict[str, Any], now: datetime | None
+    db: Session,
+    gateway: Gateway,
+    agent: AgentTask,
+    data: dict[str, Any],
+    now: datetime | None,
+    channel_id: uuid.UUID | None = None,
 ) -> RunOutcome:
     """Run A06/A07. If the answer uses a forbidden phrase (e.g. "guaranteed" in one of 50 ideas), ask
     once more and say exactly where; the scan in ``bp.problems`` still rejects a second offence."""
-    outcome = run_agent(db, gateway, agent, data, idempotent=False, now=now)
+    outcome = run_agent(db, gateway, agent, data, channel_id=channel_id, idempotent=False, now=now)
     if outcome.data is None:
         raise _outcome_error(outcome)
     hits = forbidden.scan(outcome.data)
@@ -483,7 +488,13 @@ def _run_clean(
         return outcome
     log.info("blueprint.forbidden_phrase_retry", agent=agent.code, hits=len(hits))
     retry = run_agent(
-        db, gateway, agent, {**data, "fix_notes": forbidden.describe(hits)}, idempotent=False, now=now
+        db,
+        gateway,
+        agent,
+        {**data, "fix_notes": forbidden.describe(hits)},
+        channel_id=channel_id,
+        idempotent=False,
+        now=now,
     )
     if retry.data is None:
         raise _outcome_error(retry)
