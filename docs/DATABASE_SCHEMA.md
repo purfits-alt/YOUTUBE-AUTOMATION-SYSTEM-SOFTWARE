@@ -284,6 +284,8 @@ CREATE TABLE video_ideas (                            -- (SD)
   based_on_youtube_video_id text NULL,                -- REPLICATE: the owner's own source video (US-4.6, ADR-0025)
   variation_kind text NULL CHECK (variation_kind IN ('PART_2','NEW_ANGLE','UPDATE','SHORT_FROM_LONG','LONG_FROM_SHORT','SERIES')),
   similarity_to_source numeric(4,3) NULL,
+  packaging_promise jsonb NULL,                       -- A08 draft {title_idea, thumbnail_text_idea, promise_statement}; copied to the project on approval (Phase 7)
+  owner_value_add_prompt text NULL,                   -- A08: question asking the owner for their own experience, data or opinion (Phase 7)
   version int NOT NULL DEFAULT 1, created_at, updated_at, deleted_at
 );
 CREATE INDEX ON video_ideas (channel_id, state);
