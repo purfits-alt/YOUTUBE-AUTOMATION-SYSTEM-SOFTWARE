@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 6 — Niche discovery & trends
-**Current step:** see `docs/BUILD_TRACKER.md` (current module: gap G1, the Phase 4 YouTube connection for Open Node AI, then Phase 7 step B). Earlier note: Phase 6 approved and merged to `main` (PR #10) on 2026-11-11. Next: Phase 7 (ideas, research, fact-check & scripts) when the owner says go. The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
+**Current step:** see `docs/BUILD_TRACKER.md` (G1 closed 2026-11-15; current: gaps G2 and G3, then Phase 7 step B). Earlier note: Phase 6 approved and merged to `main` (PR #10) on 2026-11-11. Next: Phase 7 (ideas, research, fact-check & scripts) when the owner says go. The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
 **Last updated:** 2026-11-11
 
 ---
@@ -747,6 +747,8 @@ Tests: unit (handle rules), integration (kit after approval), web (kit in step 2
 - Channel status: the owner created **Open Node AI** (**@OpenNodeAIHQ**, https://www.youtube.com/@OpenNodeAIHQ), with name, description and handle set from the setup kit.
 - The SEMRS-branded video watermark is added to Phase 8 task 7.
 - Current module: gap G1 (Phase 4 connection and private test upload), then Phase 7 step B.
+
+**Phase 4 manual test passed (owner, 2026-11-15), closing gap G1:** Open Node AI (@OpenNodeAIHQ) is connected to TubeForge with Google sign-in, and the private 5-second test upload is visible as **private** in YouTube Studio. This closes the Phase 4 acceptance item that had been open since 2026-11-09. Next: gaps G2 (Wikimedia terms) and G3 (`similarity-check`), then Phase 7 step B.
 
 ## Resource consumption
 
