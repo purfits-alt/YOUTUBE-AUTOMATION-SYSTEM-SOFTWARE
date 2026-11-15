@@ -750,6 +750,16 @@ Tests: unit (handle rules), integration (kit after approval), web (kit in step 2
 
 **Phase 4 manual test passed (owner, 2026-11-15), closing gap G1:** Open Node AI (@OpenNodeAIHQ) is connected to TubeForge with Google sign-in, and the private 5-second test upload is visible as **private** in YouTube Studio. This closes the Phase 4 acceptance item that had been open since 2026-11-09. Next: gaps G2 (Wikimedia terms) and G3 (`similarity-check`), then Phase 7 step B.
 
+**Gaps G2 and G3 closed (owner, 2026-11-15):**
+- G2: Wikimedia terms confirmed.
+- G3: `similarity-check` on the owner's PC shows model2vec installed. Scores: reworded 0.89; paraphrases 0.63–0.68 (en, ur, es); new angle 0.53; related 0.51.
+- So the limits are now per method (ADR-0029):
+  - duplicate ≥ 0.85;
+  - a new "same idea in other words" warning at 0.60–0.85;
+  - variation of the owner's own video < 0.60.
+- The trigram fallback keeps 0.85 / 0.70.
+- Next module: Phase 7 step B.
+
 ## Resource consumption
 
 | Resource | Used |

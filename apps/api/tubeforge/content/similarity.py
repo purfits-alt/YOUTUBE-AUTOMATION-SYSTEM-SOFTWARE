@@ -35,6 +35,28 @@ VARIATION_MAX = 0.70
 CATALOGUE_WARNING = 0.85
 CATALOGUE_CRITICAL = 0.92
 
+
+@dataclass(frozen=True)
+class Limits:
+    """Limits for one similarity method (scales differ: trigrams score paraphrases much lower)."""
+
+    duplicate: float  # ≥ this: duplicate, approval needs an owner reason
+    paraphrase_warning: float | None  # ≥ this (and < duplicate): "maybe the same idea in other words"
+    variation_max: float  # a variation of the owner's own video must stay below this
+
+
+# model2vec values calibrated on the owner's PC (`similarity-check`, 2026-11-15): reworded 0.89,
+# paraphrases 0.63–0.68 (en, ur, es), same topic / new angle 0.53, related 0.51, unrelated 0.00.
+LIMITS: dict[str, Limits] = {
+    "model2vec": Limits(duplicate=0.85, paraphrase_warning=0.60, variation_max=0.60),
+    "trigram": Limits(duplicate=IDEA_DUPLICATE, paraphrase_warning=None, variation_max=VARIATION_MAX),
+}
+
+
+def limits_for(sim: Similarity | None = None) -> Limits:
+    return LIMITS.get((sim or get_similarity()).method, LIMITS["trigram"])
+
+
 MODEL_REPO = "minishlab/potion-multilingual-128M"
 MODEL_REVISION = "73908c3438cf03b6a01bcb9611d62b23d0726f08"
 MODEL_DIR_NAME = "potion-multilingual-128M"

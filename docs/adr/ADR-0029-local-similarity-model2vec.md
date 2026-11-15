@@ -43,5 +43,26 @@ Nothing may leave the PC.
 - The build machine's network blocks the Hugging Face CDN, so the model's scores were not measured there. The thresholds are confirmed on the owner's PC with `similarity-check` during the Phase 7 demo. Unit tests use the trigram method and a fake encoder.
 - Static embeddings are weaker than transformer embeddings for subtle paraphrases. That is good enough for duplicate and variation guards, and the owner can override with a reason.
 
+## Calibration on the owner's PC (2026-11-15)
+`similarity-check` with model2vec gave these scores:
+
+| Pair | Score |
+|---|---|
+| same | 1.00 |
+| reworded | 0.89 |
+| paraphrase (en) | 0.63 |
+| paraphrase (ur) | 0.68 |
+| paraphrase (es) | 0.64 |
+| same topic, new angle | 0.53 |
+| related | 0.51 |
+| unrelated | 0.00 |
+
+So 0.85 catches copies but not paraphrases, and paraphrases sit clearly above new angles. Limits are now per method (`similarity.LIMITS`):
+
+| Method | Duplicate (owner override needed) | "Same idea in other words" warning | Variation of the owner's own video |
+|---|---|---|---|
+| model2vec | ≥ 0.85 | 0.60–0.85 | < 0.60 |
+| trigram (fallback) | ≥ 0.85 | none | < 0.70 |
+
 ## Free-tier status
 Introduces no paid dependency ✔ (model2vec MIT, model MIT, runs locally).
