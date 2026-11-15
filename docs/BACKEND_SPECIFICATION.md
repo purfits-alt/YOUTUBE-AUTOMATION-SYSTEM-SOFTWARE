@@ -122,6 +122,7 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 | GET/PUT | `/channels/{id}/publishing-rules` | PublishingRules (If-Match) | `channel.manage` |
 | POST | `/channels/{id}/publishing-rules/accept-auto-rules` 🔁🔐 | `{rules_sha256}` → records DP-6 consent | `channel.mode` |
 | GET | `/channels/{id}/onboarding` | `steps[]` | `channel.view` |
+| GET | `/channels/{id}/youtube-setup` | `{channel_name, handles[], description, logo_brief, banner_brief, palette[], fonts[], tone[], blueprint_id, art_sizes}`: what the owner types into YouTube at onboarding step 2, from the approved blueprint. Read-only; handles are suggestions (YouTube has no handle API, availability is not checked: ADR-0015) | `channel.view` |
 | PATCH | `/channels/{id}/onboarding/{step_code}` | `{status, notes}`; `CONNECT` and `TEST_UPLOAD` are set by TubeForge (409 `SYSTEM_STEP`) | `channel.manage` |
 | GET/POST/DELETE | `/oauth/clients` | register the owner's OAuth client `{label, client_id, client_secret?, gcp_project_id?, publishing_status}` (secret write-only, stored encrypted); DELETE → 409 `CLIENT_IN_USE` while a channel uses it | `oauth.manage` |
 | POST | `/oauth/youtube/start` 🔁 | `{channel_id, features[]}` → `{authorization_url, expires_at}` (scopes computed; `features` ⊆ upload, readonly, captions, playlists, metadata, comments, analytics) | `oauth.manage` |

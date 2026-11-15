@@ -121,6 +121,13 @@ def test_blueprint_edit_propose_approve_creates_the_channel(
     assert db.get_one(ChannelStrategy, other.id).status == "SUPERSEDED"
     listed = client.get("/api/v1/channels").json()["items"]
     assert [c["name"] for c in listed] == ["Budget Lab 1"]
+    kit = client.get(f"/api/v1/channels/{r.json()['channel_id']}/youtube-setup").json()
+    assert kit["channel_name"] == "Budget Lab 1" and kit["handles"][0] == "@BudgetLab1"
+    assert (
+        kit["description"] == r.json()["blueprint"]["description"] and kit["blueprint_id"] == r.json()["id"]
+    )
+    assert kit["logo_brief"] and kit["banner_brief"] and kit["palette"] and kit["fonts"]
+    assert "1546 × 423" in kit["art_sizes"]["banner"]
 
     nv = client.post(f"{url}/commands/new-version", headers=h).json()
     assert (nv["status"], nv["version"], nv["channel_id"]) == ("DRAFT", 2, r.json()["channel_id"])

@@ -1111,6 +1111,24 @@
         "title": "CodeIn",
         "type": "object"
       },
+      "ColourOut": {
+        "properties": {
+          "hex": {
+            "title": "Hex",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "hex",
+          "role"
+        ],
+        "title": "ColourOut",
+        "type": "object"
+      },
       "ConfirmIdentityIn": {
         "properties": {
           "youtube_channel_id": {
@@ -1431,6 +1449,29 @@
           "message"
         ],
         "title": "FieldError",
+        "type": "object"
+      },
+      "FontOut": {
+        "properties": {
+          "family": {
+            "title": "Family",
+            "type": "string"
+          },
+          "licence": {
+            "title": "Licence",
+            "type": "string"
+          },
+          "use": {
+            "title": "Use",
+            "type": "string"
+          }
+        },
+        "required": [
+          "family",
+          "use",
+          "licence"
+        ],
+        "title": "FontOut",
         "type": "object"
       },
       "ForecastOut": {
@@ -4839,6 +4880,108 @@
           "verified_url"
         ],
         "title": "VerifyIn",
+        "type": "object"
+      },
+      "YouTubeSetupOut": {
+        "description": "What the owner types into YouTube when creating the channel (onboarding step 2).",
+        "properties": {
+          "art_sizes": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Art Sizes",
+            "type": "object"
+          },
+          "banner_brief": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Banner Brief"
+          },
+          "blueprint_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blueprint Id"
+          },
+          "channel_name": {
+            "title": "Channel Name",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "fonts": {
+            "items": {
+              "$ref": "#/components/schemas/FontOut"
+            },
+            "title": "Fonts",
+            "type": "array"
+          },
+          "handles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Handles",
+            "type": "array"
+          },
+          "logo_brief": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Brief"
+          },
+          "palette": {
+            "items": {
+              "$ref": "#/components/schemas/ColourOut"
+            },
+            "title": "Palette",
+            "type": "array"
+          },
+          "tone": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tone",
+            "type": "array"
+          }
+        },
+        "required": [
+          "channel_name",
+          "handles",
+          "description",
+          "logo_brief",
+          "banner_brief",
+          "palette",
+          "fonts",
+          "tone",
+          "blueprint_id"
+        ],
+        "title": "YouTubeSetupOut",
         "type": "object"
       },
       "tubeforge__api__v1__agents__QueuedOut": {
@@ -11501,6 +11644,140 @@
           }
         },
         "summary": "Test Upload",
+        "tags": [
+          "channels"
+        ]
+      }
+    },
+    "/api/v1/channels/{channel_id}/youtube-setup": {
+      "get": {
+        "description": "Suggested @handles plus the approved blueprint's description and brand briefs.\n\nRead-only: TubeForge never changes the YouTube channel; the owner copies these into YouTube.",
+        "operationId": "youtube_setup_api_v1_channels__channel_id__youtube_setup_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Channel Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/YouTubeSetupOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR (field errors in errors[]) or a bad header"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "State conflict (e.g. IDEMPOTENCY_IN_PROGRESS)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_READY (master key or database missing)"
+          }
+        },
+        "summary": "Youtube Setup",
         "tags": [
           "channels"
         ]

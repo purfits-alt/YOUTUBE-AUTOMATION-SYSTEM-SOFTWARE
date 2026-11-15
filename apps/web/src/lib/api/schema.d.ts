@@ -647,6 +647,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/channels/{channel_id}/youtube-setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Youtube Setup
+         * @description Suggested @handles plus the approved blueprint's description and brand briefs.
+         *
+         *     Read-only: TubeForge never changes the YouTube channel; the owner copies these into YouTube.
+         */
+        get: operations["youtube_setup_api_v1_channels__channel_id__youtube_setup_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/costs/summary": {
         parameters: {
             query?: never;
@@ -1888,6 +1910,13 @@ export interface components {
             /** Code */
             code: string;
         };
+        /** ColourOut */
+        ColourOut: {
+            /** Hex */
+            hex: string;
+            /** Role */
+            role: string;
+        };
         /** ConfirmIdentityIn */
         ConfirmIdentityIn: {
             /** Youtube Channel Id */
@@ -2000,6 +2029,15 @@ export interface components {
             field: string;
             /** Message */
             message: string;
+        };
+        /** FontOut */
+        FontOut: {
+            /** Family */
+            family: string;
+            /** Licence */
+            licence: string;
+            /** Use */
+            use: string;
         };
         /** ForecastOut */
         ForecastOut: {
@@ -3248,6 +3286,34 @@ export interface components {
             notes?: string | null;
             /** Verified Url */
             verified_url: string;
+        };
+        /**
+         * YouTubeSetupOut
+         * @description What the owner types into YouTube when creating the channel (onboarding step 2).
+         */
+        YouTubeSetupOut: {
+            /** Art Sizes */
+            art_sizes?: {
+                [key: string]: string;
+            };
+            /** Banner Brief */
+            banner_brief: string | null;
+            /** Blueprint Id */
+            blueprint_id: string | null;
+            /** Channel Name */
+            channel_name: string;
+            /** Description */
+            description: string | null;
+            /** Fonts */
+            fonts: components["schemas"]["FontOut"][];
+            /** Handles */
+            handles: string[];
+            /** Logo Brief */
+            logo_brief: string | null;
+            /** Palette */
+            palette: components["schemas"]["ColourOut"][];
+            /** Tone */
+            tone: string[];
         };
         /** QueuedOut */
         tubeforge__api__v1__agents__QueuedOut: {
@@ -7573,6 +7639,97 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Problem"];
                     "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_READY (master key or database missing) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    youtube_setup_api_v1_channels__channel_id__youtube_setup_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YouTubeSetupOut"];
+                };
+            };
+            /** @description VALIDATION_ERROR (field errors in errors[]) or a bad header */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description State conflict (e.g. IDEMPOTENCY_IN_PROGRESS) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
             /** @description NOT_READY (master key or database missing) */

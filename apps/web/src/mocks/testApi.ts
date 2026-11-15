@@ -426,6 +426,26 @@ export const testApiHandlers: HttpHandler[] = [
     return HttpResponse.json(ch);
   }),
   http.get("/api/v1/channels/:id/onboarding", () => HttpResponse.json(state.steps)),
+  http.get("/api/v1/channels/:id/youtube-setup", () =>
+    HttpResponse.json({
+      channel_name: "Calm Science",
+      handles: ["@CalmScience", "@Calm_Science", "@Calm.Science", "@TheCalmScience", "@CalmScienceHQ"],
+      description: "Calm, clear science explainers with real numbers, made by one curious person.",
+      logo_brief: "A simple wave inside a circle, teal on dark.",
+      banner_brief: "Teal gradient with the channel name and 'New explainer every week'.",
+      palette: [
+        { hex: "#0F766E", role: "primary" },
+        { hex: "#111827", role: "dark" },
+      ],
+      fonts: [{ family: "Inter", use: "BODY", licence: "OFL-1.1" }],
+      tone: ["calm", "curious"],
+      blueprint_id: "st-1",
+      art_sizes: {
+        logo: "800 × 800 px (PNG or JPG, shown as a circle)",
+        banner: "2560 × 1440 px; keep text and logo inside the centre 1546 × 423 px",
+      },
+    }),
+  ),
   http.patch("/api/v1/channels/:id/onboarding/:code", async ({ params, request }) => {
     const body = (await request.json()) as { status: StepOut["status"] };
     const step = state.steps.find((s) => s.step_code === params.code);
