@@ -23,7 +23,7 @@ Each phase lists its steps and **your part** for that module.
 
 | | |
 |---|---|
-| **Current module** | **Phase 7 step B** (agents A08–A11 and pipelines; my part) |
+| **Current module** | **Phase 7 step C** (API for ideas, calendar, projects, research, claims, scripts; my part) |
 | Your channel | **Open Node AI**, handle **@OpenNodeAIHQ**, https://www.youtube.com/@OpenNodeAIHQ (created 2026-11-15; name, description and handle set from the setup kit) |
 | Created in TubeForge | yes, from the approved blueprint, as a test channel (private uploads only) |
 | Connected | ✅ 2026-11-15: Google sign-in done; private test upload visible (private) in YouTube Studio |
@@ -114,8 +114,8 @@ Each phase lists its steps and **your part** for that module.
 | Step | Status |
 |---|---|
 | A — Content core: similarity (ADR-0029), script craft checks, value-add score, script versions | ✅ |
-| B — Agents A08 ideas, A09 research, A10 fact-check, A11 scripts; pipelines; golden, injection and craft tests | 🟡 |
-| C — API: ideas, calendar, projects, research, claims, script versions and diff, replicate | ⬜ |
+| B — Agents A08 ideas, A09 research, A10 fact-check, A11 scripts; pipelines; golden, injection and craft tests | ✅ |
+| C — API: ideas, calendar, projects, research, claims, script versions and diff, replicate | 🟡 |
 | D — Pages: Idea Generator, Content Calendar, Script Studio, Channel Trending tabs; browser tests; phase report | ⬜ |
 | Your part (at the Phase 7 demo): rate 10 scripts for "sounds human" (≥ 4/5) | ⬜ |
 

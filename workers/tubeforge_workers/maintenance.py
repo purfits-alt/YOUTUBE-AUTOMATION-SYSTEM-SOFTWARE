@@ -213,6 +213,84 @@ def trend_scan(timestamp: int) -> dict[str, int]:
     return found
 
 
+def _content_failed(db: Session, kind: str, subject_id: str, link: str, exc: Any) -> str:
+    """A content job could not finish: tell the owner why (quota waits and stops are not failures)."""
+    titles = {
+        "ideas": "New ideas could not be generated",
+        "research": "The research brief could not be made",
+        "script": "The script draft could not be made",
+    }
+    notify_owners(
+        db,
+        event_type=f"content.{kind}_failed",
+        severity="INFO" if exc.status in ("WAITING_QUOTA", "STOPPED") else "WARNING",
+        title=titles[kind],
+        body=exc.message[:300],
+        dedup_key=f"content:{kind}:{subject_id}:{exc.status}",
+        link=link,
+    )
+    db.commit()
+    log.info(f"content.{kind}", subject_id=subject_id, status=exc.status)
+    return str(exc.status)
+
+
+def content_ideas(
+    channel_id: str,
+    count: int = 10,
+    fmt: str | None = None,
+    pillar: str | None = None,
+    variation: dict[str, str] | None = None,
+) -> str:
+    """content.ideas: A08 ideas for one channel (variation = the owner's own video to vary)."""
+    from tubeforge_agents.content import Variation, generate_ideas
+    from tubeforge_agents.discovery import PipelineError
+
+    with _research() as (db, gateway, _fetcher):
+        try:
+            result = generate_ideas(
+                db,
+                gateway,
+                uuid.UUID(channel_id),
+                count=count,
+                fmt=fmt,
+                pillar=pillar,
+                variation=Variation(**variation) if variation else None,
+            )
+        except PipelineError as exc:
+            return _content_failed(db, "ideas", channel_id, "/ideas", exc)
+    status = f"{len(result.ideas)} ideas ({len(result.dropped)} dropped, {result.method})"
+    log.info("content.ideas", channel_id=channel_id, status=status)
+    return status
+
+
+def content_research(project_id: str) -> str:
+    """content.research: Wikipedia articles → A09 brief → A10 → RESEARCH_REVIEW."""
+    from tubeforge_agents.content import run_research
+    from tubeforge_agents.discovery import PipelineError
+
+    with _research() as (db, gateway, fetcher):
+        try:
+            result = run_research(db, gateway, fetcher, uuid.UUID(project_id))
+        except PipelineError as exc:
+            return _content_failed(db, "research", project_id, f"/projects/{project_id}/script", exc)
+    log.info("content.research", project_id=project_id, brief=str(result.brief.id))
+    return f"brief v{result.brief.version}"
+
+
+def content_script(project_id: str) -> str:
+    """content.script: A11 draft + craft checks (one repair) → A10 → SCRIPT_REVIEW."""
+    from tubeforge_agents.content import run_script
+    from tubeforge_agents.discovery import PipelineError
+
+    with _research() as (db, gateway, _fetcher):
+        try:
+            result = run_script(db, gateway, uuid.UUID(project_id))
+        except PipelineError as exc:
+            return _content_failed(db, "script", project_id, f"/projects/{project_id}/script", exc)
+    log.info("content.script", project_id=project_id, version=result.version.version)
+    return f"script v{result.version.version} ({len(result.findings)} findings)"
+
+
 def upload(upload_job_id: str) -> str:
     """yt.upload: run or resume one upload job (Phase 4: private test uploads only)."""
     with _deps() as (db, box, google, youtube):

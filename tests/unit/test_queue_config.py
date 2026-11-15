@@ -30,7 +30,14 @@ def test_token_health_runs_daily_on_maintenance() -> None:
 
 def test_research_jobs_run_on_the_agents_queue_and_trends_daily() -> None:
     app = build_app("postgresql://nobody@127.0.0.1:1/none")
-    for name in ("research.discover", "research.blueprint", "research.keywords"):
+    for name in (
+        "research.discover",
+        "research.blueprint",
+        "research.keywords",
+        "content.ideas",
+        "content.research",
+        "content.script",
+    ):
         assert app.tasks[task_name(name)].queue == "agents"
     crons = {p.task.name.split(":")[-1]: p.cron for p in app.periodic_registry.periodic_tasks.values()}
     assert crons["a03.trend_scan"] == "0 1 * * *"  # 06:00 PKT
