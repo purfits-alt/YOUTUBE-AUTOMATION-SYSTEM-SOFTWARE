@@ -1,0 +1,66 @@
+{
+  "type": "object",
+  "required": ["promise_delivery", "hook", "sections", "re_hooks", "open_loops", "payoff", "cta", "owner_slots", "est_duration_s", "word_count"],
+  "properties": {
+    "promise_delivery": {
+      "type": "object", "required": ["promise_statement", "delivered_at_s", "text"],
+      "properties": {
+        "promise_statement": { "type": "string", "maxLength": 200 },
+        "delivered_at_s": { "type": "number", "minimum": 0, "maximum": 15 },
+        "text": { "type": "string", "maxLength": 600 }
+      }
+    },
+    "hook": {
+      "type": "object", "required": ["text", "est_s", "technique"],
+      "properties": {
+        "text": { "type": "string", "minLength": 3, "maxLength": 600 },
+        "est_s": { "type": "number", "minimum": 1, "maximum": 15 },
+        "technique": { "type": "array", "minItems": 1, "items": { "enum": ["SURPRISING_FACT", "QUESTION", "STAKES", "COLD_OPEN_STORY", "BOLD_TRUE_CLAIM", "BEFORE_AFTER", "VISUAL_REVEAL"] } }
+      }
+    },
+    "sections": {
+      "type": "array", "minItems": 1, "maxItems": 30,
+      "items": {
+        "type": "object", "required": ["heading", "text", "fact_refs"],
+        "properties": {
+          "heading": { "type": "string", "maxLength": 80 },
+          "text": { "type": "string", "minLength": 1, "maxLength": 12000 },
+          "fact_refs": { "type": "array", "items": { "type": "string", "maxLength": 10 } },
+          "beat": { "enum": ["SETUP", "TENSION", "EXPLORATION", "REVEAL", "PAYOFF", "NEXT_STEP"] }
+        }
+      }
+    },
+    "re_hooks": {
+      "type": "array", "maxItems": 20,
+      "items": {
+        "type": "object", "required": ["at_pct", "technique", "text"],
+        "properties": {
+          "at_pct": { "type": "number", "minimum": 5, "maximum": 95 },
+          "technique": { "enum": ["OPEN_LOOP", "PATTERN_INTERRUPT", "TWIST", "PROGRESS_MARKER", "MINI_CLIFFHANGER", "PREVIEW"] },
+          "text": { "type": "string", "maxLength": 300 }
+        }
+      }
+    },
+    "open_loops": {
+      "type": "array", "maxItems": 10,
+      "items": {
+        "type": "object", "required": ["id", "opened_in_section", "closed_in_section", "text"],
+        "properties": {
+          "id": { "type": "string", "maxLength": 10 },
+          "opened_in_section": { "type": "integer", "minimum": 0 },
+          "closed_in_section": { "type": "integer", "minimum": 0 },
+          "text": { "type": "string", "maxLength": 200 }
+        }
+      }
+    },
+    "payoff": { "type": "string", "maxLength": 3000 },
+    "cta": { "type": "string", "maxLength": 300 },
+    "owner_slots": {
+      "type": "array", "maxItems": 10,
+      "items": { "type": "object", "required": ["section_index", "prompt"], "properties": { "section_index": { "type": "integer", "minimum": 0 }, "prompt": { "type": "string", "maxLength": 200 } } }
+    },
+    "est_duration_s": { "type": "integer", "minimum": 0 },
+    "word_count": { "type": "integer", "minimum": 0 },
+    "craft_notes": { "type": "string", "maxLength": 500 }
+  }
+}
