@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 6 — Niche discovery & trends
-**Current step:** Phase 6 approved and merged to `main` (PR #10) on 2026-11-11. Next: Phase 7 (ideas, research, fact-check & scripts) when the owner says go. The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
+**Current step:** see `docs/BUILD_TRACKER.md` (current module: gap G1, the Phase 4 YouTube connection for Open Node AI, then Phase 7 step B). Earlier note: Phase 6 approved and merged to `main` (PR #10) on 2026-11-11. Next: Phase 7 (ideas, research, fact-check & scripts) when the owner says go. The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
 **Last updated:** 2026-11-11
 
 ---
@@ -740,6 +740,13 @@ Tests: unit (handle rules), integration (kit after approval), web (kit in step 2
 - They will show in the Branding Studio and in the onboarding step 2 setup kit, so the two stay linked.
 - The owner picks, downloads or copies, and uploads them in YouTube Studio. TubeForge never changes the channel.
 - Meanwhile the owner sets the channel name, description and @handle from the setup kit (PR #22).
+
+**Build tracker (owner rule, 2026-11-15):** `docs/BUILD_TRACKER.md` is now the checklist.
+- It shows every phase's steps with status, the owner's part per module, and the gaps from earlier phases (G1–G6).
+- We build in the roadmap's order, and I raise the owner's part only when its module comes up.
+- Channel status: the owner created **Open Node AI** (**@OpenNodeAIHQ**, https://www.youtube.com/@OpenNodeAIHQ), with name, description and handle set from the setup kit.
+- The SEMRS-branded video watermark is added to Phase 8 task 7.
+- Current module: gap G1 (Phase 4 connection and private test upload), then Phase 7 step B.
 
 ## Resource consumption
 

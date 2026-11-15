@@ -69,5 +69,10 @@ Code + tests (new and existing passing) + docs updated (relevant spec + `PROJECT
 3. Implement in small commits on a phase branch. Run tests as you go.
 4. Run the full phase test suite. Write the phase report (10 items, TESTING_AND_QA §7).
 5. Show the owner the results and the demo script, then **stop** until the owner replies "approved".
+6. `docs/BUILD_TRACKER.md` is the checklist (owner rule, 2026-11-15):
+   - Build phase by phase in the roadmap's order, and close the listed gaps before new work.
+   - Update the step statuses (✅ 🟡 ⬜ ⛔) in the same PR as the work.
+   - Raise the owner's part only when that module's turn comes.
+   - A module is done only when both my part and the owner's part are done.
 
 Precedence when documents disagree: owner's latest instruction > checkpoint decisions/ADRs > specs > master prompt. Fix the lower document in the same change. Unknown requirement → ask the owner and record it as an open question. Don't guess.

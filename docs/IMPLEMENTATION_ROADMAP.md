@@ -308,6 +308,11 @@ Phases 2 and 3 can run in parallel after Phase 1. Phase 14 can start any time af
      4. The owner uploads the files in YouTube Studio › Customization › Branding.
      - TubeForge never uploads channel art itself; changing the channel stays the owner's job.
    - **Wiring:** the art appears in two places, the **Branding Studio** (Brand section) and the **onboarding step 2 YouTube setup kit**, next to the name, handles and description. Both show the same chosen files, so they stay linked to the blueprint.
+   - **Video watermark (owner request, 2026-11-15):**
+     - a 150 × 150 PNG made from the owner's **SEMRS** brand logo file, which the owner uploads with a rights record (owner-owned brand);
+     - shown next to the logo and banner, with Download;
+     - the owner sets it in YouTube Studio › Customization › Branding › Video watermark.
+     - It uses only the logo image; nothing connects to SEMRS systems (ADR-0028).
    - Each file is stored as a project-less media asset of the channel. API: `POST /channels/{id}/channel-art/generate`, `GET /channels/{id}/channel-art`, `POST /channels/{id}/channel-art/{asset_id}/choose`, `GET /assets/{id}/download`.
 
 **Files to create/modify (main):** workers/tubeforge_media/{templates/*,procedural.py,channel_art.py,tts/*,voice_clone/*,recorder_cleanup.py}, apps/api/tubeforge/{assets/*,stock/*,voice/*}, apps/web/src/pages/{research/BrandingPage,channels/OnboardingPage}.tsx
