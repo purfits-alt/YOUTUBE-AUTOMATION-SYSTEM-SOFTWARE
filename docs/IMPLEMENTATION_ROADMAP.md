@@ -297,18 +297,41 @@ Phases 2 and 3 can run in parallel after Phase 1. Phase 14 can start any time af
 4. Voice profiles: live-recording tokens, consent with one-time code, local STT check, speaker similarity, encrypted storage; OpenVoice V2 converter; Chatterbox zero-shot (optional) — **weights licence re-check before enabling**
 5. Image-provider spike: evaluate a free-tier, commercial-OK provider; keep disabled unless it passes (ADR-0010)
 6. Pages 12, 14, 15, 25 wired
+7. **Channel art (owner request, 2026-11-15).** TubeForge draws the channel **logo** and **banner** from the approved blueprint, using its palette, licensed fonts, name and the logo and banner briefs. It uses the procedural renderer (Pillow), with no AI image model needed and no stock images.
+   - **Logo:** 800 × 800 PNG, readable when YouTube crops it to a circle; 3 variants.
+   - **Banner:** 2560 × 1440 PNG, with name and tagline inside the TV/desktop/phone safe area (centre 1546 × 423); 3 variants. A preview shows how the banner crops on TV, desktop and phone.
+   - Every file gets a rights record (`origin = PROCEDURAL`, fonts with their OFL/Apache licences).
+   - Owner workflow ("click, pick, copy, upload"):
+     1. **Generate** shows the variants.
+     2. The owner picks one of each.
+     3. **Download PNG** saves it; **Copy image** where the browser allows.
+     4. The owner uploads the files in YouTube Studio › Customization › Branding.
+     - TubeForge never uploads channel art itself; changing the channel stays the owner's job.
+   - **Wiring:** the art appears in two places, the **Branding Studio** (Brand section) and the **onboarding step 2 YouTube setup kit**, next to the name, handles and description. Both show the same chosen files, so they stay linked to the blueprint.
+   - **Video watermark (owner request, 2026-11-15):**
+     - a 150 × 150 PNG made from the owner's **SEMRS** brand logo file, which the owner uploads with a rights record (owner-owned brand);
+     - shown next to the logo and banner, with Download;
+     - the owner sets it in YouTube Studio › Customization › Branding › Video watermark.
+     - It uses only the logo image; nothing connects to SEMRS systems (ADR-0028).
+   - Each file is stored as a project-less media asset of the channel. API: `POST /channels/{id}/channel-art/generate`, `GET /channels/{id}/channel-art`, `POST /channels/{id}/channel-art/{asset_id}/choose`, `GET /assets/{id}/download`.
 
-**Files to create/modify (main):** workers/tubeforge_media/{templates/*,procedural.py,tts/*,voice_clone/*,recorder_cleanup.py}, apps/api/tubeforge/{assets/*,stock/*,voice/*}
+**Files to create/modify (main):** workers/tubeforge_media/{templates/*,procedural.py,channel_art.py,tts/*,voice_clone/*,recorder_cleanup.py}, apps/api/tubeforge/{assets/*,stock/*,voice/*}, apps/web/src/pages/{research/BrandingPage,channels/OnboardingPage}.tsx
 
 **Acceptance criteria**
 - [ ] Every scene has visual + narration with valid rights
 - [ ] NC voices blocked on monetised channel
 - [ ] Owner voice profile READY only after consent verification; clone narration generated locally
 - [ ] Stock: manual import with proof works; free API import (if enabled) fills rights automatically; purchase impossible with budget 0
+- [ ] Channel art:
+  - logo 800×800 and banner 2560×1440 are generated from the blueprint, each with a rights record;
+  - the banner's text stays inside the safe area;
+  - the chosen files show in both the Branding Studio and the setup kit;
+  - they download as PNG;
+  - TubeForge makes no YouTube call that changes the channel.
 
-**Tests that must pass:** rights refusal, licence block, consent tests (mismatch → REJECTED + security event), recording-token tests, TTS/clone smoke on CPU, RAM guard test
+**Tests that must pass:** rights refusal, licence block, consent tests (mismatch → REJECTED + security event), recording-token tests, TTS/clone smoke on CPU, RAM guard test, channel-art tests (sizes, safe-area bounds, contrast, rights record, same choice in both pages)
 
-**Owner demo script:** Record your voice samples and consent code; create your clone; generate narration for 3 scenes in your cloned voice and 1 in Kokoro; import a Pexels photo (if enabled) and a purchased stock clip with its receipt.
+**Owner demo script:** Record your voice samples and consent code; create your clone; generate narration for 3 scenes in your cloned voice and 1 in Kokoro; import a Pexels photo (if enabled) and a purchased stock clip with its receipt. Generate channel art for Open Node AI, pick a logo and a banner, download them from the setup kit, and upload them in YouTube Studio.
 
 **Owner actions:** Record voice samples; listen to Urdu voices; optionally get Pexels/Pixabay free keys
 
