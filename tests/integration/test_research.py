@@ -15,7 +15,7 @@ from tests.integration.conftest import OWNER_PASSWORD, Env, login
 from tests.unit.test_research_fetcher import RSS, resolver
 from tubeforge.db.models import ResearchSource, SourceDocument, SystemSettings
 from tubeforge.main import create_app
-from tubeforge.research import rss, trends, wikipedia
+from tubeforge.research import rss, trends, wiki_articles, wikipedia
 from tubeforge.research.fetcher import ResearchFetcher
 from tubeforge.research.sources import SourceUnavailableError, get_source, purge_expired, store_document
 
@@ -47,7 +47,14 @@ JAN = (date(2026, 1, 1), date(2026, 1, 2))
 
 
 def fetcher(handler: Handler) -> ResearchFetcher:
-    dns = resolver({"wikimedia.org": ["185.15.59.224"], "news.example.org": ["93.184.215.14"]})
+    dns = resolver(
+        {
+            "wikimedia.org": ["185.15.59.224"],
+            "news.example.org": ["93.184.215.14"],
+            "en.wikipedia.org": ["185.15.59.224"],
+            "ur.wikipedia.org": ["185.15.59.224"],
+        }
+    )
     return ResearchFetcher(transport=httpx.MockTransport(handler), resolver=dns, contact="")
 
 
@@ -61,7 +68,12 @@ def db(env: Env) -> Iterator[Session]:
 
 def test_registry_is_seeded_with_safe_defaults(db: Session) -> None:
     rows = {r.code: r for r in db.scalars(select(ResearchSource))}
-    assert set(rows) == {"WIKIPEDIA_PAGEVIEWS", "TRENDS_API_ALPHA", "OWNER_NOTES", "OWN_ANALYTICS"}
+    assert set(rows) == {
+        "WIKIPEDIA_PAGEVIEWS", "WIKIPEDIA_ARTICLES", "TRENDS_API_ALPHA", "OWNER_NOTES", "OWN_ANALYTICS",
+    }  # fmt: skip
+    art = rows["WIKIPEDIA_ARTICLES"]
+    assert (art.enabled, art.approval_status, art.terms_verified_at) == (True, "APPROVED", None)
+    assert art.allowed_hosts == [f"{lang}.wikipedia.org" for lang in ("en", "es", "fr", "de", "ur")]
     wiki = rows["WIKIPEDIA_PAGEVIEWS"]
     assert (wiki.enabled, wiki.approval_status, wiki.allowed_hosts) == (True, "APPROVED", ["wikimedia.org"])
     assert wiki.terms_verified_at is None  # the owner confirms the terms
@@ -99,6 +111,35 @@ def test_wikipedia_pageviews_and_top_are_stored_as_evidence(db: Session) -> None
         wikipedia.WikipediaPageviews(db, f).per_article(
             "en.wikipedia", "X", date(2024, 1, 1), date(2026, 1, 2)
         )
+
+
+def wiki(req: httpx.Request) -> httpx.Response:
+    if req.url.path == "/w/rest.php/v1/search/page":
+        assert req.url.params["q"] == "student budget"
+        return httpx.Response(
+            200, json={"pages": [{"title": "Budget"}, {"title": "Student loan"}, {"id": 3}]}
+        )
+    if req.url.path == "/w/api.php":
+        title = req.url.params["titles"]
+        if title == "Missing page":
+            return httpx.Response(200, json={"query": {"pages": [{"title": title, "missing": True}]}})
+        text = "A budget is a financial plan for a defined period. " * 5
+        return httpx.Response(200, json={"query": {"pages": [{"title": title, "extract": text}]}})
+    return httpx.Response(404)
+
+
+def test_wikipedia_articles_search_and_extracts_become_documents(db: Session) -> None:
+    with fetcher(wiki) as f:
+        art = wiki_articles.WikipediaArticles(db, f)
+        assert art.search("en", "  student   budget ") == ["Budget", "Student loan"]
+        got = art.article("en", "Budget")
+        assert got is not None and got.url == "https://en.wikipedia.org/wiki/Budget"
+        assert art.article("en", "Missing page") is None
+        with pytest.raises(ValueError, match="language"):
+            art.search("it", "budget")
+    doc = db.get_one(SourceDocument, got.document_id)
+    assert doc.title == "Budget — Wikipedia (en)" and "financial plan" in doc.content_text
+    assert doc.language == "en"
 
 
 def test_emergency_stop_and_switched_off_sources_fetch_nothing(db: Session) -> None:

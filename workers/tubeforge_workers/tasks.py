@@ -57,4 +57,7 @@ def make_blueprint() -> procrastinate.Blueprint:
     bp.task(name="research.blueprint", queue=QUEUE_AGENTS)(maintenance.blueprint)
     bp.task(name="research.keywords", queue=QUEUE_AGENTS)(maintenance.keywords)
     bp.task(name="research.trend_scan", queue=QUEUE_AGENTS)(maintenance.trend_scan_one)
+    bp.task(name="content.ideas", queue=QUEUE_AGENTS)(maintenance.content_ideas)
+    bp.task(name="content.research", queue=QUEUE_AGENTS)(maintenance.content_research)
+    bp.task(name="content.script", queue=QUEUE_AGENTS)(maintenance.content_script)
     return bp

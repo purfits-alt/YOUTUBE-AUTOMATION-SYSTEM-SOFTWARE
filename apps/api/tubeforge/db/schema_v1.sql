@@ -371,6 +371,8 @@ CREATE TABLE video_ideas (
   based_on_youtube_video_id text NULL,
   variation_kind text NULL CHECK (variation_kind IN ('PART_2','NEW_ANGLE','UPDATE','SHORT_FROM_LONG','LONG_FROM_SHORT','SERIES')),
   similarity_to_source numeric(4,3) NULL,
+  packaging_promise jsonb NULL,
+  owner_value_add_prompt text NULL,
   version int NOT NULL DEFAULT 1,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),

@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 6 — Niche discovery & trends
-**Current step:** see `docs/BUILD_TRACKER.md` (current module: gap G1, the Phase 4 YouTube connection for Open Node AI, then Phase 7 step B). Earlier note: Phase 6 approved and merged to `main` (PR #10) on 2026-11-11. Next: Phase 7 (ideas, research, fact-check & scripts) when the owner says go. The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
+**Current step:** see `docs/BUILD_TRACKER.md` (gaps G1–G3 closed 2026-11-15; Phase 7 step B done; current: Phase 7 step C). Earlier note: Phase 6 approved and merged to `main` (PR #10) on 2026-11-11. Next: Phase 7 (ideas, research, fact-check & scripts) when the owner says go. The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
 **Last updated:** 2026-11-11
 
 ---
@@ -747,6 +747,41 @@ Tests: unit (handle rules), integration (kit after approval), web (kit in step 2
 - Channel status: the owner created **Open Node AI** (**@OpenNodeAIHQ**, https://www.youtube.com/@OpenNodeAIHQ), with name, description and handle set from the setup kit.
 - The SEMRS-branded video watermark is added to Phase 8 task 7.
 - Current module: gap G1 (Phase 4 connection and private test upload), then Phase 7 step B.
+
+**Phase 4 manual test passed (owner, 2026-11-15), closing gap G1:** Open Node AI (@OpenNodeAIHQ) is connected to TubeForge with Google sign-in, and the private 5-second test upload is visible as **private** in YouTube Studio. This closes the Phase 4 acceptance item that had been open since 2026-11-09. Next: gaps G2 (Wikimedia terms) and G3 (`similarity-check`), then Phase 7 step B.
+
+**Gaps G2 and G3 closed (owner, 2026-11-15):**
+- G2: Wikimedia terms confirmed.
+- G3: `similarity-check` on the owner's PC shows model2vec installed. Scores: reworded 0.89; paraphrases 0.63–0.68 (en, ur, es); new angle 0.53; related 0.51.
+- So the limits are now per method (ADR-0029):
+  - duplicate ≥ 0.85;
+  - a new "same idea in other words" warning at 0.60–0.85;
+  - variation of the owner's own video < 0.60.
+- The trigram fallback keeps 0.85 / 0.70.
+- Next module: Phase 7 step B.
+
+**Phase 7 step B done (2026-11-15): agents A08–A11 and the content pipelines.**
+- B1, data:
+  - `video_ideas.packaging_promise` and `owner_value_add_prompt` (migration 0013).
+  - New research source `WIKIPEDIA_ARTICLES`: search plus plain-text extracts in en/es/fr/de/ur, under the same Wikimedia terms the owner confirmed in G2.
+- B2, agents: prompts and output schemas for
+  - A08 Idea Generation v1.1 (packaging promise, variation mode);
+  - A09 Research v1.0;
+  - A10 Fact-Checking v1.0;
+  - A11 Scriptwriting v1.1 (craft rules, target words, repair notes).
+
+  All outside text reaches the model only inside `<untrusted_source>`.
+- B3, pipelines (`workers/tubeforge_agents/content.py`):
+  - **Ideas:** the forbidden-phrase retry; similarity against earlier ideas (stored for the `idea_original` guard); repeats in a batch are dropped; variation mode keeps only ideas below `variation_max`.
+  - **Idea → project:** RESEARCHING, with the packaging promise copied.
+  - **Research:** Wikipedia articles (at least 2) → A09. The code then drops claims citing unknown documents and instruction-like text, and marks verbatim quotes. Then A10 → claims rows → RESEARCH_REVIEW.
+  - **Script:** A11 → craft checks → one repair call naming every failed check. Duration and word count are measured by code. Then version → A10 on the script → SCRIPT_REVIEW. Owner notifications at each review.
+- B4, jobs: `content.ideas`, `content.research`, `content.script` on the agents queue. The owner is told when a job cannot finish.
+- Tests:
+  - unit: prompts and schemas for A08–A11;
+  - integration: similarity guard with owner override, variation, a poisoned source page (injection), contradicted claim blocking approval unless overridden, craft repair, two-source minimum, refusals.
+- Free-tier check: introduces no paid dependency ✔
+- Next module: Phase 7 step C (API).
 
 ## Resource consumption
 

@@ -23,17 +23,18 @@ Each phase lists its steps and **your part** for that module.
 
 | | |
 |---|---|
-| **Current module** | **Gap G1: the Phase 4 YouTube connection** (your part), then **Phase 7 step B** |
+| **Current module** | **Phase 7 step C** (API for ideas, calendar, projects, research, claims, scripts; my part) |
 | Your channel | **Open Node AI**, handle **@OpenNodeAIHQ**, https://www.youtube.com/@OpenNodeAIHQ (created 2026-11-15; name, description and handle set from the setup kit) |
 | Created in TubeForge | yes, from the approved blueprint, as a test channel (private uploads only) |
+| Connected | ✅ 2026-11-15: Google sign-in done; private test upload visible (private) in YouTube Studio |
 
 ## Gaps from earlier phases (closed before new work)
 
 | # | Gap | From | My part | Your part | Status |
 |---|---|---|---|---|---|
-| G1 | Real YouTube connection and one private test upload for Open Node AI | Phase 4 | ✅ built (onboarding, OAuth, setup kit, privacy pages) | Onboarding steps 3–10: phone verification; Google Cloud project (no billing); YouTube Data API v3; consent screen (Testing, yourself as test user); Desktop OAuth client pasted into TubeForge; privacy page on `tubeforge.semrs.com/app-privacy.html`; **Connect with Google**; **private test upload**. Then tell me the result. | 🟡 |
-| G2 | Confirm Wikimedia's terms on the Research sources panel | Phase 6 | ✅ built | Open **Terms**, read them, press **I checked the terms** | ⬜ |
-| G3 | Check the similarity model's scores | Phase 7 step A | ✅ built (`fetch-models`, `similarity-check`) | Run `uv run tubeforge-admin similarity-check` once after `setup` and send me the output | ⬜ (asked at the Phase 7 demo) |
+| G1 | Real YouTube connection and one private test upload for Open Node AI | Phase 4 | ✅ built (onboarding, OAuth, setup kit, privacy pages) | Onboarding steps 3–10: phone verification; Google Cloud project (no billing); YouTube Data API v3; consent screen (Testing, yourself as test user); Desktop OAuth client pasted into TubeForge; privacy page on `tubeforge.semrs.com/app-privacy.html`; **Connect with Google**; **private test upload**. Then tell me the result. | ✅ 2026-11-15 |
+| G2 | Confirm Wikimedia's terms on the Research sources panel | Phase 6 | ✅ built | Open **Terms**, read them, press **I checked the terms** | ✅ 2026-11-15 |
+| G3 | Check the similarity model's scores | Phase 7 step A | ✅ built (`fetch-models`, `similarity-check`) | Run `uv run tubeforge-admin similarity-check` once after `setup` and send me the output | ✅ 2026-11-15: model2vec installed; limits calibrated (ADR-0029) |
 | G4 | Duplicate-upload guard after an expired upload session | Phase 4 → moved | deferred to Phase 12 (task 1, "duplicate guard via uploads playlist") | none | ⬜ (Phase 12) |
 | G5 | Friendlier password prompt in `setup` | Phase 1 | deferred to the Phase 15 installer | none | ⬜ (Phase 15) |
 | G6 | Add a contact to research requests (Wikimedia asks for one) | Phase 6 | ✅ built (`research_contact`) | Optional: add `research_contact = "..."` to `config\tubeforge.toml` | ⬜ optional |
@@ -70,7 +71,7 @@ Each phase lists its steps and **your part** for that module.
 | Errors, idempotency, pagination, live updates | ✅ |
 | Your part: none (2FA is recommended: Audit & Security Center › enable 2FA) | — |
 
-## Phase 4 — Channel onboarding, OAuth & quota ledger ✅ build · 🟡 your part (gap G1)
+## Phase 4 — Channel onboarding, OAuth & quota ledger ✅
 | Step | Status |
 |---|---|
 | 10-step onboarding with help links | ✅ |
@@ -81,7 +82,7 @@ Each phase lists its steps and **your part** for that module.
 | Retention jobs; notifications | ✅ |
 | Channel Manager and onboarding pages | ✅ |
 | **Added:** YouTube setup kit (name, @handles, description, brand briefs) | ✅ |
-| Your part: Google Cloud project, OAuth client, channel, privacy page details, connect, test upload | 🟡 (G1) |
+| Your part: Google Cloud project, OAuth client, channel, privacy page details, connect, test upload | ✅ 2026-11-15 (G1) |
 
 ## Phase 5 — Orchestrator & agent infrastructure ✅
 | Step | Status |
@@ -113,10 +114,10 @@ Each phase lists its steps and **your part** for that module.
 | Step | Status |
 |---|---|
 | A — Content core: similarity (ADR-0029), script craft checks, value-add score, script versions | ✅ |
-| B — Agents A08 ideas, A09 research, A10 fact-check, A11 scripts; pipelines; golden, injection and craft tests | ⬜ next (after G1) |
-| C — API: ideas, calendar, projects, research, claims, script versions and diff, replicate | ⬜ |
+| B — Agents A08 ideas, A09 research, A10 fact-check, A11 scripts; pipelines; golden, injection and craft tests | ✅ |
+| C — API: ideas, calendar, projects, research, claims, script versions and diff, replicate | 🟡 |
 | D — Pages: Idea Generator, Content Calendar, Script Studio, Channel Trending tabs; browser tests; phase report | ⬜ |
-| Your part (at the Phase 7 demo): rate 10 scripts for "sounds human" (≥ 4/5); `similarity-check` (G3) | ⬜ |
+| Your part (at the Phase 7 demo): rate 10 scripts for "sounds human" (≥ 4/5) | ⬜ |
 
 ## Phase 8 — Storyboards, visuals, voice & stock ⬜
 | Step | Status |

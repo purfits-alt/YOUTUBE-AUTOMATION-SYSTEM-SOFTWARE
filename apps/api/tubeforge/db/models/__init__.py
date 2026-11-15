@@ -517,6 +517,8 @@ class VideoIdea(Base):
     based_on_youtube_video_id: Mapped[str | None] = mapped_column(Text)
     variation_kind: Mapped[str | None] = mapped_column(Text)
     similarity_to_source: Mapped[Decimal | None] = mapped_column(Numeric(4, 3))
+    packaging_promise: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    owner_value_add_prompt: Mapped[str | None] = mapped_column(Text)
     version: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")

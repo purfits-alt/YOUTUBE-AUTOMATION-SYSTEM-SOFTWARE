@@ -87,7 +87,15 @@ def test_prompts_use_strict_variables_and_the_shared_preamble() -> None:
 )
 def test_every_system_prompt_spells_out_the_output_schema(code: str) -> None:
     version = sorted(p.stem for p in (prompting.PROMPTS / code).glob("v*.md"))[-1]
-    context = {"hardware_profile": "H-LITE", "licensed_fonts": "Inter", "pillars": "a, b"}
+    context = {
+        "hardware_profile": "H-LITE",
+        "licensed_fonts": "Inter",
+        "pillars": "a, b",
+        "target_duration_s": 480,
+        "wpm": 150,
+        "target_words": 1200,
+        "humour": False,
+    }
     system = render_system(code, "Agent", version, context)
     assert json.dumps(output_schema(code), ensure_ascii=False, separators=(",", ":")) in system
     assert "use exactly these field names" in system

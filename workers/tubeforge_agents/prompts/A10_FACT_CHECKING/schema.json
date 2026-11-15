@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "required": ["claims"],
+  "additionalProperties": false,
+  "properties": {
+    "claims": {
+      "type": "array", "maxItems": 60,
+      "items": {
+        "type": "object",
+        "required": ["claim_text", "verdict", "source_document_ids", "explanation"],
+        "properties": {
+          "claim_text": { "type": "string", "minLength": 3, "maxLength": 400 },
+          "verdict": { "enum": ["SUPPORTED", "UNSUPPORTED", "CONTRADICTED", "OPINION"] },
+          "source_document_ids": { "type": "array", "maxItems": 5, "items": { "type": "string", "maxLength": 64 } },
+          "explanation": { "type": "string", "maxLength": 300 },
+          "span": { "type": "object", "properties": { "start": { "type": "integer", "minimum": 0 }, "end": { "type": "integer", "minimum": 0 } } }
+        }
+      }
+    }
+  }
+}

@@ -160,7 +160,9 @@ def similarity_check() -> int:
     from tubeforge.content import similarity
 
     method = similarity.get_similarity()
-    limits = f"duplicate ≥ {similarity.IDEA_DUPLICATE}, variation ≤ {similarity.VARIATION_MAX}"
+    lim = similarity.limits_for(method)
+    warn = f", paraphrase warning ≥ {lim.paraphrase_warning}" if lim.paraphrase_warning else ""
+    limits = f"duplicate ≥ {lim.duplicate}{warn}, variation < {lim.variation_max}"
     print(f"Method: {method.method}  ({limits})")
     for label, score in similarity.self_test(method):
         print(f"  {score:5.2f}  {label}")

@@ -160,6 +160,26 @@ def test_embedding_similarity_and_helpers() -> None:
     assert pairs == [(0, 1, 1.0)]
 
 
+def test_limits_follow_the_method_and_the_owner_pc_calibration() -> None:
+    m2v = similarity.limits_for(similarity.EmbeddingSimilarity(FakeEncoder()))
+    tri = similarity.limits_for(similarity.TrigramSimilarity())
+    assert (m2v.duplicate, m2v.paraphrase_warning, m2v.variation_max) == (0.85, 0.60, 0.60)
+    assert (tri.duplicate, tri.paraphrase_warning, tri.variation_max) == (0.85, None, 0.70)
+    # The owner's measured scores land on the intended side of each limit.
+    measured = {
+        "reworded": 0.89,
+        "paraphrase": 0.63,
+        "ur": 0.68,
+        "es": 0.64,
+        "new angle": 0.53,
+        "related": 0.51,
+    }
+    assert measured["reworded"] >= m2v.duplicate
+    assert all(m2v.paraphrase_warning <= measured[k] < m2v.duplicate for k in ("paraphrase", "ur", "es"))
+    assert all(measured[k] < m2v.variation_max for k in ("new angle", "related"))
+    assert all(measured[k] >= m2v.variation_max for k in ("paraphrase", "ur", "es"))
+
+
 def test_without_the_model_the_fallback_is_used(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(similarity, "model_dir", lambda: tmp_path / "missing")
     similarity.reset_similarity()
