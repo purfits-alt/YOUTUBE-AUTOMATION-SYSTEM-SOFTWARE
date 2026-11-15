@@ -735,6 +735,12 @@ TubeForge never edits the YouTube channel:
 
 Tests: unit (handle rules), integration (kit after approval), web (kit in step 2). Introduces no paid dependency ✔.
 
+**Channel art planned for Phase 8 (owner decision, 2026-11-15):** IMPLEMENTATION_ROADMAP Phase 8, task 7.
+- TubeForge will draw the logo (800×800) and banner (2560×1440, inside the safe area) from the approved blueprint, offering 3 variants each.
+- They will show in the Branding Studio and in the onboarding step 2 setup kit, so the two stay linked.
+- The owner picks, downloads or copies, and uploads them in YouTube Studio. TubeForge never changes the channel.
+- Meanwhile the owner sets the channel name, description and @handle from the setup kit (PR #22).
+
 ## Resource consumption
 
 | Resource | Used |
