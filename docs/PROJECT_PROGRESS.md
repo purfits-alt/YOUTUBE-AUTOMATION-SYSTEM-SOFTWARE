@@ -863,7 +863,7 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
      - `/niches/build`
    - Changed: blueprint approve with `channel_id`, and trends `to-idea` (now works).
 5. **Agents created:** A08, A09, A10 and A11, all through the Gateway (free providers, then local).
-6. **Tests executed (Linux, this session):** 
+6. **Tests executed (Linux, this session):**
    - **Python: 503 passed** (+321 contract subtests); ruff, mypy --strict, pre-commit and traceability are green.
      - Phase 7 added unit tests for the craft golden set (15 cases), similarity limits and the A08–A11 prompts and schemas.
      - It added integration tests for the pipelines (similarity guard, variation, injection page, contradicted-claim override, craft repair, two-source minimum, owner-edit fact check), the content APIs, and the Build tab with attach-to-existing-channel.
