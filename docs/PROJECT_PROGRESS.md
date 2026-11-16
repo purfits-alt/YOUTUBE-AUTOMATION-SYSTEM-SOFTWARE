@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 6 — Niche discovery & trends
-**Current step:** see `docs/BUILD_TRACKER.md` (gaps G1–G3 closed 2026-11-15; Phase 7 steps B and C done; current: Phase 7 step D). Earlier note: Phase 6 approved and merged to `main` (PR #10) on 2026-11-11. Next: Phase 7 (ideas, research, fact-check & scripts) when the owner says go. The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
+**Current step:** see `docs/BUILD_TRACKER.md` (gaps G1–G3 closed 2026-11-15; Phase 7 my part done; current: your Phase 7 demo and blind review). Earlier note: Phase 6 approved and merged to `main` (PR #10) on 2026-11-11. Next: Phase 7 (ideas, research, fact-check & scripts) when the owner says go. The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
 **Last updated:** 2026-11-11
 
 ---
@@ -799,6 +799,121 @@ Tests: unit (handle rules), integration (kit after approval), web (kit in step 2
 - **Tests:** API integration tests for the idea flow (duplicate needs a reason), research override → approval, the script review gates (fact-check pending, value-add), regenerate/pause/resume/cancel and the Replicate own-video rule. The pipeline test now also covers the owner-edit fact check.
 - Free-tier check: introduces no paid dependency ✔
 - Next module: Phase 7 step D (pages: Idea Generator, Content Calendar, Script Studio, Channel Trending tabs; browser tests; phase report).
+
+**Owner request (2026-11-16), added to step D:**
+1. A **Build** tab beside **Run discovery**: add a niche or channel yourself, with your own channel name or names TubeForge suggests (as in discovery).
+2. Channels added outside discovery (onboarded through the 10 steps) are taken into the same pipelines and pages: Idea Generator, Content Calendar, Script Studio and Channel Trending.
+
+Both are done (see below). Decision: an existing channel takes a blueprint by **approving it for that channel**; its earlier blueprint is superseded. A channel with no blueprint still works, with one general pillar.
+
+**Phase 7 step D done (2026-11-16):**
+- **D1, backend:**
+  - `POST /niches/build`;
+  - blueprint approve with `channel_id` (attach to an existing channel; versions counted per channel; this fixed a unique-version clash the test found).
+- **D2, Build tab** and the approve dialog with "New channel / A channel I already have"; shared accessible Tabs component.
+- **D3, pages on real data:**
+  - Idea Generator, Content Calendar, Script Studio, a Projects list;
+  - Trends › Turn into idea;
+  - Channel Trending: Replicate and New Ideas real; Outliers sample until Phase 13.
+- **D4:** docs, tracker and this report.
+
+## Phase 7 report — 2026-11-16 (TESTING_AND_QA §7)
+
+1. **Modules implemented**
+   - **Content core (A):**
+     - the similarity service (model2vec on the owner's PC, trigram fallback; limits per method, calibrated: ADR-0029);
+     - script craft validators (hook 10–15 s / Short ≤ 3 s, promise ≤ 15 s / 3 s, re-hook bands, open loops closed, banned and forbidden phrases, duration ±10 %, owner slots, fact refs);
+     - the value-add score; script versions, fingerprint and diff.
+   - **Agents and pipelines (B):**
+     - A08 Idea Generation v1.1 (packaging promise, variation mode), A09 Research v1.0, A10 Fact-Checking v1.0, A11 Scriptwriting v1.1;
+     - pipelines: ideas → project → research (Wikipedia articles) → brief + claims → script → craft repair → fact check;
+     - jobs `content.ideas`, `content.research`, `content.script`, `content.fact_check`.
+   - **API (C):** ideas, calendar, Replicate (own videos only), projects with commands and live gate checks, research briefs, claims with override, script versions, diff, owner edits, regenerate. Guard facts are read from the database.
+   - **Pages (D):** Build tab, Idea Generator, Content Calendar, Script Studio, Projects, Trends › Turn into idea, Channel Trending (Replicate, New Ideas).
+2. **Files created/modified:**
+   - Backend:
+     - `apps/api/tubeforge/content/{similarity,craft,value_add,scripts,ideas}.py`
+     - `api/v1/{ideas,projects}.py`
+     - `api/v1/{niches,trends}.py`
+     - `research/wiki_articles.py`
+     - `admin.py`, `db/models`
+   - Workers:
+     - `workers/tubeforge_agents/{content_agents,content}.py`
+     - `prompts/A08…A11/*`
+     - `tubeforge_workers/{maintenance,tasks}.py`
+   - Web:
+     - `src/pages/content/*`, `pages/research/BuildPanel.tsx`
+     - `components/Tabs.tsx`, `pages/ChannelTrendingPage.tsx`
+     - `mocks/contentApi.ts`
+     - e2e: helpers, fixtures, seed, stateful flow
+   - Docs:
+     - AGENT_PROMPTS, BACKEND_SPECIFICATION, FRONTEND_SPECIFICATION, CHANNEL_DISCOVERY_SPEC, DATABASE_SCHEMA
+     - ADR-0029, BUILD_TRACKER, CLAUDE.md
+3. **Database changes:**
+   - Migration 0013: `video_ideas.packaging_promise` and `owner_value_add_prompt`, plus the `WIKIPEDIA_ARTICLES` research source, with a downgrade.
+   - ORM models for the Phase 3 tables `owner_value_add`, `research_briefs`, `scripts`, `script_versions` and `fact_check_claims`.
+4. **APIs implemented:** 31 new routes, plus 2 changed.
+   - New:
+     - `/channels/{id}/ideas` (2), `/ideas/{id}` (2) and commands, `/channels/{id}/ideas/generate`
+     - `/calendar` (2)
+     - `/channels/{id}/replicate`, `/channels/{id}/ideas/replicate`
+     - `/projects` (4) and commands, `timeline-history`
+     - `value-add` (2), `research` (2), `claims`, `/claims/{id}/override`
+     - `script/versions` (3), `diff`, `regenerate`
+     - `/niches/build`
+   - Changed: blueprint approve with `channel_id`, and trends `to-idea` (now works).
+5. **Agents created:** A08, A09, A10 and A11, all through the Gateway (free providers, then local).
+6. **Tests executed (Linux, this session):** 
+   - **Python: 503 passed** (+321 contract subtests); ruff, mypy --strict, pre-commit and traceability are green.
+     - Phase 7 added unit tests for the craft golden set (15 cases), similarity limits and the A08–A11 prompts and schemas.
+     - It added integration tests for the pipelines (similarity guard, variation, injection page, contradicted-claim override, craft repair, two-source minimum, owner-edit fact check), the content APIs, and the Build tab with attach-to-existing-channel.
+   - **The tests found 3 real bugs, all fixed:**
+     - the calendar rejected valid ranges (contract test);
+     - the locked version id was lost on refresh;
+     - a blueprint version clash when attaching to an existing channel.
+   - **Web unit: 48 passed.**
+   - **Playwright, local run against the real API:** routes × 4 states, axe (light and dark), mobile and shell all pass (202), and the new stateful "ideas → calendar" flow passes. Only the visual snapshots differ locally; this push asks CI for new baselines (`[update-snapshots]`, key pages now Storyboard and Renders).
+7. **Free-tier services used:**
+   - Wikipedia (Action API extracts and REST search; Wikimedia terms, confirmed under G2).
+   - The free AI providers already configured (Gemini free tier, then Groq free tier, then local Ollama).
+   - The local similarity model (MIT, runs on the CPU).
+   - No paid service.
+8. **Resource consumption:**
+   - The similarity model takes about 256 MB of RAM when loaded (half precision), only in the process that needs it.
+   - Research fetches stay ≤ 2 MB each, with at most 6 articles per project.
+   - Model calls per video: 1 A09, 1–2 A11, 2 A10 (more with owner edits).
+   - YouTube quota: 0.
+9. **Known limitations:**
+   - Outliers (Channel Trending) stay sample data until Phase 13; Replicate lists only published videos, so it is empty until the channel publishes.
+   - The calendar has no daily caps or side list of unscheduled ideas yet.
+   - Idea Generator has no Kanban view.
+   - Research uses Wikipedia only; RSS items are not yet used as research documents.
+   - A refused or failed job is reported as a notification; the page shows no live progress bar (SSE `job.progress` comes later).
+   - Owner script edits are checked against the A11 schema; rich-text editing is plain text areas.
+10. **Remaining tasks (owner):** the Phase 7 demo and the blind review of 10 scripts (≥ 4/5 "sounds human"), then "approved". Next phase: 8 (storyboards, visuals, voice, channel art, SEMRS watermark).
+11. **Demo script (on your PC):**
+    1. **Update and start TubeForge.** `git pull`, then `tubeforge.ps1 setup`, then `tubeforge.ps1 start`. Check the API and both workers are running (`tubeforge.ps1 status`).
+    2. **Build tab.**
+       - Go to **Channel Discovery › Build**. Enter a niche, e.g. "Open source AI tools".
+       - Choose **A channel I already have › Open Node AI**, then **Build blueprint**.
+       - After a minute or two, open **Blueprints**, review it, then **Propose** and **Approve › A channel I already have › Open Node AI**.
+       - The Idea Generator for Open Node AI opens.
+    3. **Ideas.**
+       - **Generate ideas** (10). After a minute, the ideas appear with packaging promises.
+       - Shortlist two. Schedule one for a day this month, and see it on the **Content Calendar**.
+       - Add one idea of your own; a "guaranteed" title is refused.
+    4. **Approve an idea.** The project opens in **Script Studio**. Research runs: wait 1–2 minutes and refresh.
+    5. **Review the research brief.** Read the facts and their sources. Accept a contradicted one only if you are sure (write the reason). Then **Approve research**.
+    6. **Script.**
+       - Wait for the draft and refresh.
+       - Check the hook timer (10–15 s) and the re-hook marks.
+       - Fill each [[OWNER: …]] slot with your own words and **Save as new version**. Wait about a minute for the fact check.
+       - Fill **Your own value** (at least one field), then **Approve script**. The project moves to Storyboard.
+    7. **Blind review.**
+       - Repeat steps 3–6 for 10 ideas; a mix of long videos and Shorts is fine.
+       - Read each final script aloud and rate it 1–5 for "sounds like a real person".
+       - Send me the 10 scores. The target is an average of 4 or more.
+
 
 ## Resource consumption
 

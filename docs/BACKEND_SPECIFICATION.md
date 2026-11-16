@@ -173,6 +173,10 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 - **Rescore.** `/niches/rescore` takes `weights` or `weight_profile_id` (exactly one). It stores the new scores; unknown criteria or weights outside 0–15 get 422 `INVALID_WEIGHTS`.
 - **Weight profiles.** `PUT /niches/weight-profiles/{id}` takes `{name?, weights?, is_default?: true}`; one default at a time.
 - **Reading blueprints.** `GET /strategies/{id}` returns the blueprint with `problems`, re-checked on every read. PATCH and the approval commands come in step D.
+- **Build without discovery (Phase 7 step D, owner request 2026-11-16).** `POST /niches/build` (Idempotency-Key, `strategy.manage`) takes `{name, summary?, language, originality_angles?, channel_name?, channel_id?, owner_notes?}`.
+  - It answers 202 `{candidate, job_id}` and queues `research.blueprint`.
+  - Refusals: 422 `FORBIDDEN_PHRASE`; 404 for an unknown channel; 409 `STOPPED`.
+  - `CandidateOut` adds `added_by_owner`, `owner_channel_name` and `target_channel_id`.
 
 *`/lookups/youtube` implemented in Phase 6 step C (`api/v1/lookups.py`):*
 - **POST** `{kind, query, channel_id?}` needs an `Idempotency-Key` and returns `{id, kind, query_key, items[], cached, fetched_at, expires_at, notice}`.
@@ -188,7 +192,11 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 - **Editing a blueprint.** `PATCH /strategies/{id}` needs If-Match with the `etag` (428/412) and works on a DRAFT only (409 `NOT_EDITABLE`). The saved blueprint must match the schema (422 `BLUEPRINT_INVALID`). `niche` and `footer` cannot be edited; other rule problems may stay in a draft.
 - **Commands** — `POST /strategies/{id}/commands/{propose|approve|reject|new-version}`:
   - `propose` and `approve` need zero problems (409 `BLUEPRINT_HAS_PROBLEMS`);
-  - `approve` needs `{channel_name, is_test_channel = true}` and `channel.manage`. It creates the channel (APPROVED, publishing rules, not monetised, language from the niche), links the blueprint, marks the candidate CONVERTED and the candidate's other drafts SUPERSEDED;
+  - `approve` needs `channel.manage` and exactly one of:
+    - `{channel_name, is_test_channel = true}`: creates the channel (APPROVED, publishing rules, not monetised, language from the niche);
+    - `{channel_id}` (Phase 7): attaches the blueprint to an existing channel and supersedes that channel's earlier approved blueprint; the channel itself is unchanged.
+
+    Either way it links the blueprint, marks the candidate CONVERTED and the candidate's other drafts SUPERSEDED;
   - `new-version` copies the blueprint into a new DRAFT.
 - **Trends.**
   - `GET /trends?channel_id=&include_inactive=`: expired items are hidden by default, and shown as EXPIRED when included.

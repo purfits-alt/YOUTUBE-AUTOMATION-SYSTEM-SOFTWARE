@@ -95,6 +95,16 @@ Display rules:
 5. The owner reviews them, adjusts weights, then shortlists or dismisses.
 6. For a shortlisted candidate the owner clicks **Generate blueprint** → A06 strategy + A07 branding → `channel_strategies` DRAFT → owner edits → PROPOSED → APPROVED (creates the channel in state APPROVED).
 
+### 3a. Build without discovery (owner request 2026-11-16)
+The owner can name a niche directly (Channel Discovery › **Build**, `POST /niches/build`).
+- **Stored as:** a SHORTLISTED candidate in a one-line report marked `manual`. It is unscored (score 0, shown as "Added by you · not scored"), and its `_OWNER_BUILD` side record holds the owner's channel name and/or target channel.
+- **Blueprint:** the job is queued at once, the same A07 + A06 as after discovery. The owner's channel name goes to A06 as an owner note; A07 still suggests names.
+- **Forbidden phrases** in the niche, summary, angles or name are refused (422).
+- **Approval** (`POST /strategies/{id}/commands/approve`):
+  - `{channel_name}` creates a new channel;
+  - `{channel_id}` attaches the blueprint to an existing channel, such as one the owner created in Channel Manager and onboarded without discovery. That channel keeps its name, state and connection. Its earlier approved blueprint becomes SUPERSEDED, and blueprint versions are counted per channel.
+- **Afterwards:** ideas, the calendar, Script Studio and Channel Trending treat every channel the same, whatever its origin. A channel with no approved blueprint still works, with one general pillar.
+
 ## 4. Channel Blueprint (`channel_blueprint.json`)
 
 | Section | Content | Producer |

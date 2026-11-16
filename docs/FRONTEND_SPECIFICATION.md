@@ -106,6 +106,13 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 | **Error state** | Job failed → reason + 'Retry'; source blocked → link to Settings › Research sources. |
 | **Success state** | Candidates appear; banner: 'Scores are estimates with sources — not a promise of earnings.' |
 
+**Build tab (owner request 2026-11-16, Phase 7 step D).** The page has two tabs: **Run discovery** (everything above) and **Build**.
+- **What the owner enters:** the niche (2–80 characters), an optional summary, the language, optional originality angles (≤ 5), optional notes, and the channel. The channel is one of:
+  - a **new channel**, with the owner's own name or "Let TubeForge suggest channel names" (A07 proposes 10 names in the blueprint);
+  - a **channel I already have**, picked from Channel Manager, for channels onboarded without discovery.
+- **Build blueprint** calls `POST /niches/build` and queues the blueprint at once. The niche shows as "Added by you · not scored".
+- **Approval:** the Branding Studio approve dialog is prefilled from these choices.
+
 ## 3. Channel Manager
 
 | Item | Specification |
@@ -226,6 +233,10 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 | **Error state** | Schema validation errors inline per field. |
 | **Success state** | Approved → 'Channel created — continue to onboarding'. |
 
+**Approve options (Phase 7 step D).** The approve dialog offers:
+- **New channel:** the name, prefilled with the owner's Build name or A07's first idea; the test-channel box; creates the channel and opens onboarding.
+- **A channel I already have:** attaches the blueprint to that channel and opens its Idea Generator. The channel keeps its name and YouTube connection, and its earlier blueprint is superseded.
+
 ## 9. Idea Generator
 
 | Item | Specification |
@@ -245,6 +256,12 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 | **Loading state** | Card skeletons. |
 | **Error state** | Generation failed (quota) → wait time + fallback provider info. |
 | **Success state** | New ideas animate in; similarity warnings shown in amber. |
+
+**Implemented in Phase 7 step D:**
+- **Layout:** cards in a two-column grid with state filter buttons; the Kanban view is deferred.
+- **Each card shows:** the packaging promise, the owner prompt, and the similarity badges ("Same as …": approval needs a reason of ≥ 20 characters; "Maybe the same idea …": a hint).
+- **Generate** is a queued job.
+- **Channels without a blueprint** see a hint linking to Discovery › Build. Ideas there use one general pillar.
 
 ## 10. Content Calendar
 
@@ -266,6 +283,12 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 | **Error state** | Drop rejected (cap exceeded) → toast with reason. |
 | **Success state** | Item moved; caps recalculated. |
 
+**Implemented in Phase 7 step D:**
+- **Layout:** month grid (Monday first), with an "All channels" toggle.
+- **Moving an item:** drag it to a day, or set its date (keyboard accessible).
+- **Item links:** each item links to its project's Script Studio or to the channel's ideas.
+- **Deferred:** caps per day and the side list of unscheduled ideas.
+
 ## 11. Script Studio
 
 | Item | Specification |
@@ -285,6 +308,18 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 | **Loading state** | Editor skeleton. |
 | **Error state** | Contradicted claims block approval → list with links; version conflict → merge dialog. |
 | **Success state** | Version saved toast; value-add score shown. |
+
+**Implemented in Phase 7 step D:**
+- **Header:** state stepper; live gate checks (`ProjectOut.checks`); command buttons from `allowed_commands`.
+- **Research:** the research brief with open questions; claims for the brief and the shown version, with verdict badges and source links. Contradicted and unsupported claims can be accepted with a reason.
+- **Script:**
+  - a hook timer (10–15 s long form, ≤ 3 s Shorts) and a timeline with re-hook markers;
+  - the craft findings;
+  - a section editor that saves a new version, with a fact-check status badge;
+  - a diff against an earlier version;
+  - **New draft**, with the owner's instruction.
+- **Value-add** form with its score.
+- **Menu:** the link opens `/projects`, the list of the selected channel's projects.
 
 ## 12. Storyboard Studio
 
@@ -710,6 +745,12 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 | **Error state** | Per-tab problem card with Retry. |
 | **Success state** | "Variation idea created" toast with link to the Idea Generator. Safety note: "Estimates with sources — not a promise of views or earnings." |
 | **Compliance** | Own channels only (ADR-0015, ADR-0025): no other channel's videos are ranked or compared. Variations must pass the originality guard (similarity ≤ threshold, owner value-add) and the auditors. |
+
+
+**Phase 7 step D:**
+- **Replicate** uses the real API: the channel's own published videos (test uploads excluded) and the variations made from them. A Replicate request is queued; variations too close to the source are dropped by the worker.
+- **New Ideas** lists the channel's suggested ideas, with Generate.
+- **Outliers** stays sample data until Phase 13 (own analytics) and says so on the page.
 
 ## 33. Test plan for the frontend (Phase 2 onward)
 - **Phase 2 (shell):** all 31 routes render with mocked data in all four states. A Playwright test visits each route × state via MSW (Mock Service Worker) scenarios.
