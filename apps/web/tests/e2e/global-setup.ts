@@ -68,6 +68,28 @@ async function seed(ctx: APIRequestContext): Promise<void> {
     });
     if (started.status() !== 202) throw new Error(`seed: discovery report, got ${String(started.status())}`);
   }
+  // One owner idea, scheduled for today, so the Idea Generator and the Content Calendar have real data.
+  const ideas = (await (await ctx.get(`/api/v1/channels/${channel.id}/ideas`)).json()) as {
+    items: unknown[];
+  };
+  if (ideas.items.length === 0) {
+    const made = await ctx.post(`/api/v1/channels/${channel.id}/ideas`, {
+      headers: headers(),
+      data: {
+        title: "Why octopuses dream",
+        angle: "What sleeping octopuses show, explained plainly.",
+        format: "LONG",
+      },
+    });
+    if (made.status() !== 201) throw new Error(`seed: idea, got ${String(made.status())}`);
+    const idea = (await made.json()) as { id: string };
+    await ctx.post(`/api/v1/ideas/${idea.id}/commands/shortlist`, { headers: headers(), data: {} });
+    const today = new Date().toISOString().slice(0, 10);
+    await ctx.post(`/api/v1/ideas/${idea.id}/commands/schedule`, {
+      headers: headers(),
+      data: { date: today },
+    });
+  }
   mkdirSync(dirname(SEED_FILE), { recursive: true });
   writeFileSync(SEED_FILE, JSON.stringify({ channelId: channel.id }));
 }

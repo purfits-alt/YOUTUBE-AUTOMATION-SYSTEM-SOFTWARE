@@ -17,6 +17,10 @@ import { LookupPage } from "../pages/research/LookupPage";
 import { BlueprintsIndexPage, NichesIndexPage } from "../pages/research/IndexPages";
 import { NichePage } from "../pages/research/NichePage";
 import { TrendsPage } from "../pages/research/TrendsPage";
+import { CalendarPage } from "../pages/content/CalendarPage";
+import { IdeasPage } from "../pages/content/IdeasPage";
+import { ProjectsIndexPage } from "../pages/content/ProjectsIndexPage";
+import { ScriptStudioPage } from "../pages/content/ScriptStudioPage";
 import { AuthGate } from "./AuthGate";
 import { Layout } from "./Layout";
 
@@ -36,6 +40,9 @@ const REAL_PAGES: Record<string, () => React.JSX.Element> = {
   security: () => <SecurityPage />,
   trending: () => <ChannelTrendingPage />,
   settings: () => <SettingsPage />,
+  ideas: () => <IdeasPage />,
+  calendar: () => <CalendarPage />,
+  script: () => <ScriptStudioPage />,
 };
 
 export const routes: RouteObject[] = [
@@ -53,6 +60,7 @@ export const routes: RouteObject[] = [
       ),
       { path: "/strategies", element: <BlueprintsIndexPage /> },
       { path: "/research/niches", element: <NichesIndexPage /> },
+      { path: "/projects", element: <ProjectsIndexPage /> },
       { path: "*", element: <NotFound /> },
     ],
   },

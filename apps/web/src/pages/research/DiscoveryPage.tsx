@@ -16,9 +16,11 @@ import {
   type ReportOut,
   type SourceOut,
 } from "../../lib/api/client";
+import { Tabs } from "../../components/Tabs";
 import { inputCls, problemText } from "../channels/common";
 import { asProblem, LoadingSkeleton, PageTitle, SafetyNote } from "../PageView";
 import { getPage } from "../registry";
+import { BuildPanel } from "./BuildPanel";
 import {
   CandidateStatus,
   LANGUAGES,
@@ -503,8 +505,12 @@ function Sources() {
   );
 }
 
+type DiscoveryTab = "run" | "build";
+const DISCOVERY_TABS: readonly DiscoveryTab[] = ["run", "build"];
+
 export function DiscoveryPage() {
   const page = getPage("discovery");
+  const [tab, setTab] = useState<DiscoveryTab>("run");
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string | undefined>();
   const qc = useQueryClient();
@@ -526,47 +532,61 @@ export function DiscoveryPage() {
         </Button>
       </PageTitle>
       <SafetyNote />
-      {reports.isPending && <LoadingSkeleton />}
-      {reports.isError && (
-        <ProblemDisplay problem={asProblem(reports.error)} onRetry={() => void reports.refetch()} />
-      )}
-      {reports.data && list.length === 0 && (
-        <StateCard
-          message={t("pages.discovery.empty")}
-          actionLabel={t("pages.discovery.emptyAction")}
-          onAction={() => setOpen(true)}
-        />
-      )}
-      {list.length > 0 && (
-        <div data-testid="state-success" className="grid gap-4 lg:grid-cols-[16rem_1fr]">
-          <Card title={t("researchPage.reports")}>
-            <ul className="space-y-1" data-testid="reports">
-              {list.map((r) => (
-                <li key={r.id}>
-                  <button
-                    type="button"
-                    aria-pressed={r.id === current}
-                    onClick={() => setSelected(r.id)}
-                    className={`w-full rounded-lg px-2 py-1.5 text-left text-sm ${r.id === current ? "bg-surface-2 font-semibold" : "hover:bg-surface-2"}`}
-                  >
-                    {new Date(r.created_at).toLocaleString()}
-                    <span className="block">
-                      <Badge tone={REPORT_TONE[r.status]}>{t(`researchPage.status.${r.status}`)}</Badge>{" "}
-                      <span className="text-xs text-muted">
-                        {r.interests.length ? r.interests.join(", ") : t("researchPage.suggested")}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </Card>
-          <Card title={t("researchPage.candidates")}>
-            {current && <Candidates reportId={current} profiles={profiles.data ?? []} />}
-          </Card>
-        </div>
-      )}
-      <Sources />
+      <Tabs
+        tabs={DISCOVERY_TABS}
+        value={tab}
+        onChange={setTab}
+        label={t("buildTab.tabs")}
+        labelOf={(name) => t(`buildTab.tab.${name}`)}
+        testId="discovery-tabs"
+      >
+        {tab === "build" && <BuildPanel />}
+        {tab === "run" && (
+          <>
+            {reports.isPending && <LoadingSkeleton />}
+            {reports.isError && (
+              <ProblemDisplay problem={asProblem(reports.error)} onRetry={() => void reports.refetch()} />
+            )}
+            {reports.data && list.length === 0 && (
+              <StateCard
+                message={t("pages.discovery.empty")}
+                actionLabel={t("pages.discovery.emptyAction")}
+                onAction={() => setOpen(true)}
+              />
+            )}
+            {list.length > 0 && (
+              <div data-testid="state-success" className="grid gap-4 lg:grid-cols-[16rem_1fr]">
+                <Card title={t("researchPage.reports")}>
+                  <ul className="space-y-1" data-testid="reports">
+                    {list.map((r) => (
+                      <li key={r.id}>
+                        <button
+                          type="button"
+                          aria-pressed={r.id === current}
+                          onClick={() => setSelected(r.id)}
+                          className={`w-full rounded-lg px-2 py-1.5 text-left text-sm ${r.id === current ? "bg-surface-2 font-semibold" : "hover:bg-surface-2"}`}
+                        >
+                          {new Date(r.created_at).toLocaleString()}
+                          <span className="block">
+                            <Badge tone={REPORT_TONE[r.status]}>{t(`researchPage.status.${r.status}`)}</Badge>{" "}
+                            <span className="text-xs text-muted">
+                              {r.interests.length ? r.interests.join(", ") : t("researchPage.suggested")}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+                <Card title={t("researchPage.candidates")}>
+                  {current && <Candidates reportId={current} profiles={profiles.data ?? []} />}
+                </Card>
+              </div>
+            )}
+            <Sources />
+          </>
+        )}
+      </Tabs>
       <RunDialog
         open={open}
         onClose={() => setOpen(false)}

@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from tests.integration.conftest import Env, login
@@ -215,3 +215,62 @@ def test_keywords(api: tuple[TestClient, dict[str, str]], db: Session, env: Env)
     ] == "Added by the owner"
     assert client.delete(f"{url}/{listed[0]['id']}", headers=h).status_code == 204
     assert client.get(url).json() == []
+
+
+def test_build_tab_and_attach_blueprint_to_an_existing_channel(
+    api: tuple[TestClient, dict[str, str]], db: Session, env: Env
+) -> None:
+    """Owner request 2026-11-16: build a niche without discovery; an external channel takes a blueprint."""
+    from tubeforge_agents.discovery import channel_pillars
+
+    client, h = api
+    external = Channel(id=uuid7(), name="My Old Channel", state="ACTIVE", content_language="en")
+    db.add(external)
+    db.flush()
+    db.add(ChannelStrategy(id=uuid7(), channel_id=external.id, version=1, status="APPROVED",
+                           blueprint={"pillars": [{"name": "Old pillar"}]}))  # fmt: skip
+    db.commit()
+    bad = client.post("/api/v1/niches/build", json={"name": "Guaranteed income"}, headers=_idem(h))
+    assert (bad.status_code, bad.json()["code"]) == (422, "FORBIDDEN_PHRASE")
+    r = client.post(
+        "/api/v1/niches/build",
+        json={"name": "Open source AI tools", "summary": "Hands-on tests of free AI tools.", "language": "en",
+              "channel_name": "Open Node AI", "channel_id": str(external.id)},
+        headers=_idem(h),
+    )  # fmt: skip
+    assert r.status_code == 202, r.text
+    cand = r.json()["candidate"]
+    assert (cand["status"], cand["added_by_owner"], cand["owner_channel_name"]) == (
+        "SHORTLISTED",
+        True,
+        "Open Node AI",
+    )
+    assert cand["target_channel_id"] == str(external.id) and cand["opportunity_score"] == "0.00"
+    (args,) = env.sql("SELECT args FROM procrastinate_jobs WHERE task_name LIKE '%research.blueprint'")[0]
+    assert "Open Node AI" in args["owner_notes"]  # type: ignore[index]
+    assert client.get(f"/api/v1/niches/candidates/{cand['id']}").json()["added_by_owner"] is True
+
+    blueprint = bp.compose(
+        {"candidate_id": cand["id"], "name": cand["name"], "language": "en"},
+        {**fx.strategy(), "ideas": fx.ideas()[:50]},
+        fx.branding(),
+    )
+    row = ChannelStrategy(id=uuid7(), niche_candidate_id=uuid.UUID(cand["id"]), version=1, status="PROPOSED",
+                          blueprint=blueprint)  # fmt: skip
+    db.add(row)
+    db.commit()
+    url = f"/api/v1/strategies/{row.id}/commands/approve"
+    both = client.post(url, json={"channel_name": "X", "channel_id": str(external.id)}, headers=h)
+    assert both.status_code == 400
+    ok = client.post(url, json={"channel_id": str(external.id)}, headers=h)
+    assert ok.status_code == 200 and ok.json()["channel_id"] == str(external.id)
+    db.expire_all()
+    assert db.get_one(Channel, external.id).name == "My Old Channel"  # an existing channel keeps its name
+    assert [c["name"] for c in client.get("/api/v1/channels").json()["items"]] == ["My Old Channel"]
+    assert channel_pillars(db, external.id) == [p["name"] for p in blueprint["pillars"]][:7]
+    statuses = {
+        s.status for s in db.scalars(select(ChannelStrategy).where(ChannelStrategy.channel_id == external.id))
+    }
+    assert statuses == {"APPROVED", "SUPERSEDED"}
+    actions = {a for (a,) in env.sql("SELECT action FROM audit_log")}
+    assert {"niche.built_by_owner", "channel.blueprint_attached"} <= actions

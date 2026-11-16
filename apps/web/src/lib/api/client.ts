@@ -152,3 +152,17 @@ export function getPageData(apiPath: string, id: string | undefined, fallbackId:
   const path = apiPath as "/projects/{id}/script";
   return call(() => stubApi.GET(path, { params: { path: { id: id ?? fallbackId } } }));
 }
+
+// Phase 7 content types
+export type IdeaOut = Schemas["IdeaOut"];
+export type IdeaIn = Schemas["IdeaIn"];
+export type CalendarItemOut = Schemas["CalendarItemOut"];
+export type ReplicateOut = Schemas["ReplicateOut"];
+export type ProjectOut = Schemas["ProjectOut"];
+export type GuardOut = Schemas["GuardOut"];
+export type BriefOut = Schemas["BriefOut"];
+export type ClaimOut = Schemas["ClaimOut"];
+export type VersionOut = Schemas["VersionOut"];
+export type VersionSummaryOut = Schemas["VersionSummaryOut"];
+export type ValueAddOut = Schemas["ValueAddOut"];
+export type ValueAddIn = Schemas["ValueAddIn"];

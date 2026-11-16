@@ -23,7 +23,7 @@ Each phase lists its steps and **your part** for that module.
 
 | | |
 |---|---|
-| **Current module** | **Phase 7 step D** (pages: Idea Generator, Content Calendar, Script Studio, Channel Trending tabs; browser tests; phase report; my part, then your demo and blind review) |
+| **Current module** | **Phase 7: your part** (demo and blind review of 10 scripts). My part of Phase 7 is done. |
 | Your channel | **Open Node AI**, handle **@OpenNodeAIHQ**, https://www.youtube.com/@OpenNodeAIHQ (created 2026-11-15; name, description and handle set from the setup kit) |
 | Created in TubeForge | yes, from the approved blueprint, as a test channel (private uploads only) |
 | Connected | ✅ 2026-11-15: Google sign-in done; private test upload visible (private) in YouTube Studio |
@@ -110,14 +110,16 @@ Each phase lists its steps and **your part** for that module.
 | **Added:** agent job descriptions (`agents/`), product site and demo on `tubeforge.semrs.com` | ✅ |
 | Your part: none (Wikimedia terms: see G2) | — |
 
-## Phase 7 — Ideas, research, fact-check & scripts 🟡
+## Phase 7 — Ideas, research, fact-check & scripts 🟡 (waiting for your demo)
 | Step | Status |
 |---|---|
 | A — Content core: similarity (ADR-0029), script craft checks, value-add score, script versions | ✅ |
 | B — Agents A08 ideas, A09 research, A10 fact-check, A11 scripts; pipelines; golden, injection and craft tests | ✅ |
 | C — API: ideas, calendar, projects, research, claims, script versions and diff, replicate | ✅ |
-| D — Pages: Idea Generator, Content Calendar, Script Studio, Channel Trending tabs; browser tests; phase report | 🟡 |
-| Your part (at the Phase 7 demo): rate 10 scripts for "sounds human" (≥ 4/5) | ⬜ |
+| D — Pages: Idea Generator, Content Calendar, Script Studio, Channel Trending tabs; browser tests; phase report | ✅ |
+| Owner request (2026-11-16): **Build** tab beside Run discovery (your own channel name or TubeForge's names, or a channel you already have) | ✅ |
+| Owner request (2026-11-16): channels onboarded outside discovery go through the same ideas, calendar, Script Studio and Trending pages (blueprint can be attached to them) | ✅ |
+| Your part, now: run the Phase 7 demo (`PROJECT_PROGRESS.md`, Phase 7 report, item 11) and rate 10 scripts for "sounds human" (≥ 4/5), then reply "approved" | ⬜ |
 
 ## Phase 8 — Storyboards, visuals, voice & stock ⬜
 | Step | Status |

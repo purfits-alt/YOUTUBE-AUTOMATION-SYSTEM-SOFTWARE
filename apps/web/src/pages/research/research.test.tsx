@@ -46,6 +46,29 @@ describe("Channel Discovery (real API)", () => {
     );
   });
 
+  it("builds a niche without discovery: own channel name, TubeForge's names or an existing channel", async () => {
+    renderAt("/discovery");
+    fireEvent.click(await screen.findByRole("tab", { name: "Build" }));
+    const form = await screen.findByTestId("build-form");
+    const submit = screen.getByRole("button", { name: "Build blueprint" });
+    expect(submit).toBeDisabled();
+    fireEvent.change(within(form).getByLabelText("Niche"), { target: { value: "Open source AI tools" } });
+    fireEvent.click(within(form).getByLabelText("I have a name"));
+    expect(submit).toBeDisabled();
+    fireEvent.change(within(form).getByLabelText("Channel name"), { target: { value: "Open Node AI" } });
+    fireEvent.click(submit);
+    expect(await screen.findByTestId("build-done")).toHaveTextContent("“Open source AI tools” added");
+    expect(research.built).toEqual({
+      name: "Open source AI tools",
+      channel_name: "Open Node AI",
+      channel_id: null,
+    });
+    fireEvent.click(within(form).getByLabelText("A channel I already have"));
+    expect(within(form).getByLabelText("Choose the channel")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Run discovery" }));
+    expect(await screen.findByTestId("candidates-table")).toBeInTheDocument();
+  });
+
   it("shows the evidence behind each criterion on the niche page", async () => {
     renderAt("/research/niches/c-1");
     const table = await screen.findByTestId("criteria-table");
@@ -106,13 +129,13 @@ describe("Competitor Research (real API)", () => {
 });
 
 describe("Trend Intelligence (real API)", () => {
-  it("lists trends, keeps 'turn into idea' for Phase 7 and dismisses", async () => {
+  it("lists trends, turns one into an idea and dismisses", async () => {
     renderAt("/trends");
     const card = await screen.findByTestId("trend-t-1");
     expect(card).toHaveTextContent("Signal 2.4");
-    expect(within(card).getByRole("button", { name: "Turn into idea" })).toBeDisabled();
-    fireEvent.click(within(card).getByRole("button", { name: "Dismiss" }));
-    expect(await screen.findByTestId("state-empty")).toBeInTheDocument();
+    fireEvent.click(within(card).getByRole("button", { name: "Turn into idea" }));
+    expect(await screen.findByText(/Idea created in the Idea Generator/)).toBeInTheDocument();
+    expect(research.trends[0]?.status).toBe("USED");
   });
 });
 

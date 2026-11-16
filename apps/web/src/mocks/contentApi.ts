@@ -1,0 +1,473 @@
+/**
+ * Unit tests and the public demo only: imitates the Phase 7 content endpoints (ideas, calendar,
+ * Replicate, projects, research, claims, script versions). The app itself talks to the real
+ * FastAPI backend; the Python integration tests cover the real behaviour.
+ */
+import { http, HttpResponse, type HttpHandler } from "msw";
+import type {
+  BriefOut,
+  ClaimOut,
+  IdeaOut,
+  ProjectOut,
+  ReplicateOut,
+  ValueAddOut,
+  VersionOut,
+  VersionSummaryOut,
+} from "../lib/api/client";
+
+const NOW = "2026-11-16T06:00:00Z";
+const CHANNEL = "ch-1";
+const PROJECT = "p-101";
+
+function idea(overrides: Partial<IdeaOut>): IdeaOut {
+  return {
+    id: "i-1",
+    channel_id: CHANNEL,
+    state: "SUGGESTED",
+    title: "I tested 5 free AI note apps for a week",
+    angle: "Same notes, five apps, my own scores for speed and accuracy.",
+    target_viewer: "Students",
+    format: "LONG",
+    pillar: "Free AI tools",
+    trend_item_id: null,
+    originality_notes: "My own week of tests",
+    similarity_max: null,
+    similar_to_id: null,
+    similar_to_title: null,
+    duplicate: false,
+    maybe_same_idea: false,
+    calendar_date: null,
+    expires_at: null,
+    source: "AGENT",
+    based_on_youtube_video_id: null,
+    variation_kind: null,
+    similarity_to_source: null,
+    packaging_promise: {
+      title_idea: "I tested 5 free AI note apps",
+      thumbnail_text_idea: "5 APPS, 1 WINNER",
+      promise_statement: "See which free AI note app was fastest and most accurate in my own test.",
+    },
+    owner_value_add_prompt: "Which app did you keep using after the test, and why?",
+    project_id: null,
+    version: 1,
+    created_at: NOW,
+    updated_at: NOW,
+    ...overrides,
+  };
+}
+
+const longScript = {
+  promise_delivery: {
+    promise_statement: "Which free AI note app won",
+    delivered_at_s: 5,
+    text: "I tested five free AI note apps for a week.",
+  },
+  hook: {
+    text: "I gave five free AI note apps the same messy lecture notes for a week. One of them quietly rewrote half my facts. Another saved me an hour every single day.",
+    est_s: 12,
+    technique: ["COLD_OPEN_STORY", "STAKES"],
+  },
+  sections: [
+    {
+      heading: "The test",
+      text: "Same notes, same week, five apps. [[OWNER: why you started the test]]",
+      fact_refs: ["c1"],
+      beat: "SETUP",
+    },
+    {
+      heading: "The surprise",
+      text: "The fastest app was not the most accurate one.",
+      fact_refs: [],
+      beat: "REVEAL",
+    },
+    { heading: "What I kept", text: "[[OWNER: the app you kept and why]]", fact_refs: [], beat: "PAYOFF" },
+  ],
+  re_hooks: [
+    { at_pct: 25, technique: "PROGRESS_MARKER", text: "That's app one. App two looks better than it is." },
+    { at_pct: 50, technique: "TWIST", text: "And here's where it got weird." },
+    { at_pct: 75, technique: "OPEN_LOOP", text: "Before the winner, look at this number." },
+  ],
+  open_loops: [{ id: "L1", opened_in_section: 0, closed_in_section: 2, text: "Which app won" }],
+  payoff: "The winner, and the one setting that made it accurate.",
+  cta: "If you try it this week, tell me which app you kept.",
+  owner_slots: [
+    { section_index: 0, prompt: "Why you started" },
+    { section_index: 2, prompt: "The app you kept" },
+  ],
+  est_duration_s: 470,
+  word_count: 1175,
+};
+
+interface ContentState {
+  ideas: IdeaOut[];
+  project: ProjectOut;
+  versions: VersionOut[];
+  briefs: BriefOut[];
+  claims: ClaimOut[];
+  valueAdd: ValueAddOut;
+  replicate: ReplicateOut;
+  generated: number;
+  replicated: { youtube_video_id: string; kind: string }[];
+}
+
+function initial(): ContentState {
+  const project: ProjectOut = {
+    id: PROJECT,
+    channel_id: CHANNEL,
+    idea_id: "i-3",
+    parent_project_id: null,
+    format: "LONG",
+    state: "SCRIPT_REVIEW",
+    resume_to_state: null,
+    working_title: "Why octopuses dream",
+    packaging_promise: {
+      title_idea: "Why octopuses dream",
+      thumbnail_text_idea: "THEY DREAM?",
+      promise_statement: "What scientists saw when sleeping octopuses changed colour, and what it may mean.",
+    },
+    target_duration_s: 480,
+    render_profile: { profile: "LONG_1080" },
+    locked_script_version_id: null,
+    originality_score: null,
+    is_test: false,
+    version: 1,
+    created_at: NOW,
+    updated_at: NOW,
+    allowed_commands: ["approve-script", "request-script-changes", "pause", "cancel"],
+    checks: [
+      { code: "no_contradicted_claims", ok: true, message: null },
+      { code: "owner_value_add", ok: false, message: "Add your own value: 0 of 1 owner fields filled." },
+      { code: "duration_fits_format", ok: true, message: null },
+    ],
+  };
+  const version: VersionOut = {
+    id: "sv-1",
+    version: 1,
+    author_type: "AGENT",
+    author_id: "A11_SCRIPTWRITING",
+    word_count: 1175,
+    est_duration_s: 470,
+    content_sha256: "a".repeat(64),
+    locked: false,
+    fact_check: "DONE",
+    created_at: NOW,
+    body: longScript,
+    plain_text: "I gave five free AI note apps the same messy lecture notes for a week…",
+    findings: [],
+    hook_s: 12.4,
+  };
+  return {
+    ideas: [
+      idea({}),
+      idea({
+        id: "i-2",
+        title: "How I budget as a student in 2026",
+        state: "SHORTLISTED",
+        source: "OWNER",
+        duplicate: true,
+        similarity_max: "0.91",
+        similar_to_id: "i-9",
+        similar_to_title: "My student budget for 2026, explained",
+      }),
+      idea({
+        id: "i-3",
+        title: "Why octopuses dream",
+        state: "IN_PRODUCTION",
+        calendar_date: "2026-11-20",
+        project_id: PROJECT,
+        format: "LONG",
+      }),
+    ],
+    project,
+    versions: [version],
+    briefs: [
+      {
+        id: "b-1",
+        version: 1,
+        status: "APPROVED",
+        created_at: NOW,
+        content: {
+          summary:
+            "Researchers filmed sleeping octopuses changing colour in patterns similar to awake hunting.",
+          open_questions: ["No source says whether this is dreaming in the human sense."],
+          claims: [
+            { id: "c1", text: "Sleeping octopuses show active colour changes.", verdict: "SUPPORTED" },
+          ],
+        },
+      },
+    ],
+    claims: [
+      {
+        id: "cl-1",
+        subject_type: "RESEARCH_BRIEF",
+        subject_id: "b-1",
+        claim_text: "c1: Sleeping octopuses show active colour changes.",
+        verdict: "SUPPORTED",
+        explanation: "The source describes it.",
+        sources: [
+          { id: "d-1", url: "https://en.wikipedia.org/wiki/Octopus", title: "Octopus — Wikipedia (en)" },
+        ],
+        owner_override_reason: null,
+        overridden_at: null,
+      },
+      {
+        id: "cl-2",
+        subject_type: "SCRIPT_VERSION",
+        subject_id: "sv-1",
+        claim_text: "All octopuses dream every night.",
+        verdict: "CONTRADICTED",
+        explanation: "The source only reports one species in a lab.",
+        sources: [
+          { id: "d-1", url: "https://en.wikipedia.org/wiki/Octopus", title: "Octopus — Wikipedia (en)" },
+        ],
+        owner_override_reason: null,
+        overridden_at: null,
+      },
+    ],
+    valueAdd: {
+      own_opinion: null,
+      own_experience: null,
+      own_data: null,
+      own_examples: null,
+      owner_voice: "NONE",
+      owner_footage: false,
+      owner_photos: false,
+      score: "0.00",
+      filled_fields: [],
+      min_chars: 30,
+      updated_at: null,
+    },
+    replicate: {
+      winners: [
+        {
+          youtube_video_id: "abcDEF12345",
+          title: "My 30-day student budget",
+          project_id: "p-9",
+          published_at: null,
+          views: null,
+          multiple: null,
+        },
+      ],
+      variations: [
+        idea({
+          id: "i-4",
+          title: "My student budget, one year later",
+          source: "REPLICATE",
+          variation_kind: "UPDATE",
+          similarity_to_source: "0.48",
+        }),
+      ],
+    },
+    generated: 0,
+    replicated: [],
+  };
+}
+
+/** The list form of a script version (no body, text or findings). */
+export function versionSummary(v: VersionOut): VersionSummaryOut {
+  return {
+    id: v.id,
+    version: v.version,
+    author_type: v.author_type,
+    author_id: v.author_id,
+    word_count: v.word_count,
+    est_duration_s: v.est_duration_s,
+    content_sha256: v.content_sha256,
+    locked: v.locked,
+    fact_check: v.fact_check,
+    created_at: v.created_at,
+  };
+}
+
+export let content = initial();
+
+export function resetContentApi(): void {
+  content = initial();
+}
+
+const problem = (status: number, code: string, detail: string) =>
+  HttpResponse.json(
+    { title: code, status, code, detail },
+    { status, headers: { "Content-Type": "application/problem+json" } },
+  );
+
+export const contentHandlers: HttpHandler[] = [
+  http.get("/api/v1/channels/:id/ideas", ({ request }) => {
+    const state = new URL(request.url).searchParams.get("state");
+    return HttpResponse.json({
+      items: content.ideas.filter((i) => !state || i.state === state),
+      next_cursor: null,
+    });
+  }),
+  http.post("/api/v1/channels/:id/ideas/generate", () => {
+    content.generated += 1;
+    return HttpResponse.json({ job_id: 21, status: "QUEUED" }, { status: 202 });
+  }),
+  http.post("/api/v1/channels/:id/ideas/replicate", async ({ request }) => {
+    const body = (await request.json()) as { youtube_video_id: string; kind: string };
+    if (!content.replicate.winners.some((w) => w.youtube_video_id === body.youtube_video_id))
+      return problem(404, "NOT_FOUND", "That video is not one of this channel's own videos.");
+    content.replicated.push(body);
+    return HttpResponse.json({ job_id: 22, status: "QUEUED" }, { status: 202 });
+  }),
+  http.post("/api/v1/channels/:id/ideas", async ({ request }) => {
+    const body = (await request.json()) as { title: string; angle: string; format: "LONG" | "SHORT" };
+    if (/guarantee/i.test(body.title + body.angle))
+      return problem(
+        422,
+        "FORBIDDEN_PHRASE",
+        "“guaranteed” makes a promise TubeForge cannot keep. Please reword it.",
+      );
+    const created = idea({
+      id: `i-${String(content.ideas.length + 10)}`,
+      ...body,
+      source: "OWNER",
+      packaging_promise: null,
+    });
+    content.ideas = [created, ...content.ideas];
+    return HttpResponse.json(created, { status: 201 });
+  }),
+  http.get("/api/v1/channels/:id/replicate", () => HttpResponse.json(content.replicate)),
+  http.post("/api/v1/ideas/:id/commands/:cmd", async ({ params, request }) => {
+    const body = (await request.json().catch(() => ({}))) as {
+      date?: string | null;
+      override_reason?: string | null;
+    };
+    const found = content.ideas.find((i) => i.id === params.id);
+    if (!found) return problem(404, "NOT_FOUND", "No such idea.");
+    if (
+      params.cmd === "approve" &&
+      found.duplicate &&
+      !(body.override_reason && body.override_reason.length >= 20)
+    )
+      return problem(
+        409,
+        "GUARD_FAILED",
+        "Too similar to an existing idea (0.91 ≥ 0.85); give a reason to override.",
+      );
+    const next: Record<string, IdeaOut["state"]> = {
+      shortlist: "SHORTLISTED",
+      schedule: "SCHEDULED",
+      approve: "IN_PRODUCTION",
+      discard: "DISCARDED",
+    };
+    const updated: IdeaOut = {
+      ...found,
+      state: next[String(params.cmd)] ?? found.state,
+      calendar_date: params.cmd === "schedule" ? (body.date ?? null) : found.calendar_date,
+      project_id: params.cmd === "approve" ? PROJECT : found.project_id,
+    };
+    content.ideas = content.ideas.map((i) => (i.id === found.id ? updated : i));
+    const project_id = params.cmd === "approve" ? PROJECT : null;
+    return HttpResponse.json(
+      { idea: updated, transition_id: 1, project_id, job_ids: project_id ? [23] : [] },
+      { status: project_id ? 202 : 200 },
+    );
+  }),
+  http.get("/api/v1/calendar", () =>
+    HttpResponse.json({
+      items: content.ideas
+        .filter((i) => i.calendar_date)
+        .map((i) => ({
+          id: i.id,
+          date: i.calendar_date,
+          channel_id: i.channel_id,
+          title: i.title,
+          format: i.format,
+          state: i.state,
+          project_id: i.project_id,
+          project_state: i.project_id ? content.project.state : null,
+        })),
+    }),
+  ),
+  http.patch("/api/v1/calendar/items/:id", async ({ params, request }) => {
+    const { date } = (await request.json()) as { date: string };
+    content.ideas = content.ideas.map((i) => (i.id === params.id ? { ...i, calendar_date: date } : i));
+    const it = content.ideas.find((i) => i.id === params.id);
+    return HttpResponse.json({ ...it, date, project_state: null });
+  }),
+  http.get("/api/v1/projects", () => HttpResponse.json({ items: [content.project], next_cursor: null })),
+  http.get("/api/v1/projects/:id", () => HttpResponse.json(content.project)),
+  http.post("/api/v1/projects/:id/commands/:cmd", ({ params }) => {
+    if (params.cmd === "approve-script" && content.project.checks?.some((c) => !c.ok))
+      return problem(409, "GUARD_FAILED", "Add your own value: 0 of 1 owner fields filled.");
+    if (params.cmd === "approve-script") {
+      content.project = {
+        ...content.project,
+        state: "STORYBOARDING",
+        allowed_commands: ["pause", "cancel"],
+        checks: [],
+      };
+      content.versions = content.versions.map((v, i) => (i === 0 ? { ...v, locked: true } : v));
+    }
+    return HttpResponse.json({ project: content.project, transition_id: 2, job_ids: [] });
+  }),
+  http.get("/api/v1/projects/:id/research", () => HttpResponse.json(content.briefs)),
+  http.get("/api/v1/projects/:id/claims", () => HttpResponse.json(content.claims)),
+  http.post("/api/v1/claims/:id/override", async ({ params, request }) => {
+    const { reason } = (await request.json()) as { reason: string };
+    content.claims = content.claims.map((c) =>
+      c.id === params.id ? { ...c, owner_override_reason: reason, overridden_at: NOW } : c,
+    );
+    return HttpResponse.json(content.claims.find((c) => c.id === params.id));
+  }),
+  http.get("/api/v1/projects/:id/value-add", () => HttpResponse.json(content.valueAdd)),
+  http.put("/api/v1/projects/:id/value-add", async ({ request }) => {
+    const body = (await request.json()) as Partial<ValueAddOut>;
+    const filled = (["own_experience", "own_opinion", "own_data", "own_examples"] as const).filter(
+      (k) => (body[k] ?? "").length >= 30,
+    );
+    content.valueAdd = {
+      ...content.valueAdd,
+      ...body,
+      filled_fields: filled,
+      score: filled.length ? "25.00" : "0.00",
+    };
+    content.project = {
+      ...content.project,
+      checks: (content.project.checks ?? []).map((c) =>
+        c.code === "owner_value_add"
+          ? { ...c, ok: filled.length > 0, message: filled.length ? null : c.message }
+          : c,
+      ),
+    };
+    return HttpResponse.json(content.valueAdd);
+  }),
+  http.get("/api/v1/projects/:id/script/versions", () =>
+    HttpResponse.json([...content.versions].sort((a, b) => b.version - a.version).map(versionSummary)),
+  ),
+  http.get("/api/v1/projects/:id/script/versions/:n", ({ params }) =>
+    HttpResponse.json(content.versions.find((v) => v.version === Number(params.n))),
+  ),
+  http.post("/api/v1/projects/:id/script/versions", async ({ request }) => {
+    const { body, based_on_version } = (await request.json()) as {
+      body: Record<string, unknown>;
+      based_on_version: number;
+    };
+    const latest = Math.max(...content.versions.map((v) => v.version));
+    if (based_on_version !== latest)
+      return problem(412, "VERSION_CONFLICT", `Version ${String(latest)} is the latest.`);
+    const created: VersionOut = {
+      ...(content.versions[0] as VersionOut),
+      id: `sv-${String(latest + 1)}`,
+      version: latest + 1,
+      author_type: "OWNER",
+      author_id: "owner",
+      fact_check: "PENDING",
+      body,
+    };
+    content.versions = [...content.versions, created];
+    return HttpResponse.json(created, { status: 201 });
+  }),
+  http.get("/api/v1/projects/:id/script/diff", ({ request }) => {
+    const q = new URL(request.url).searchParams;
+    return HttpResponse.json({
+      a: Number(q.get("a")),
+      b: Number(q.get("b")),
+      lines: ["--- v1", "+++ v2", "+A new line"],
+    });
+  }),
+  http.post("/api/v1/projects/:id/script/regenerate", () =>
+    HttpResponse.json({ job_id: 24, transition_id: 3, status: "QUEUED" }, { status: 202 }),
+  ),
+];

@@ -48,53 +48,130 @@ const STATUS_TONE: Record<StrategyOut["status"], Tone> = {
   REJECTED: "neutral",
 };
 
+export type ApproveChoice =
+  { channel_name: string; is_test_channel: boolean } | { channel_id: string; is_test_channel: boolean };
+
 function ApproveDialog({
   open,
   names,
+  ownerName,
+  targetChannel,
+  channels,
   onClose,
   onApprove,
 }: {
   open: boolean;
   names: string[];
+  ownerName: string | null;
+  targetChannel: string | null;
+  channels: { id: string; name: string }[];
   onClose: () => void;
-  onApprove: (name: string, test: boolean) => void;
+  onApprove: (choice: ApproveChoice) => void;
 }) {
-  const [name, setName] = useState(names[0] ?? "");
+  const [mode, setMode] = useState<"new" | "existing">(targetChannel ? "existing" : "new");
+  const [name, setName] = useState(ownerName ?? names[0] ?? "");
+  const [channelId, setChannelId] = useState(targetChannel ?? "");
   const [test, setTest] = useState(true);
+  useEffect(() => {
+    setMode(targetChannel ? "existing" : "new");
+    setChannelId(targetChannel ?? "");
+    setName(ownerName ?? names[0] ?? "");
+  }, [ownerName, targetChannel, names]);
+  const ready = mode === "new" ? name.trim().length > 0 : channelId.length > 0;
   return (
     <Dialog open={open} title={t("brandingPage.approveTitle")} onClose={onClose} testId="approve-dialog">
       <div className="space-y-3">
-        <p className="text-sm">{t("brandingPage.approveHint")}</p>
-        <div>
-          <label htmlFor="channel-name" className="block text-sm font-medium">
-            {t("brandingPage.channelName")}
-          </label>
-          <input
-            id="channel-name"
-            list="name-ideas"
-            className={inputCls}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <datalist id="name-ideas">
-            {names.map((n) => (
-              <option key={n} value={n} />
-            ))}
-          </datalist>
-        </div>
-        <label className="flex items-start gap-2 text-sm">
-          <input
-            type="checkbox"
-            className="mt-1"
-            checked={test}
-            onChange={(e) => setTest(e.target.checked)}
-          />
-          {t("brandingPage.testChannel")}
-        </label>
+        <fieldset>
+          <legend className="text-sm font-medium">{t("buildTab.channel")}</legend>
+          <div className="mt-1 flex flex-wrap gap-4 text-sm">
+            <label className="flex items-center gap-1">
+              <input
+                type="radio"
+                name="approve-mode"
+                checked={mode === "new"}
+                onChange={() => setMode("new")}
+              />
+              {t("buildTab.newChannel")}
+            </label>
+            <label className="flex items-center gap-1">
+              <input
+                type="radio"
+                name="approve-mode"
+                checked={mode === "existing"}
+                onChange={() => setMode("existing")}
+              />
+              {t("buildTab.existingChannel")}
+            </label>
+          </div>
+        </fieldset>
+        {mode === "new" ? (
+          <>
+            <p className="text-sm">{t("brandingPage.approveHint")}</p>
+            <div>
+              <label htmlFor="channel-name" className="block text-sm font-medium">
+                {t("brandingPage.channelName")}
+              </label>
+              <input
+                id="channel-name"
+                list="name-ideas"
+                className={inputCls}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <datalist id="name-ideas">
+                {[...(ownerName ? [ownerName] : []), ...names].map((n) => (
+                  <option key={n} value={n} />
+                ))}
+              </datalist>
+              {ownerName && (
+                <p className="mt-1 text-xs text-muted">{t("brandingPage.ownerName", { name: ownerName })}</p>
+              )}
+            </div>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={test}
+                onChange={(e) => setTest(e.target.checked)}
+              />
+              {t("brandingPage.testChannel")}
+            </label>
+          </>
+        ) : (
+          <div>
+            <p className="mb-2 text-sm">{t("brandingPage.attachHint")}</p>
+            <label htmlFor="approve-channel" className="block text-sm font-medium">
+              {t("buildTab.pickChannel")}
+            </label>
+            <select
+              id="approve-channel"
+              className={inputCls}
+              value={channelId}
+              onChange={(e) => setChannelId(e.target.value)}
+            >
+              <option value="">{t("buildTab.choose")}</option>
+              {channels.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="flex justify-end gap-2">
           <Button onClick={onClose}>{t("actions.cancel")}</Button>
-          <Button variant="primary" disabled={name.trim().length === 0} onClick={() => onApprove(name, test)}>
-            {t("brandingPage.approveCreate")}
+          <Button
+            variant="primary"
+            disabled={!ready}
+            onClick={() =>
+              onApprove(
+                mode === "new"
+                  ? { channel_name: name.trim(), is_test_channel: test }
+                  : { channel_id: channelId, is_test_channel: true },
+              )
+            }
+          >
+            {mode === "new" ? t("brandingPage.approveCreate") : t("brandingPage.approveAttach")}
           </Button>
         </div>
       </div>
@@ -149,18 +226,41 @@ export function BrandingPage() {
       toast(problemText(e), "danger");
     }
   };
-  const approve = async (name: string, test: boolean) => {
+  const candidateId = s?.niche_candidate_id ?? null;
+  const candidate = useQuery({
+    queryKey: ["candidate", candidateId],
+    enabled: candidateId !== null,
+    queryFn: () =>
+      call(() =>
+        api.GET("/api/v1/niches/candidates/{candidate_id}", {
+          params: { path: { candidate_id: candidateId ?? "" } },
+        }),
+      ),
+  });
+  const channels = useQuery({
+    queryKey: ["channels", "approve"],
+    enabled: approving,
+    queryFn: () => call(() => api.GET("/api/v1/channels", { params: { query: { limit: 200 } } })),
+  });
+  const approve = async (choice: ApproveChoice) => {
     try {
       const out = await call(() =>
         api.POST("/api/v1/strategies/{strategy_id}/commands/{cmd}", {
           params: { path: { strategy_id: id, cmd: "approve" } },
-          body: { channel_name: name, is_test_channel: test },
+          body: choice,
         }),
       );
       setApproving(false);
-      toast(t("brandingPage.approved", { name }));
+      const attached = "channel_id" in choice;
+      const name = attached
+        ? (channels.data?.items.find((c) => c.id === choice.channel_id)?.name ?? "")
+        : choice.channel_name;
+      toast(attached ? t("brandingPage.attached", { name }) : t("brandingPage.approved", { name }));
       void qc.invalidateQueries({ queryKey: ["channels"] });
-      if (out.channel_id) void navigate(`/channels/${out.channel_id}/onboarding`);
+      if (out.channel_id)
+        void navigate(
+          attached ? `/channels/${out.channel_id}/ideas` : `/channels/${out.channel_id}/onboarding`,
+        );
     } catch (e) {
       toast(problemText(e), "danger");
     }
@@ -403,8 +503,11 @@ export function BrandingPage() {
           <ApproveDialog
             open={approving}
             names={b.name_ideas.map((n) => n.name)}
+            ownerName={candidate.data?.owner_channel_name ?? null}
+            targetChannel={candidate.data?.target_channel_id ?? null}
+            channels={(channels.data?.items ?? []).map((c) => ({ id: c.id, name: c.name }))}
             onClose={() => setApproving(false)}
-            onApprove={(name, test) => void approve(name, test)}
+            onApprove={(choice) => void approve(choice)}
           />
         </div>
       )}

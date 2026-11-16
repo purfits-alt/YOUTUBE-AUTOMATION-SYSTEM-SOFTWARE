@@ -1,10 +1,32 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { OWNER_EMAIL, OWNER_PASSWORD } from "./global-setup";
-import { watchConsole } from "./helpers";
+import { seed, watchConsole } from "./helpers";
 
 // These tests change shared server state; the "stateful" project runs them last and in order.
 test.describe.configure({ mode: "serial" });
+
+test("Ideas → calendar on the real API: add an idea, shortlist and schedule it, see it on the calendar", async ({
+  page,
+}) => {
+  const problems = watchConsole(page);
+  const title = `Free AI tools I kept ${String(Date.now())}`;
+  await page.goto(`/channels/${seed().channelId}/ideas`);
+  await page.getByRole("button", { name: "New idea" }).click();
+  const dialog = page.getByTestId("new-idea-dialog");
+  await dialog.getByLabel("Title").fill(title);
+  await dialog.getByLabel(/Angle/).fill("My own month of testing free AI tools.");
+  await dialog.getByRole("button", { name: "Add idea" }).click();
+  const card = page.locator("li", { hasText: title }).first();
+  await card.getByRole("button", { name: "Shortlist" }).click();
+  const today = new Date().toISOString().slice(0, 10);
+  await card.getByLabel("Date").fill(today);
+  await card.getByRole("button", { name: "Schedule" }).click();
+  await expect(card).toContainText("Scheduled");
+  await page.goto("/calendar");
+  await expect(page.getByRole("link", { name: title })).toBeVisible();
+  expect(problems).toEqual([]);
+});
 
 test("Emergency Stop: two clicks to stop, broadcast to other tabs, clearing asks for the password", async ({
   page,
