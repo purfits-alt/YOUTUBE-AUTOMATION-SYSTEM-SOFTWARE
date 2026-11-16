@@ -1,8 +1,8 @@
 """Trends and keywords per channel (BACKEND_SPECIFICATION §4.5, CHANNEL_DISCOVERY_SPEC §5–§6).
 
 Trend items come from the daily A03 scan (or "Scan now"); their strength is computed in code.
-Expired items are shown as EXPIRED and never offered as ideas. Turning a trend into an idea needs
-the idea pipeline (Phase 7), so that command says so instead of pretending.
+Expired items are shown as EXPIRED and never offered as ideas. ``to-idea`` turns an active trend
+into a SUGGESTED idea that expires with the trend (Phase 7).
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ from tubeforge.api.deps import Db, Principal, client_ip, request_id, require
 from tubeforge.api.errors import ProblemError, not_found, problem_doc
 from tubeforge.api.idempotency import Idempotency
 from tubeforge.api.v1.channels import get_channel
+from tubeforge.api.v1.ideas import trend_to_idea
 from tubeforge.audit import record
 from tubeforge.db.ids import uuid7
 from tubeforge.db.models import Keyword, SourceDocument, TrendItem
@@ -32,7 +33,7 @@ router = APIRouter(tags=["research"])
 View = Annotated[Principal, Depends(require("research.view"))]
 Run = Annotated[Principal, Depends(require("research.run"))]
 WRITE: dict[int | str, dict[str, Any]] = {
-    409: problem_doc("STOPPED / NOT_AVAILABLE_YET / DUPLICATE_KEYWORD / NOT_ACTIVE"),
+    409: problem_doc("STOPPED / DUPLICATE_KEYWORD / NOT_ACTIVE / NO_CHANNEL"),
     422: problem_doc("FORBIDDEN_PHRASE / IDEMPOTENCY_MISMATCH"),
 }
 Phrase = Annotated[str, Field(min_length=2, max_length=80, pattern=r"^[^\x00-\x1f<>]+$")]
@@ -154,17 +155,15 @@ def trend_command(
     row = db.get(TrendItem, trend_id, with_for_update=True)
     if row is None:
         raise not_found("No such trend.")
+    now = datetime.now(UTC)
+    if row.status != "ACTIVE" or row.expires_at <= now:
+        raise ProblemError(409, "NOT_ACTIVE", "Not active", "Only an active trend can be used or dismissed.")
     if cmd == "to-idea":
-        raise ProblemError(
-            409,
-            "NOT_AVAILABLE_YET",
-            "Coming in Phase 7",
-            "Turning a trend into an idea arrives with Ideas (Phase 7).",
-        )
-    if row.status != "ACTIVE":
-        raise ProblemError(409, "NOT_ACTIVE", "Not active", "Only an active trend can be dismissed.")
-    row.status = "DISMISSED"
-    _audit(request, db, p, "trend.dismissed", "trend_item", row.id, topic=row.topic)
+        idea = trend_to_idea(db, row, now)
+        _audit(request, db, p, "trend.to_idea", "trend_item", row.id, topic=row.topic, idea_id=str(idea.id))
+    else:
+        row.status = "DISMISSED"
+        _audit(request, db, p, "trend.dismissed", "trend_item", row.id, topic=row.topic)
     db.commit()
     return _trend_out(db, row, datetime.now(UTC))
 
