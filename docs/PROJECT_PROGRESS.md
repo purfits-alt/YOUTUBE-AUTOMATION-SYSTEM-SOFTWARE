@@ -3,7 +3,7 @@
 > Living document. Updated at every checkpoint and at the end of every phase.
 
 **Current phase:** Phase 6 — Niche discovery & trends
-**Current step:** see `docs/BUILD_TRACKER.md` (gaps G1–G3 closed 2026-11-15; Phase 7 step B done; current: Phase 7 step C). Earlier note: Phase 6 approved and merged to `main` (PR #10) on 2026-11-11. Next: Phase 7 (ideas, research, fact-check & scripts) when the owner says go. The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
+**Current step:** see `docs/BUILD_TRACKER.md` (gaps G1–G3 closed 2026-11-15; Phase 7 steps B and C done; current: Phase 7 step D). Earlier note: Phase 6 approved and merged to `main` (PR #10) on 2026-11-11. Next: Phase 7 (ideas, research, fact-check & scripts) when the owner says go. The owner's manual real-OAuth test (Phase 4) is still open; it will use the new channel. Phase 5 approved 2026-11-10 (PR #9 merged). The owner's manual real-OAuth test (Phase 4) is still open; it will use the owner's new channel.
 **Last updated:** 2026-11-11
 
 ---
@@ -782,6 +782,23 @@ Tests: unit (handle rules), integration (kit after approval), web (kit in step 2
   - integration: similarity guard with owner override, variation, a poisoned source page (injection), contradicted claim blocking approval unless overridden, craft repair, two-source minimum, refusals.
 - Free-tier check: introduces no paid dependency ✔
 - Next module: Phase 7 step C (API).
+
+**Phase 7 step C done (2026-11-16): API for ideas, calendar, Replicate, projects, research, claims and scripts.**
+- **Ideas** (`api/v1/ideas.py`):
+  - owner ideas, with the forbidden-phrase check and similarity flags;
+  - list with filters, search and cursor; edit with If-Match;
+  - commands, where approve creates the project and queues research in one transaction;
+  - generate (queued A08) and the calendar (list and move);
+  - Replicate, for the channel's own videos only; trend → idea now works.
+- **Projects** (`api/v1/projects.py`):
+  - create, list, view (allowed commands and live gate checks) and edit;
+  - commands: start, approve and request changes for research and script, pause, resume, retry, cancel;
+  - history, value-add, research briefs, claims with owner override;
+  - script versions with craft findings, diff, owner edits (fact-checked by a new `content.fact_check` job) and regenerate with an instruction.
+- **Guards read their facts from the database:** contradicted claims, value-add fields and measured duration. The script is locked on approval.
+- **Tests:** API integration tests for the idea flow (duplicate needs a reason), research override → approval, the script review gates (fact-check pending, value-add), regenerate/pause/resume/cancel and the Replicate own-video rule. The pipeline test now also covers the owner-edit fact check.
+- Free-tier check: introduces no paid dependency ✔
+- Next module: Phase 7 step D (pages: Idea Generator, Content Calendar, Script Studio, Channel Trending tabs; browser tests; phase report).
 
 ## Resource consumption
 

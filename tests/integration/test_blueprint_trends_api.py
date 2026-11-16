@@ -165,12 +165,24 @@ def test_trends_list_dismiss_and_scan(api: tuple[TestClient, dict[str, str]], db
         for t in client.get(f"/api/v1/trends?channel_id={ch.id}&include_inactive=true").json()
     }
     assert every == {"Rent rises": "ACTIVE", "Old news": "EXPIRED"}
+    other = TrendItem(id=uuid7(), channel_id=ch.id, topic="Bus fares", summary="s", source_document_ids=[],
+                      signal_strength=Decimal("2"), confidence="LOW", detected_at=now,
+                      expires_at=now + timedelta(days=5))  # fmt: skip
+    db.add(other)
+    db.commit()
     r = client.post(f"/api/v1/trends/{live.id}/commands/to-idea", headers=h)
-    assert (r.status_code, r.json()["code"]) == (409, "NOT_AVAILABLE_YET")
+    assert (r.status_code, r.json()["status"]) == (200, "USED")
+    ideas = client.get(f"/api/v1/channels/{ch.id}/ideas").json()["items"]
+    assert [(i["title"], i["trend_item_id"], i["state"]) for i in ideas] == [
+        ("Rent rises", str(live.id), "SUGGESTED")
+    ]
+    assert client.post(f"/api/v1/trends/{old.id}/commands/to-idea", headers=h).json()["code"] == "NOT_ACTIVE"
     assert (
-        client.post(f"/api/v1/trends/{live.id}/commands/dismiss", headers=h).json()["status"] == "DISMISSED"
+        client.post(f"/api/v1/trends/{other.id}/commands/dismiss", headers=h).json()["status"] == "DISMISSED"
     )
-    assert client.post(f"/api/v1/trends/{live.id}/commands/dismiss", headers=h).json()["code"] == "NOT_ACTIVE"
+    assert (
+        client.post(f"/api/v1/trends/{other.id}/commands/dismiss", headers=h).json()["code"] == "NOT_ACTIVE"
+    )
     r = client.post("/api/v1/trends/scan", json={"channel_id": str(ch.id)}, headers=_idem(h))
     assert r.status_code == 202
     assert env.sql("SELECT count(*) FROM procrastinate_jobs WHERE task_name LIKE '%research.trend_scan'") == [

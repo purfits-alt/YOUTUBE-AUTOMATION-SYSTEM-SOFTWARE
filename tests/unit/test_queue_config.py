@@ -37,6 +37,7 @@ def test_research_jobs_run_on_the_agents_queue_and_trends_daily() -> None:
         "content.ideas",
         "content.research",
         "content.script",
+        "content.fact_check",
     ):
         assert app.tasks[task_name(name)].queue == "agents"
     crons = {p.task.name.split(":")[-1]: p.cron for p in app.periodic_registry.periodic_tasks.values()}

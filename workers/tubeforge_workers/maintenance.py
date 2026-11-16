@@ -277,18 +277,33 @@ def content_research(project_id: str) -> str:
     return f"brief v{result.brief.version}"
 
 
-def content_script(project_id: str) -> str:
-    """content.script: A11 draft + craft checks (one repair) → A10 → SCRIPT_REVIEW."""
+def content_script(project_id: str, instruction: str = "") -> str:
+    """content.script: A11 draft (with the owner's instruction, if any) + craft checks (one repair)
+    → A10 → SCRIPT_REVIEW."""
     from tubeforge_agents.content import run_script
     from tubeforge_agents.discovery import PipelineError
 
     with _research() as (db, gateway, _fetcher):
         try:
-            result = run_script(db, gateway, uuid.UUID(project_id))
+            result = run_script(db, gateway, uuid.UUID(project_id), instruction=instruction)
         except PipelineError as exc:
             return _content_failed(db, "script", project_id, f"/projects/{project_id}/script", exc)
     log.info("content.script", project_id=project_id, version=result.version.version)
     return f"script v{result.version.version} ({len(result.findings)} findings)"
+
+
+def content_fact_check(version_id: str) -> str:
+    """content.fact_check: A10 on one script version (after the owner edits the script)."""
+    from tubeforge_agents.content import fact_check_version
+    from tubeforge_agents.discovery import PipelineError
+
+    with _research() as (db, gateway, _fetcher):
+        try:
+            found = fact_check_version(db, gateway, uuid.UUID(version_id))
+        except PipelineError as exc:
+            return _content_failed(db, "script", version_id, "/projects", exc)
+    log.info("content.fact_check", version_id=version_id, claims=found)
+    return f"{found} claims"
 
 
 def upload(upload_job_id: str) -> str:

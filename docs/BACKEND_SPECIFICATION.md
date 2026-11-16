@@ -193,7 +193,7 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 - **Trends.**
   - `GET /trends?channel_id=&include_inactive=`: expired items are hidden by default, and shown as EXPIRED when included.
   - `POST /trends/scan` (Idempotency-Key) queues `research.trend_scan`.
-  - `POST /trends/{id}/commands/{dismiss|to-idea}`: `to-idea` answers 409 `NOT_AVAILABLE_YET` until Phase 7.
+  - `POST /trends/{id}/commands/{dismiss|to-idea}`: `to-idea` (Phase 7) makes a SUGGESTED owner idea that expires with the trend and marks the trend USED; expired or used trends answer 409 `NOT_ACTIVE`.
 - **Keywords** — `GET`, `POST` and `DELETE /channels/{id}/keywords`:
   - POST `{phrase}` adds the phrase now (201, 409 `DUPLICATE_KEYWORD`, 422 `FORBIDDEN_PHRASE`);
   - POST `{seeds}` queues A05 (202, Idempotency-Key).
@@ -213,6 +213,20 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 | GET | `/calendar?from=&to=&channel_id=` | `{items:[{date, idea|project, state}]}` | `content.view` |
 | PATCH | `/calendar/items/{id}` | `{date}` (drag & drop) | `content.edit` |
 
+*Ideas, calendar and Replicate implemented in Phase 7 step C (`api/v1/ideas.py`):*
+- **Owner ideas.** `POST /channels/{id}/ideas` (Idempotency-Key) refuses forbidden phrases with 422 `FORBIDDEN_PHRASE`. It stores the similarity to the channel's earlier ideas (`similarity_max`, `similar_to_id`). `IdeaOut` adds `similar_to_title`, `duplicate` (at or above the method's duplicate limit; approval then needs `override_reason` ≥ 20 characters) and `maybe_same_idea` (the paraphrase band, ADR-0029).
+- **Reading and editing ideas.** `GET /ideas/{id}` returns an `ETag`; `PATCH /ideas/{id}` needs `If-Match` and works only while SUGGESTED, SHORTLISTED or SCHEDULED.
+- **Idea commands.**
+  - `schedule` needs `{date}` (400 otherwise).
+  - `approve` (`content.approve`) also takes `override_reason` and `target_duration_s`. In one transaction it creates the project (packaging promise copied, state RESEARCHING) and queues `content.research` → 202 `{idea, transition_id, project_id, job_ids}`.
+  - A scheduled idea is approved with the `approve_scheduled` edge.
+- **Generating ideas.** `POST /channels/{id}/ideas/generate` queues `content.ideas` (409 `STOPPED` under Emergency Stop or a kill switch).
+- **Calendar.** `GET /calendar` returns scheduled ideas with their project state. A range longer than 120 days is cut to 120 days, and `to` before `from` gives an empty list (never a 400, so every request that matches the contract is accepted). `PATCH /calendar/items/{idea_id}` moves one.
+- **Replicate.**
+  - Winners are the channel's own published projects (test uploads excluded); views and outlier multiples arrive in Phase 13.
+  - `POST /channels/{id}/ideas/replicate` answers 404 unless the video is one of them, then queues `content.ideas` in variation mode with `count` ≤ 10.
+  - Ideas at or above `variation_max` similarity to the source are dropped by the worker and listed in the job result, instead of a synchronous 422 `TOO_SIMILAR`.
+
 ### 4.7 Projects (core workflow)
 
 | Method | Path | Request → Response | Perm |
@@ -230,6 +244,25 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 | GET | `/projects/{id}/script/versions` · `/versions/{v}` · `/diff?a=&b=` | versions / diff | `content.view` |
 | POST | `/projects/{id}/script/versions` 🔁 | ScriptVersionIn (owner edit → new version) | `content.edit` |
 | POST | `/projects/{id}/script/regenerate` 🔁⚙ | `{section?, instruction}` | `content.edit` |
+
+*Phase 7 step C (`api/v1/projects.py`):*
+- **Project view.** `ProjectOut` adds `allowed_commands` and `checks`: the guards of the next owner gate (research or script), evaluated from current data.
+- **Creating a project.** `POST /projects` creates an owner project without an idea (state IDEA). Passing `idea_id` answers 409 `USE_IDEA_APPROVE`.
+- **Commands.**
+  - `start` (the orchestrator moves IDEA → RESEARCHING) queues `content.research`.
+  - `approve-research` reads the latest SUBMITTED brief's claims for the guard (a contradicted claim needs a claim override). The brief becomes APPROVED and `content.script` is queued.
+  - `request-research-changes` rejects the brief and re-queues research.
+  - `approve-script` locks the latest version and sets `locked_script_version_id`. The guard facts come from the database: contradicted claims without an override, value-add fields filled and measured duration. If the version is still being fact-checked it answers 409 `FACT_CHECK_PENDING`.
+  - `request-script-changes {note}` queues a new draft with the note as the owner's instruction.
+  - `pause`, `resume`, `retry` and `cancel` are the engine's universal events. Resuming into RESEARCHING or SCRIPTING re-queues that work.
+  - Cut and fix-path commands answer 409 `NOT_AVAILABLE_YET` until Phase 9.
+- **Claim overrides.** `POST /claims/{id}/override` sets the reason on the claim and, for a brief claim, on the brief, so the research guard accepts it.
+- **Script versions.**
+  - `POST /projects/{id}/script/versions {body, based_on_version}` saves an owner edit while SCRIPTING or SCRIPT_REVIEW. A stale `based_on_version` → 412; a body that breaks the A11 schema → 422 `SCRIPT_INVALID`.
+  - Word count and duration are measured by code. The craft findings are returned, not enforced.
+  - Saving queues `content.fact_check`; the version shows `fact_check: PENDING` until it is DONE.
+  - The `_fact_check` bookkeeping key is not part of the script or its fingerprint.
+- **Regenerate.** `POST /projects/{id}/script/regenerate` (from SCRIPT_REVIEW only) moves the project back to SCRIPTING and queues a draft. That draft sees the current script and the instruction (and the section, if given).
 | GET | `/projects/{id}/storyboard` | latest StoryboardOut | `content.view` |
 | PUT | `/projects/{id}/storyboard` | StoryboardIn (new version, If-Match) | `content.edit` |
 | POST | `/projects/{id}/storyboard/scenes/{scene_id}/regenerate` ⚙ | `{instruction}` | `content.edit` |
