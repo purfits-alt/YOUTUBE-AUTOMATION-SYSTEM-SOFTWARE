@@ -9,7 +9,7 @@ creates its project and queues the research job in the same transaction.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from datetime import date as Day  # noqa: N812 - a field is named "date"
 from decimal import Decimal
 from typing import Annotated, Any, Literal
@@ -51,6 +51,7 @@ Format = Literal["LONG", "SHORT"]
 VariationKind = Literal["PART_2", "NEW_ANGLE", "UPDATE", "SHORT_FROM_LONG", "LONG_FROM_SHORT", "SERIES"]
 Text = Annotated[str, Field(pattern=r"^[^\x00-\x08\x0b\x0c\x0e-\x1f]*$")]
 EDITABLE = {"SUGGESTED", "SHORTLISTED", "SCHEDULED"}
+MAX_CALENDAR_DAYS = 120
 WideCursor = Annotated[str | None, Query(pattern=r"^c[0-9]{1,40}$")]
 
 
@@ -454,8 +455,9 @@ def calendar(
     to: date,
     channel_id: uuid.UUID | None = None,
 ) -> CalendarOut:
-    if to < from_ or (to - from_).days > 120:
-        raise ProblemError(400, "VALIDATION_ERROR", "Invalid range", "Pick a range of at most 120 days.")
+    """Scheduled ideas between ``from`` and ``to``. A range longer than 120 days is cut to 120 days;
+    ``to`` before ``from`` gives an empty list."""
+    to = min(to, from_ + timedelta(days=MAX_CALENDAR_DAYS))
     stmt = (
         select(VideoIdea)
         .where(

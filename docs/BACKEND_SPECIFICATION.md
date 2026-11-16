@@ -221,7 +221,7 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
   - `approve` (`content.approve`) also takes `override_reason` and `target_duration_s`. In one transaction it creates the project (packaging promise copied, state RESEARCHING) and queues `content.research` → 202 `{idea, transition_id, project_id, job_ids}`.
   - A scheduled idea is approved with the `approve_scheduled` edge.
 - **Generating ideas.** `POST /channels/{id}/ideas/generate` queues `content.ideas` (409 `STOPPED` under Emergency Stop or a kill switch).
-- **Calendar.** `GET /calendar` covers at most 120 days and returns scheduled ideas with their project state. `PATCH /calendar/items/{idea_id}` moves one.
+- **Calendar.** `GET /calendar` returns scheduled ideas with their project state. A range longer than 120 days is cut to 120 days, and `to` before `from` gives an empty list (never a 400, so every request that matches the contract is accepted). `PATCH /calendar/items/{idea_id}` moves one.
 - **Replicate.**
   - Winners are the channel's own published projects (test uploads excluded); views and outlier multiples arrive in Phase 13.
   - `POST /channels/{id}/ideas/replicate` answers 404 unless the video is one of them, then queues `content.ideas` in variation mode with `count` ≤ 10.

@@ -133,7 +133,15 @@ def test_ideas_calendar_and_approval(api: tuple[TestClient, dict[str, str]], db:
         f"/api/v1/calendar/items/{first.json()['id']}", json={"date": str(day + timedelta(days=1))}, headers=h
     )
     assert moved.json()["date"] == str(day + timedelta(days=1))
-    assert client.get(f"/api/v1/calendar?from={day}&to={day + timedelta(days=200)}").status_code == 400
+    assert (
+        len(
+            client.get(
+                f"/api/v1/calendar?from={day - timedelta(days=150)}&to={day + timedelta(days=200)}"
+            ).json()["items"]
+        )
+        == 0
+    )  # cut to 120 days
+    assert client.get(f"/api/v1/calendar?from={day}&to={day - timedelta(days=1)}").json() == {"items": []}
 
     # Approving a scheduled idea creates the project and queues research.
     approved = client.post(f"{cmd}/approve", json={"target_duration_s": 600}, headers=idem(h))
