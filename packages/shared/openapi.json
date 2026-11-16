@@ -413,11 +413,31 @@
       },
       "ApproveIn": {
         "properties": {
+          "channel_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Attach the blueprint to this existing channel instead of creating one.",
+            "title": "Channel Id"
+          },
           "channel_name": {
-            "maxLength": 80,
-            "minLength": 1,
-            "title": "Channel Name",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel Name"
           },
           "is_test_channel": {
             "default": true,
@@ -426,9 +446,6 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "channel_name"
-        ],
         "title": "ApproveIn",
         "type": "object"
       },
@@ -708,6 +725,115 @@
         "title": "BudgetOut",
         "type": "object"
       },
+      "BuildIn": {
+        "description": "Build tab: the owner adds a niche (and optionally a channel name or an existing channel) without\nrunning discovery. TubeForge then writes the blueprint (A07 suggests names when none is given).",
+        "properties": {
+          "channel_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel Id"
+          },
+          "channel_name": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f<>]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel Name"
+          },
+          "language": {
+            "default": "en",
+            "enum": [
+              "en",
+              "es",
+              "fr",
+              "de",
+              "ur"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 80,
+            "minLength": 2,
+            "pattern": "^[^\\x00-\\x1f<>]+$",
+            "title": "Name",
+            "type": "string"
+          },
+          "originality_angles": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 2,
+              "pattern": "^[^\\x00-\\x1f<>]+$",
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Originality Angles",
+            "type": "array"
+          },
+          "owner_notes": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Owner Notes",
+            "type": "string"
+          },
+          "summary": {
+            "default": "",
+            "maxLength": 600,
+            "pattern": "^[^\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]*$",
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "BuildIn",
+        "type": "object"
+      },
+      "BuildOut": {
+        "properties": {
+          "candidate": {
+            "$ref": "#/components/schemas/CandidateOut"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "status": {
+            "const": "QUEUED",
+            "default": "QUEUED",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "candidate",
+          "job_id"
+        ],
+        "title": "BuildOut",
+        "type": "object"
+      },
       "CalendarItemOut": {
         "properties": {
           "channel_id": {
@@ -805,6 +931,12 @@
       },
       "CandidateOut": {
         "properties": {
+          "added_by_owner": {
+            "default": false,
+            "description": "Built by the owner (Build tab), not scored by discovery.",
+            "title": "Added By Owner",
+            "type": "boolean"
+          },
           "band": {
             "anyOf": [
               {
@@ -861,6 +993,18 @@
             "title": "Originality Angles",
             "type": "array"
           },
+          "owner_channel_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The name the owner chose, if any.",
+            "title": "Owner Channel Name"
+          },
           "production_difficulty": {
             "enum": [
               "LOW",
@@ -895,6 +1039,19 @@
           "summary": {
             "title": "Summary",
             "type": "string"
+          },
+          "target_channel_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Existing channel to attach the blueprint to.",
+            "title": "Target Channel Id"
           }
         },
         "required": [
@@ -9930,6 +10087,7 @@
     },
     "/api/v1/calendar": {
       "get": {
+        "description": "Scheduled ideas between ``from`` and ``to``. A range longer than 120 days is cut to 120 days;\n``to`` before ``from`` gives an empty list.",
         "operationId": "calendar_api_v1_calendar_get",
         "parameters": [
           {
@@ -16090,6 +16248,143 @@
           }
         },
         "summary": "Run Lookup",
+        "tags": [
+          "research"
+        ]
+      }
+    },
+    "/api/v1/niches/build": {
+      "post": {
+        "description": "Build tab (owner request 2026-11-16): a niche the owner chose, without a discovery run. It is\nstored as a shortlisted, unscored candidate and its blueprint job is queued at once. With\n``channel_id`` the blueprint is meant for an existing channel (approve attaches it there).",
+        "operationId": "build_niche_api_v1_niches_build_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuildIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR (field errors in errors[]) or a bad header"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "STOPPED / NOT_SHORTLISTED / CANDIDATE_CONVERTED / DUPLICATE_PROFILE"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "INVALID_WEIGHTS / IDEMPOTENCY_MISMATCH"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_READY (master key or database missing)"
+          }
+        },
+        "summary": "Build Niche",
         "tags": [
           "research"
         ]

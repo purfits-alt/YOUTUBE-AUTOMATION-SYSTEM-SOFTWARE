@@ -357,7 +357,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Calendar */
+        /**
+         * Calendar
+         * @description Scheduled ideas between ``from`` and ``to``. A range longer than 120 days is cut to 120 days;
+         *     ``to`` before ``from`` gives an empty list.
+         */
         get: operations["calendar_api_v1_calendar_get"];
         put?: never;
         post?: never;
@@ -890,6 +894,28 @@ export interface paths {
         put?: never;
         /** Run Lookup */
         post: operations["run_lookup_api_v1_lookups_youtube_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/niches/build": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Build Niche
+         * @description Build tab (owner request 2026-11-16): a niche the owner chose, without a discovery run. It is
+         *     stored as a shortlisted, unscored candidate and its blueprint job is queued at once. With
+         *     ``channel_id`` the blueprint is meant for an existing channel (approve attaches it there).
+         */
+        post: operations["build_niche_api_v1_niches_build_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2037,8 +2063,13 @@ export interface components {
         };
         /** ApproveIn */
         ApproveIn: {
+            /**
+             * Channel Id
+             * @description Attach the blueprint to this existing channel instead of creating one.
+             */
+            channel_id?: string | null;
             /** Channel Name */
-            channel_name: string;
+            channel_name?: string | null;
             /**
              * Is Test Channel
              * @description Start as the test channel (private uploads only).
@@ -2162,6 +2193,49 @@ export interface components {
             /** Spent Minor */
             spent_minor: number;
         };
+        /**
+         * BuildIn
+         * @description Build tab: the owner adds a niche (and optionally a channel name or an existing channel) without
+         *     running discovery. TubeForge then writes the blueprint (A07 suggests names when none is given).
+         */
+        BuildIn: {
+            /** Channel Id */
+            channel_id?: string | null;
+            /** Channel Name */
+            channel_name?: string | null;
+            /**
+             * Language
+             * @default en
+             * @enum {string}
+             */
+            language: "en" | "es" | "fr" | "de" | "ur";
+            /** Name */
+            name: string;
+            /** Originality Angles */
+            originality_angles?: string[];
+            /**
+             * Owner Notes
+             * @default
+             */
+            owner_notes: string;
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+        };
+        /** BuildOut */
+        BuildOut: {
+            candidate: components["schemas"]["CandidateOut"];
+            /** Job Id */
+            job_id: number | null;
+            /**
+             * Status
+             * @default QUEUED
+             * @constant
+             */
+            status: "QUEUED";
+        };
         /** CalendarItemOut */
         CalendarItemOut: {
             /**
@@ -2203,6 +2277,12 @@ export interface components {
         };
         /** CandidateOut */
         CandidateOut: {
+            /**
+             * Added By Owner
+             * @description Built by the owner (Build tab), not scored by discovery.
+             * @default false
+             */
+            added_by_owner: boolean;
             /** Band */
             band: string | null;
             /** Criteria */
@@ -2231,6 +2311,11 @@ export interface components {
             /** Originality Angles */
             originality_angles: string[];
             /**
+             * Owner Channel Name
+             * @description The name the owner chose, if any.
+             */
+            owner_channel_name?: string | null;
+            /**
              * Production Difficulty
              * @enum {string}
              */
@@ -2249,6 +2334,11 @@ export interface components {
             status: "NEW" | "SHORTLISTED" | "DISMISSED" | "CONVERTED";
             /** Summary */
             summary: string;
+            /**
+             * Target Channel Id
+             * @description Existing channel to attach the blueprint to.
+             */
+            target_channel_id?: string | null;
         };
         /** ChainOut */
         ChainOut: {
@@ -10255,6 +10345,100 @@ export interface operations {
             };
             /** @description YOUTUBE_ERROR */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_READY (master key or database missing) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    build_niche_api_v1_niches_build_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BuildIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuildOut"];
+                };
+            };
+            /** @description VALIDATION_ERROR (field errors in errors[]) or a bad header */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description STOPPED / NOT_SHORTLISTED / CANDIDATE_CONVERTED / DUPLICATE_PROFILE */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description INVALID_WEIGHTS / IDEMPOTENCY_MISMATCH */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

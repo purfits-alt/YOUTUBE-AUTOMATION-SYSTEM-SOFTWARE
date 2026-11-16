@@ -36,6 +36,7 @@ from tubeforge.db.models import (
 from tubeforge.orchestrator.controls import stop_reason
 from tubeforge.queue import defer_in_transaction
 from tubeforge.research import blueprint as bp
+from tubeforge.research.forbidden import scan as forbidden_scan
 from tubeforge.research.niches import criteria_only, profile_weights, rescore, side_records
 from tubeforge.research.scoring import CRITERIA, FOOTER, MAX_WEIGHT, check_weights, remarks, score
 
@@ -115,6 +116,32 @@ class CandidateOut(BaseModel):
     status: Literal["NEW", "SHORTLISTED", "DISMISSED", "CONVERTED"]
     remarks: list[RemarkOut] = Field(default_factory=list)
     footer: str = FOOTER
+    added_by_owner: bool = Field(
+        default=False, description="Built by the owner (Build tab), not scored by discovery."
+    )
+    owner_channel_name: str | None = Field(default=None, description="The name the owner chose, if any.")
+    target_channel_id: uuid.UUID | None = Field(
+        default=None, description="Existing channel to attach the blueprint to."
+    )
+
+
+class BuildIn(BaseModel):
+    """Build tab: the owner adds a niche (and optionally a channel name or an existing channel) without
+    running discovery. TubeForge then writes the blueprint (A07 suggests names when none is given)."""
+
+    name: Term
+    summary: str = Field(default="", max_length=600, pattern=r"^[^\x00-\x08\x0b\x0c\x0e-\x1f]*$")
+    language: Language = "en"
+    originality_angles: list[Term] = Field(default_factory=list, max_length=5)
+    channel_name: str | None = Field(default=None, min_length=1, max_length=80, pattern=r"^[^\x00-\x1f<>]+$")
+    channel_id: uuid.UUID | None = None
+    owner_notes: str = Field(default="", max_length=2000)
+
+
+class BuildOut(BaseModel):
+    candidate: CandidateOut
+    job_id: int | None
+    status: Literal["QUEUED"] = "QUEUED"
 
 
 class ReportDetail(ReportOut):
@@ -189,10 +216,19 @@ class StrategyPatch(BaseModel):
 
 
 class ApproveIn(BaseModel):
-    channel_name: str = Field(min_length=1, max_length=80)
+    channel_name: str | None = Field(default=None, min_length=1, max_length=80)
+    channel_id: uuid.UUID | None = Field(
+        default=None, description="Attach the blueprint to this existing channel instead of creating one."
+    )
     is_test_channel: bool = Field(
         default=True, description="Start as the test channel (private uploads only)."
     )
+
+    @model_validator(mode="after")
+    def _one(self) -> ApproveIn:
+        if (self.channel_name is None) == (self.channel_id is None):
+            raise ValueError("Give either channel_name (new channel) or channel_id (existing channel).")
+        return self
 
 
 # --------------------------------------------------------------------------------------- helpers
@@ -216,6 +252,7 @@ def _report_out(row: NicheReport) -> dict[str, Any]:
 
 
 def _candidate_out(row: NicheCandidate, weights: dict[str, float] | None = None) -> CandidateOut:
+    manual = next((c for c in side_records(row.criteria) if c["code"] == "_OWNER_BUILD"), None)
     crit = criteria_only(row.criteria)
     w = weights or {c["code"]: float(c.get("weight", CRITERIA.get(c["code"], 0))) for c in crit}
     s = score(crit, w)
@@ -246,6 +283,9 @@ def _candidate_out(row: NicheCandidate, weights: dict[str, float] | None = None)
         production_difficulty=row.production_difficulty,
         status=row.status,
         remarks=[RemarkOut(**r) for r in remarks(crit, w)],
+        added_by_owner=manual is not None,
+        owner_channel_name=(manual or {}).get("channel_name"),
+        target_channel_id=(manual or {}).get("channel_id"),
     )
 
 
@@ -312,6 +352,75 @@ def start_report(body: ReportIn, request: Request, db: Db, p: Run) -> Any:
     _audit(request, db, p, "niche_report.started", "niche_report", row.id, languages=body.languages)
     db.refresh(row)
     out = ReportOut(**_report_out(row))
+    idem.store(202, out.model_dump(mode="json"))
+    db.commit()
+    return out
+
+
+@router.post("/niches/build", response_model=BuildOut, status_code=202, responses=WRITE)
+def build_niche(body: BuildIn, request: Request, db: Db, p: StrategyManage) -> Any:
+    """Build tab (owner request 2026-11-16): a niche the owner chose, without a discovery run. It is
+    stored as a shortlisted, unscored candidate and its blueprint job is queued at once. With
+    ``channel_id`` the blueprint is meant for an existing channel (approve attaches it there)."""
+    idem = Idempotency(db, request, p.user.id, body)
+    if (replayed := idem.replay()) is not None:
+        return replayed
+    if stop_reason(db) is not None:
+        raise ProblemError(
+            409, "STOPPED", "Emergency Stop is on", "Clear Emergency Stop to build a blueprint."
+        )
+    if body.channel_id is not None:
+        channel = db.get(Channel, body.channel_id)
+        if channel is None or channel.deleted_at is not None:
+            raise not_found("No such channel.")
+    text = " ".join([body.name, body.summary, *body.originality_angles, body.channel_name or ""])
+    hits = forbidden_scan(text)
+    if hits:
+        raise ProblemError(
+            422, "FORBIDDEN_PHRASE", "Not allowed", f"“{hits[0].phrase}” makes a promise. Please reword it."
+        )
+    report = NicheReport(
+        id=uuid7(),
+        requested_by=p.user.id,
+        params={"languages": [body.language], "interests": [body.name], "avoid": [], "manual": True,
+                "result": {"candidates": 1}},
+        status="DONE",
+    )  # fmt: skip
+    db.add(report)
+    db.flush()
+    cand = NicheCandidate(
+        id=uuid7(),
+        report_id=report.id,
+        name=body.name.strip(),
+        summary=body.summary.strip() or f"{body.name.strip()} (added by the owner)",
+        language=body.language,
+        criteria=[
+            {"code": "_ORIGINALITY_ANGLES", "angles": body.originality_angles},
+            {
+                "code": "_OWNER_BUILD",
+                "channel_name": body.channel_name.strip() if body.channel_name else None,
+                "channel_id": str(body.channel_id) if body.channel_id else None,
+            },
+        ],
+        opportunity_score=Decimal("0"),
+        inauthentic_risk="MEDIUM",
+        production_difficulty="MEDIUM",
+        status="SHORTLISTED",
+    )
+    db.add(cand)
+    db.flush()
+    notes = body.owner_notes.strip()
+    if body.channel_name:
+        notes = f"The owner has chosen the channel name “{body.channel_name.strip()}”. {notes}".strip()
+    job = defer_in_transaction(
+        db,
+        "research.blueprint",
+        queue="agents",
+        args={"candidate_id": str(cand.id), "owner_notes": notes[:2000]},
+    )
+    _audit(request, db, p, "niche.built_by_owner", "niche_candidate", cand.id, name=cand.name)
+    db.refresh(cand)
+    out = BuildOut(candidate=_candidate_out(cand), job_id=job)
     idem.store(202, out.model_dump(mode="json"))
     db.commit()
     return out
@@ -598,20 +707,40 @@ def strategy_command(
             raise ProblemError(422, "CHANNEL_NAME_REQUIRED", "Name needed", "Choose the channel name.")
         if not p.has("channel.manage"):
             raise ProblemError(
-                403, "FORBIDDEN", "Not allowed", "Approving creates a channel (channel.manage)."
+                403, "FORBIDDEN", "Not allowed", "Approving creates or changes a channel (channel.manage)."
             )
         niche = row.blueprint.get("niche", {})
-        channel = Channel(
-            id=uuid7(),
-            state="APPROVED",
-            name=body.channel_name.strip(),
-            content_language=str(niche.get("language", "en")),
-            is_test_channel=body.is_test_channel,
-            is_monetised=False,  # a brand-new channel is not in the YouTube Partner Programme
-        )
-        db.add(channel)
-        db.flush()
-        db.add(ChannelPublishingRules(channel_id=channel.id))
+        created = body.channel_id is None
+        if body.channel_id is not None:
+            # An existing channel (e.g. one the owner onboarded without discovery) takes this blueprint;
+            # its earlier approved blueprint is superseded so the pipelines use the new pillars.
+            channel = db.get(Channel, body.channel_id, with_for_update=True)
+            if channel is None or channel.deleted_at is not None:
+                raise not_found("No such channel.")
+            for old in db.scalars(
+                select(ChannelStrategy).where(
+                    ChannelStrategy.channel_id == channel.id,
+                    ChannelStrategy.status == "APPROVED",
+                    ChannelStrategy.id != row.id,
+                )
+            ):
+                old.status = "SUPERSEDED"
+            top = db.scalar(
+                select(func.max(ChannelStrategy.version)).where(ChannelStrategy.channel_id == channel.id)
+            )
+            row.version = int(top or 0) + 1  # versions are counted per channel
+        else:
+            channel = Channel(
+                id=uuid7(),
+                state="APPROVED",
+                name=str(body.channel_name).strip(),
+                content_language=str(niche.get("language", "en")),
+                is_test_channel=body.is_test_channel,
+                is_monetised=False,  # a brand-new channel is not in the YouTube Partner Programme
+            )
+            db.add(channel)
+            db.flush()
+            db.add(ChannelPublishingRules(channel_id=channel.id))
         row.channel_id = channel.id
         row.status = "APPROVED"
         row.approved_by = p.user.id
@@ -632,7 +761,7 @@ def strategy_command(
             request,
             db,
             p,
-            "channel.created",
+            "channel.created" if created else "channel.blueprint_attached",
             "channel",
             channel.id,
             name=channel.name,
