@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { setScenario } from "../lib/scenario";
 import { resetTestApi } from "../mocks/testApi";
 import { App, makeQueryClient } from "./App";
+import { content } from "../mocks/contentApi";
 import { routes } from "./routes";
 
 function renderAt(path: string) {
@@ -47,7 +48,7 @@ describe("app shell", () => {
   });
 
   it("shows the project header on project pages", async () => {
-    renderAt("/projects/p-101/script");
+    renderAt("/projects/p-101/storyboard");
     const header = await screen.findByTestId("project-header");
     expect(header).toHaveTextContent("Why octopuses dream");
     expect(within(header).getByText("SCRIPTING").closest("li")).toHaveAttribute("aria-current", "step");
@@ -133,11 +134,12 @@ describe("app shell", () => {
     expect(await screen.findByTestId("login-form")).toBeInTheDocument();
   });
 
-  it("Channel Trending: outliers by default, tabs switch, replicate refuses near-copies", async () => {
+  it("Channel Trending: sample outliers, real Replicate (own videos only) and New Ideas", async () => {
     renderAt("/channels/ch-1/trending");
     expect(await screen.findByRole("heading", { level: 1, name: "Channel Trending" })).toBeInTheDocument();
     expect(await screen.findByTestId("state-success")).toHaveTextContent("Outlier ×");
     expect(screen.getByText(/Only your own channels/)).toBeInTheDocument();
+    expect(screen.getByText(/Outliers need your channel's own analytics/)).toBeInTheDocument();
     // Exactly one menu item is active (Channel Manager "/channels" must not match this page too).
     const nav = screen.getAllByRole("navigation", { name: "Main navigation" })[0];
     expect(
@@ -149,19 +151,21 @@ describe("app shell", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Replicate / Milk" }));
     expect(screen.getByRole("tab", { name: "Replicate / Milk" })).toHaveAttribute("aria-selected", "true");
-    expect(await screen.findByText("Winners to replicate")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Replicate this" }));
+    const winners = await screen.findByTestId("winners");
+    expect(winners).toHaveTextContent("My 30-day student budget");
+    expect(screen.getByTestId("idea-list")).toHaveTextContent("48% alike to the original");
+    fireEvent.click(within(winners).getByRole("button", { name: "Replicate this" }));
     const dialog = await screen.findByTestId("replicate-dialog");
-    await waitFor(() => expect(dialog).toHaveAttribute("open"));
-    fireEvent.change(within(dialog).getByLabelText("Kind of variation"), { target: { value: "UPDATE" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Create variation idea" }));
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Too close to the original");
     fireEvent.change(within(dialog).getByLabelText("Kind of variation"), { target: { value: "NEW_ANGLE" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Create variation idea" }));
-    expect(await screen.findByText(/Variation idea created/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Variations of “My 30-day student budget” are being written/),
+    ).toBeInTheDocument();
+    expect(content.replicated).toEqual([
+      expect.objectContaining({ youtube_video_id: "abcDEF12345", kind: "NEW_ANGLE" }),
+    ]);
 
     fireEvent.click(screen.getByRole("tab", { name: "New Ideas" }));
-    expect(await screen.findByRole("button", { name: "Generate ideas" })).toBeInTheDocument();
+    expect(await screen.findByTestId("idea-list")).toHaveTextContent("I tested 5 free AI note apps");
   });
 });

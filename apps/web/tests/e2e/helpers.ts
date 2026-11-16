@@ -3,7 +3,7 @@ import { expect, type Page } from "@playwright/test";
 import { SUCCESS_FIXTURES } from "./fixtures";
 import { SEED_FILE } from "./global-setup";
 import en from "../../src/i18n/en.json" with { type: "json" };
-import { PAGES, pageHref } from "../../src/pages/registry";
+import { PAGES, pageHref, SAMPLE_IDS } from "../../src/pages/registry";
 import type { PageDef } from "../../src/pages/types";
 
 export { en, PAGES, pageHref };
@@ -17,7 +17,7 @@ export function seed(): { channelId: string } {
 }
 
 /** Real pages whose main endpoint returns a plain array (not a cursor page). */
-const ARRAY_PAGES = new Set(["agents", "usage", "discovery", "trends", "lookup"]);
+const ARRAY_PAGES = new Set(["agents", "usage", "discovery", "trends", "lookup", "script"]);
 
 /** Pages with no empty state (FRONTEND_SPECIFICATION: "Empty state: N/A" / steps always exist). */
 export const NO_EMPTY_STATE = new Set(["settings", "onboarding", "niche", "branding"]);
@@ -61,6 +61,7 @@ const SHELL_STUB = {
 /** The id in a real page's main API path: the seeded channel, or the sample id in the page URL. */
 function apiId(def: PageDef): string {
   if (def.path.startsWith("/channels/")) return seed().channelId;
+  if (def.path.startsWith("/projects/")) return SAMPLE_IDS.project;
   return hrefFor(def).split("/").pop() ?? "";
 }
 
@@ -74,9 +75,12 @@ async function interceptRealPage(page: Page, def: PageDef, state: State): Promis
   );
   const fixtures = SUCCESS_FIXTURES[def.id];
   const showsData = state === "success" || (NO_EMPTY_STATE.has(def.id) && state === "empty");
-  if (fixtures && showsData) {
+  const path = `/api/v1${def.api.replace("{id}", apiId(def))}`;
+  if (fixtures) {
+    // Supporting data (e.g. the project above Script Studio) is served in every state; the page's
+    // main request gets the state below unless the page shows data.
     await page.route(
-      (url) => url.pathname in fixtures,
+      (url) => url.pathname in fixtures && (showsData || url.pathname !== path),
       (route) =>
         route.fulfill({
           status: 200,
@@ -84,10 +88,8 @@ async function interceptRealPage(page: Page, def: PageDef, state: State): Promis
           body: JSON.stringify(fixtures[new URL(route.request().url()).pathname]),
         }),
     );
-    return;
   }
   if (showsData) return;
-  const path = `/api/v1${def.api.replace("{id}", apiId(def))}`;
   await page.route(
     (url) => url.pathname === path,
     async (route) => {

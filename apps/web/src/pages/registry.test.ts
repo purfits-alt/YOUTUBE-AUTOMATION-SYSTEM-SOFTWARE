@@ -36,7 +36,7 @@ describe("page registry", () => {
     }
   });
 
-  it("marks the pages backed by the real API (Phase 3: Security, Settings; Phase 4: channels, bell; Phase 5: agents, usage; Phase 6: discovery)", () => {
+  it("marks the pages backed by the real API (Phase 3: Security, Settings; Phase 4: channels, bell; Phase 5: agents, usage; Phase 6: discovery; Phase 7: ideas, calendar, script)", () => {
     expect(PAGES.filter((p) => p.real).map((p) => p.id)).toEqual([
       "discovery",
       "channels",
@@ -45,6 +45,9 @@ describe("page registry", () => {
       "trends",
       "lookup",
       "branding",
+      "ideas",
+      "calendar",
+      "script",
       "usage",
       "notifications",
       "agents",

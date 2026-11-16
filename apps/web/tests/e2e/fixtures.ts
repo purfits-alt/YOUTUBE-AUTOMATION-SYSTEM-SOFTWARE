@@ -4,6 +4,8 @@
  * routes × states, axe and visual tests; the real flows are covered by the Python integration tests
  * and stateful.spec.ts. Shapes follow packages/shared/openapi.json.
  */
+import { content, versionSummary } from "../../src/mocks/contentApi";
+
 const NOW = "2026-11-10T06:00:00Z";
 const FOOTER = "Estimates based on cited sources. Not a prediction of views, subscribers or earnings.";
 
@@ -145,7 +147,16 @@ const lookup = {
 /** page id → (API pathname → JSON body) for the success state. */
 export const SUCCESS_FIXTURES: Record<string, Record<string, unknown>> = {
   niche: { "/api/v1/niches/candidates/nc-1": candidate, "/api/v1/strategies": [strategy] },
-  branding: { "/api/v1/strategies/st-1": strategy },
+  branding: { "/api/v1/strategies/st-1": strategy, "/api/v1/niches/candidates/nc-1": candidate },
   trends: { "/api/v1/trends": [trend] },
   lookup: { "/api/v1/lookups/youtube": [lookup] },
+  // Script Studio needs a project with research and a script; no worker writes them in e2e.
+  script: {
+    "/api/v1/projects/p-101": content.project,
+    "/api/v1/projects/p-101/script/versions": content.versions.map(versionSummary),
+    "/api/v1/projects/p-101/script/versions/1": content.versions[0],
+    "/api/v1/projects/p-101/research": content.briefs,
+    "/api/v1/projects/p-101/claims": content.claims,
+    "/api/v1/projects/p-101/value-add": content.valueAdd,
+  },
 };

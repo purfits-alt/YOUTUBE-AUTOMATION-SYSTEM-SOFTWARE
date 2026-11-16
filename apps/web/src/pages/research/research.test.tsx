@@ -129,13 +129,13 @@ describe("Competitor Research (real API)", () => {
 });
 
 describe("Trend Intelligence (real API)", () => {
-  it("lists trends, keeps 'turn into idea' for Phase 7 and dismisses", async () => {
+  it("lists trends, turns one into an idea and dismisses", async () => {
     renderAt("/trends");
     const card = await screen.findByTestId("trend-t-1");
     expect(card).toHaveTextContent("Signal 2.4");
-    expect(within(card).getByRole("button", { name: "Turn into idea" })).toBeDisabled();
-    fireEvent.click(within(card).getByRole("button", { name: "Dismiss" }));
-    expect(await screen.findByTestId("state-empty")).toBeInTheDocument();
+    fireEvent.click(within(card).getByRole("button", { name: "Turn into idea" }));
+    expect(await screen.findByText(/Idea created in the Idea Generator/)).toBeInTheDocument();
+    expect(research.trends[0]?.status).toBe("USED");
   });
 });
 

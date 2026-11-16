@@ -4,8 +4,8 @@ import { expect, test } from "@playwright/test";
 const KEY_PAGES = [
   ["overview", "/"],
   ["approvals", "/approvals"],
-  ["script", "/projects/p-101/script"],
-  ["calendar", "/calendar"], // Discovery became a real page in Phase 6 (live data)
+  ["storyboard", "/projects/p-101/storyboard"],
+  ["renders", "/renders"], // Discovery (Phase 6), Script Studio and Calendar (Phase 7) are real pages now
 ] as const;
 
 for (const scheme of ["light", "dark"] as const) {

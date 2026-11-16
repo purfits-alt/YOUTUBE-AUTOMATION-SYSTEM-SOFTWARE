@@ -183,7 +183,7 @@ function initial(): ResearchState {
     strategy: {
       id: "st-9",
       niche_candidate_id: "c-1",
-      channel_id: null,
+      channel_id: "ch-1",
       version: 1,
       status: "DRAFT",
       blueprint: blueprint(),
@@ -311,7 +311,10 @@ export const researchHandlers: HttpHandler[] = [
   }),
   http.get("/api/v1/trends", () => HttpResponse.json(research.trends.filter((x) => x.status === "ACTIVE"))),
   http.post("/api/v1/trends/:id/commands/:cmd", ({ params }) => {
-    if (params.cmd === "to-idea") return problem(409, "NOT_AVAILABLE_YET", "Phase 7");
+    if (params.cmd === "to-idea") {
+      research.trends = research.trends.map((x) => (x.id === params.id ? { ...x, status: "USED" } : x));
+      return HttpResponse.json(research.trends.find((x) => x.id === params.id));
+    }
     research.trends = research.trends.map((x) => ({ ...x, status: "DISMISSED" }));
     return HttpResponse.json(research.trends[0]);
   }),

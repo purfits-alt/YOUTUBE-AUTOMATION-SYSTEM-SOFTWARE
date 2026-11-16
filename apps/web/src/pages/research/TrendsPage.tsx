@@ -38,14 +38,16 @@ export function TrendsPage() {
       toast(problemText(e), "danger");
     }
   };
-  const dismiss = async (item: TrendOut) => {
+  const command = async (item: TrendOut, cmd: "dismiss" | "to-idea") => {
     try {
       await call(() =>
         api.POST("/api/v1/trends/{trend_id}/commands/{cmd}", {
-          params: { path: { trend_id: item.id, cmd: "dismiss" } },
+          params: { path: { trend_id: item.id, cmd } },
         }),
       );
+      if (cmd === "to-idea") toast(t("trendsPage.ideaMade"));
       refresh();
+      void qc.invalidateQueries({ queryKey: ["ideas"] });
     } catch (e) {
       toast(problemText(e), "danger");
     }
@@ -103,11 +105,14 @@ export function TrendsPage() {
                   </ul>
                 )}
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <Button onClick={() => void dismiss(item)}>{t("trendsPage.dismiss")}</Button>
-                  <Button disabled title={t("trendsPage.ideasLater")}>
+                  <Button
+                    variant="primary"
+                    disabled={!item.channel_id}
+                    onClick={() => void command(item, "to-idea")}
+                  >
                     {t("trendsPage.toIdea")}
                   </Button>
-                  <span className="text-xs text-muted">{t("trendsPage.ideasLater")}</span>
+                  <Button onClick={() => void command(item, "dismiss")}>{t("trendsPage.dismiss")}</Button>
                 </div>
               </Card>
             </li>

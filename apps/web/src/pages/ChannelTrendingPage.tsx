@@ -1,15 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
-import { useId, useRef, useState, type KeyboardEvent } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { Link, useParams } from "react-router";
 import { DataTable } from "../components/DataTable";
 import { Dialog } from "../components/Dialog";
 import { ProblemDisplay } from "../components/ProblemDisplay";
 import { StatTile } from "../components/StatTile";
 import { StateCard } from "../components/StateCard";
+import { Tabs } from "../components/Tabs";
 import { useToast } from "../components/Toasts";
-import { Button } from "../components/ui";
+import { Badge, Button, Card } from "../components/ui";
 import { t } from "../i18n";
-import { call, getPageData, idempotencyKey, ProblemError, stubApi, type PageData } from "../lib/api/client";
+import { api, call, getPageData, idempotencyKey, ProblemError, type IdeaOut } from "../lib/api/client";
+import { useSelectedChannel } from "../lib/channel";
+import { GenerateDialog } from "./content/IdeasPage";
+import { IdeaStateBadge, pct, SimilarityBadge } from "./content/common";
 import { asProblem, LoadingSkeleton, PageTitle, SafetyNote } from "./PageView";
 import { getPage, SAMPLE_IDS } from "./registry";
 
@@ -17,42 +21,33 @@ type Tab = "outliers" | "replicate" | "ideas";
 const TABS: readonly Tab[] = ["outliers", "replicate", "ideas"];
 const KINDS = ["PART_2", "NEW_ANGLE", "UPDATE", "SHORT_FROM_LONG", "LONG_FROM_SHORT", "SERIES"] as const;
 type Kind = (typeof KINDS)[number];
+const OUTLIER_COLUMNS = ["title", "published", "views", "multiple", "engagedViews", "ctr", "avd"];
 
-const COLUMNS: Record<Tab, readonly string[]> = {
-  outliers: ["title", "published", "views", "multiple", "engagedViews", "ctr", "avd"],
-  replicate: ["title", "variation", "angle", "similarity", "state"],
-  ideas: ["title", "format", "reason", "similarity", "state"],
-};
-
-function TabData({
-  tab,
-  query,
-  emptyMessage,
-  emptyAction,
-  onEmptyAction,
-}: {
-  tab: Tab;
-  query: {
-    data: PageData | undefined;
-    isPending: boolean;
-    isError: boolean;
-    error: unknown;
-    refetch: () => unknown;
-  };
-  emptyMessage: string;
-  emptyAction: string;
-  onEmptyAction: () => void;
-}) {
-  const data = query.data;
-  const empty = data !== undefined && data.rows.length === 0;
+/** Outliers need the channel's own analytics (Phase 13); until then the tab shows sample data. */
+function Outliers({ channelId }: { channelId: string }) {
+  const page = getPage("trending");
+  const outliers = useQuery({
+    queryKey: ["page", "trending", "outliers", channelId],
+    queryFn: () => getPageData(page.api, channelId, SAMPLE_IDS.channel),
+  });
+  const data = outliers.data;
   return (
     <>
-      {query.isPending && <LoadingSkeleton />}
-      {query.isError && (
-        <ProblemDisplay problem={asProblem(query.error)} onRetry={() => void query.refetch()} />
+      <p className="rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn-text">
+        {t("trending.outliersLater")}
+      </p>
+      {outliers.isPending && <LoadingSkeleton />}
+      {outliers.isError && (
+        <ProblemDisplay problem={asProblem(outliers.error)} onRetry={() => void outliers.refetch()} />
       )}
-      {empty && <StateCard message={emptyMessage} actionLabel={emptyAction} onAction={onEmptyAction} />}
-      {data && !empty && (
+      {data && data.rows.length === 0 && (
+        <StateCard
+          message={t("pages.trending.empty")}
+          actionLabel={t("pages.trending.emptyAction")}
+          onAction={() => undefined}
+        />
+      )}
+      {data && data.rows.length > 0 && (
         <div data-testid="state-success" className="space-y-4">
           {data.stats.length > 0 && (
             <div
@@ -70,14 +65,14 @@ function TabData({
                   delta={s.delta}
                   deltaGood={s.delta_good}
                   trend={s.trend}
-                  icon={tab === "ideas" ? "spark" : tab === "replicate" ? "film" : "grow"}
+                  icon="grow"
                 />
               ))}
             </div>
           )}
           <DataTable
-            caption={t(`trending.${tab}`)}
-            columns={COLUMNS[tab].map((c) => ({ key: c, label: t(`columns.${c}`) }))}
+            caption={t("trending.outliers")}
+            columns={OUTLIER_COLUMNS.map((c) => ({ key: c, label: t(`columns.${c}`) }))}
             rows={data.rows}
           />
         </div>
@@ -87,13 +82,11 @@ function TabData({
 }
 
 function ReplicateDialog({
-  open,
   onClose,
   channelId,
   sources,
   initialSource,
 }: {
-  open: boolean;
   onClose: () => void;
   channelId: string;
   sources: { id: string; title: string }[];
@@ -109,33 +102,25 @@ function ReplicateDialog({
   const submit = async () => {
     setBusy(true);
     setError(null);
-    const key = idempotencyKey();
     try {
-      const r = await call(() =>
-        stubApi.POST("/channels/{id}/ideas/replicate", {
-          params: { path: { id: channelId } },
-          body: { youtube_video_id: source, kind, ...(note.trim() ? { note: note.trim() } : {}) },
-          headers: { "Idempotency-Key": key },
+      await call(() =>
+        api.POST("/api/v1/channels/{channel_id}/ideas/replicate", {
+          params: { path: { channel_id: channelId } },
+          body: { youtube_video_id: source, kind, note: note.trim() || null, count: 5 },
+          headers: { "Idempotency-Key": idempotencyKey() },
         }),
       );
-      toast(t("trending.created", { title: r.idea_title }));
+      toast(t("trending.queued", { title }));
       onClose();
     } catch (e) {
-      if (e instanceof ProblemError && e.problem.code === "TOO_SIMILAR") setError(t("trending.tooSimilar"));
-      else
-        setError(e instanceof ProblemError ? (e.problem.detail ?? e.problem.title) : t("states.errorTitle"));
+      setError(e instanceof ProblemError ? (e.problem.detail ?? e.problem.title) : t("states.errorTitle"));
     } finally {
       setBusy(false);
     }
   };
   const field = "mt-1 w-full rounded-lg border border-line bg-bg px-3 py-2 text-sm";
   return (
-    <Dialog
-      open={open}
-      title={t("trending.dialogTitle", { title })}
-      onClose={onClose}
-      testId="replicate-dialog"
-    >
+    <Dialog open title={t("trending.dialogTitle", { title })} onClose={onClose} testId="replicate-dialog">
       <p className="text-sm text-muted">{t("trending.guard")}</p>
       <label htmlFor="rep-source" className="mt-3 block text-sm font-medium">
         {t("trending.source")}
@@ -183,145 +168,166 @@ function ReplicateDialog({
   );
 }
 
+function IdeaList({ ideas }: { ideas: IdeaOut[] }) {
+  return (
+    <ul className="space-y-2" data-testid="idea-list">
+      {ideas.map((i) => (
+        <li key={i.id} className="rounded-lg border border-line p-2 text-sm">
+          <p className="font-medium" dir="auto">
+            {i.title}
+          </p>
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+            <IdeaStateBadge state={i.state} />
+            {i.variation_kind && <Badge tone="info">{t(`trending.kinds.${i.variation_kind}`)}</Badge>}
+            {i.similarity_to_source !== null && (
+              <span className="text-muted">
+                {t("trending.toSource", { value: pct(i.similarity_to_source) })}
+              </span>
+            )}
+            <SimilarityBadge idea={i} />
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** Page 32 — Channel Trending (US-4.6, ADR-0025): own outliers, replicate own winners, new ideas. */
 export function ChannelTrendingPage() {
   const page = getPage("trending");
   const { id } = useParams();
-  const channelId = id ?? SAMPLE_IDS.channel;
-  const navigate = useNavigate();
-  const toast = useToast();
+  const { channelId: selected } = useSelectedChannel();
+  const channelId = id ?? selected ?? SAMPLE_IDS.channel;
+  const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("outliers");
-  const [dialog, setDialog] = useState(false);
-  const base = useId();
-  const tabRefs = useRef<Record<Tab, HTMLButtonElement | null>>({
-    outliers: null,
-    replicate: null,
-    ideas: null,
-  });
-
-  const outliers = useQuery({
-    queryKey: ["page", "trending", "outliers", channelId],
-    queryFn: () => getPageData(page.api, channelId, SAMPLE_IDS.channel),
-  });
+  const [dialog, setDialog] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
   const replicate = useQuery({
-    queryKey: ["page", "trending", "replicate", channelId],
+    queryKey: ["replicate", channelId],
     queryFn: () =>
-      call(() => stubApi.GET("/channels/{id}/replicate", { params: { path: { id: channelId } } })),
-    enabled: tab === "replicate",
+      call(() =>
+        api.GET("/api/v1/channels/{channel_id}/replicate", { params: { path: { channel_id: channelId } } }),
+      ),
+    enabled: tab !== "outliers",
   });
   const ideas = useQuery({
-    queryKey: ["page", "trending", "ideas", channelId],
-    queryFn: () => getPageData("/channels/{id}/ideas", channelId, SAMPLE_IDS.channel),
+    queryKey: ["ideas", channelId, "SUGGESTED"],
+    queryFn: () =>
+      call(() =>
+        api.GET("/api/v1/channels/{channel_id}/ideas", {
+          params: { path: { channel_id: channelId }, query: { state: "SUGGESTED", limit: 50 } },
+        }),
+      ),
     enabled: tab === "ideas",
   });
-
-  const sources = (outliers.data?.rows ?? []).map((r) => ({ id: r.id, title: String(r.title ?? r.id) }));
-  const queued = (action: string) => toast(t("toast.actionQueued", { action }));
-
-  const onKey = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const delta = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
-    if (!delta) return;
-    const next = TABS[(index + delta + TABS.length) % TABS.length] ?? "outliers";
-    setTab(next);
-    tabRefs.current[next]?.focus();
-  };
-
+  const winners = replicate.data?.winners ?? [];
+  const sources = winners.map((w) => ({ id: w.youtube_video_id, title: w.title }));
   return (
     <div className="space-y-4" data-testid="page-trending">
       <PageTitle page={page}>
         <div className="flex flex-wrap gap-2" role="group" aria-label={t("pages.trending.title")}>
-          <Button variant="primary" onClick={() => setDialog(true)} disabled={sources.length === 0}>
+          <Button
+            variant="primary"
+            onClick={() => {
+              setTab("replicate");
+              if (sources.length > 0) setDialog(sources[0]?.id ?? null);
+            }}
+          >
             {t("actions.replicateThis")}
           </Button>
-          <Button onClick={() => queued(t("actions.refreshAnalytics"))}>
-            {t("actions.refreshAnalytics")}
-          </Button>
+          <Button onClick={() => setGenerating(true)}>{t("trending.ideasAction")}</Button>
         </div>
       </PageTitle>
       <SafetyNote />
       <p className="text-sm text-muted">{t("trending.ownOnly")}</p>
-
-      <div
-        role="tablist"
-        aria-label={t("trending.tabs")}
-        className="flex gap-1 rounded-xl border border-line bg-surface p-1"
+      <Tabs
+        tabs={TABS}
+        value={tab}
+        onChange={setTab}
+        label={t("trending.tabs")}
+        labelOf={(n) => t(`trending.${n}`)}
       >
-        {TABS.map((name, i) => (
-          <button
-            key={name}
-            ref={(el) => {
-              tabRefs.current[name] = el;
-            }}
-            id={`${base}-tab-${name}`}
-            type="button"
-            role="tab"
-            aria-selected={tab === name}
-            aria-controls={`${base}-panel-${name}`}
-            tabIndex={tab === name ? 0 : -1}
-            onClick={() => setTab(name)}
-            onKeyDown={(e) => onKey(e, i)}
-            className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition ${
-              tab === name ? "bg-accent text-accent-fg shadow-glow" : "text-fg hover:bg-surface-2"
-            }`}
-          >
-            {t(`trending.${name}`)}
-          </button>
-        ))}
-      </div>
-
-      <div
-        role="tabpanel"
-        id={`${base}-panel-${tab}`}
-        aria-labelledby={`${base}-tab-${tab}`}
-        className="space-y-4"
-      >
-        {tab === "outliers" && (
-          <TabData
-            tab="outliers"
-            query={outliers}
-            emptyMessage={t("pages.trending.empty")}
-            emptyAction={t("pages.trending.emptyAction")}
-            onEmptyAction={() => queued(t("actions.refreshAnalytics"))}
-          />
-        )}
+        {tab === "outliers" && <Outliers channelId={channelId} />}
         {tab === "replicate" && (
-          <TabData
-            tab="replicate"
-            query={replicate}
-            emptyMessage={t("trending.replicateEmpty")}
-            emptyAction={t("trending.outliers")}
-            onEmptyAction={() => setTab("outliers")}
-          />
+          <>
+            {replicate.isPending && <LoadingSkeleton />}
+            {replicate.isError && (
+              <ProblemDisplay problem={asProblem(replicate.error)} onRetry={() => void replicate.refetch()} />
+            )}
+            {replicate.data && (
+              <div className="grid gap-4 lg:grid-cols-2" data-testid="state-success">
+                <Card title={t("trending.winners")}>
+                  {winners.length === 0 ? (
+                    <p className="text-sm text-muted">{t("trending.noWinners")}</p>
+                  ) : (
+                    <ul className="space-y-2" data-testid="winners">
+                      {winners.map((w) => (
+                        <li
+                          key={w.youtube_video_id}
+                          className="flex flex-wrap items-center justify-between gap-2 text-sm"
+                        >
+                          <span dir="auto">{w.title}</span>
+                          <Button onClick={() => setDialog(w.youtube_video_id)}>
+                            {t("actions.replicateThis")}
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Card>
+                <Card title={t("trending.variations")}>
+                  {replicate.data.variations.length === 0 ? (
+                    <p className="text-sm text-muted">{t("trending.replicateEmpty")}</p>
+                  ) : (
+                    <IdeaList ideas={replicate.data.variations} />
+                  )}
+                </Card>
+              </div>
+            )}
+          </>
         )}
         {tab === "ideas" && (
           <>
             <div className="flex flex-wrap gap-2">
-              <Button variant="primary" onClick={() => queued(t("trending.ideasAction"))}>
+              <Button variant="primary" onClick={() => setGenerating(true)}>
                 {t("trending.ideasAction")}
               </Button>
-              <Button onClick={() => void navigate(`/channels/${channelId}/ideas`)}>
+              <Link className="self-center text-sm text-accent underline" to={`/channels/${channelId}/ideas`}>
                 {t("pages.ideas.title")}
-              </Button>
+              </Link>
             </div>
-            <TabData
-              tab="ideas"
-              query={ideas}
-              emptyMessage={t("trending.ideasEmpty")}
-              emptyAction={t("trending.ideasAction")}
-              onEmptyAction={() => queued(t("trending.ideasAction"))}
-            />
+            {ideas.isPending && <LoadingSkeleton />}
+            {ideas.isError && (
+              <ProblemDisplay problem={asProblem(ideas.error)} onRetry={() => void ideas.refetch()} />
+            )}
+            {ideas.data && ideas.data.items.length === 0 && (
+              <StateCard
+                message={t("trending.ideasEmpty")}
+                actionLabel={t("trending.ideasAction")}
+                onAction={() => setGenerating(true)}
+              />
+            )}
+            {ideas.data && ideas.data.items.length > 0 && (
+              <div data-testid="state-success">
+                <IdeaList ideas={ideas.data.items} />
+              </div>
+            )}
           </>
         )}
-      </div>
-
-      {dialog && (
+      </Tabs>
+      {dialog !== null && (
         <ReplicateDialog
-          open={dialog}
-          onClose={() => setDialog(false)}
+          onClose={() => {
+            setDialog(null);
+            void qc.invalidateQueries({ queryKey: ["replicate", channelId] });
+          }}
           channelId={channelId}
           sources={sources}
-          initialSource={sources[0]?.id}
+          initialSource={dialog}
         />
+      )}
+      {generating && (
+        <GenerateDialog channelId={channelId} open={generating} onClose={() => setGenerating(false)} />
       )}
     </div>
   );

@@ -628,7 +628,13 @@
       "LONG_FROM_SHORT": "Long video from this Short",
       "SERIES": "Start a series"
     },
-    "source": "Your video"
+    "source": "Your video",
+    "outliersLater": "Outliers need your channel's own analytics (Phase 13). Until then this tab shows sample data.",
+    "queued": "Variations of “{title}” are being written. They appear under Variations shortly; any too close to the original are dropped.",
+    "winners": "Your published videos",
+    "noWinners": "No published videos yet. Once your channel publishes, its videos appear here to replicate.",
+    "variations": "Variations",
+    "toSource": "{value}% alike to the original"
   },
   "channelStates": {
     "PROPOSED": "Proposed",
@@ -1035,7 +1041,8 @@
     "expires": "Expires {date}",
     "dismiss": "Dismiss",
     "toIdea": "Turn into idea",
-    "ideasLater": "Ideas arrive in Phase 7."
+    "ideasLater": "Ideas arrive in Phase 7.",
+    "ideaMade": "Idea created in the Idea Generator. It expires with the trend."
   },
   "lookupPage": {
     "policy": "One public channel or video at a time. Results are never combined, ranked or used in scores, and are kept for 30 days at most (YouTube Developer Policies, ADR-0015).",
@@ -1165,5 +1172,208 @@
     "done": "“{name}” added; its blueprint is on the way.",
     "openBlueprints": "Open Blueprints",
     "unscored": "Added by you · not scored"
+  },
+  "content": {
+    "ideaState": {
+      "SUGGESTED": "Suggested",
+      "SHORTLISTED": "Shortlisted",
+      "SCHEDULED": "Scheduled",
+      "APPROVED": "Approved",
+      "IN_PRODUCTION": "In production",
+      "PRODUCED": "Produced",
+      "DISCARDED": "Discarded"
+    },
+    "projectState": {
+      "IDEA": "Idea",
+      "RESEARCHING": "Researching",
+      "RESEARCH_REVIEW": "Research review",
+      "SCRIPTING": "Scripting",
+      "SCRIPT_REVIEW": "Script review",
+      "STORYBOARDING": "Storyboard",
+      "ASSET_GENERATION": "Visuals",
+      "VOICEOVER": "Voice-over",
+      "ASSEMBLY": "Assembly",
+      "ROUGH_CUT_REVIEW": "Rough cut review",
+      "EXTERNAL_EDITING": "External editing",
+      "RENDERING": "Rendering",
+      "PACKAGING": "Packaging",
+      "QC_AUDIT": "Checks",
+      "BLOCKED": "Blocked",
+      "READY_FOR_APPROVAL": "Ready for approval",
+      "APPROVED": "Approved",
+      "UPLOADING": "Uploading",
+      "PROCESSING": "Processing",
+      "SCHEDULED": "Scheduled",
+      "PRIVATE_DONE": "Private (done)",
+      "PUBLISHED": "Published",
+      "ANALYZING": "Analysing",
+      "ARCHIVED": "Archived",
+      "PAUSED": "Paused",
+      "CANCELLED": "Cancelled",
+      "FAILED": "Failed"
+    },
+    "format": {
+      "LONG": "Long video",
+      "SHORT": "Short"
+    },
+    "source": {
+      "AGENT": "TubeForge idea",
+      "OWNER": "Your idea",
+      "BLUEPRINT": "From blueprint",
+      "REPLICATE": "Variation"
+    },
+    "duplicate": "Same as “{title}” ({pct}% alike): approving needs your reason",
+    "maybeSame": "Maybe the same idea as “{title}” in other words ({pct}% alike)",
+    "noBlueprint": "This channel has no approved blueprint yet, so ideas use one general pillar.",
+    "buildBlueprint": "Build a blueprint for it (Channel Discovery › Build)"
+  },
+  "ideasPage": {
+    "generate": "Generate ideas",
+    "newIdea": "New idea",
+    "generateTitle": "Generate ideas",
+    "count": "How many (1–20)",
+    "format": "Format",
+    "rotate": "Mix long videos and Shorts",
+    "generateHint": "TubeForge writes the ideas in the background from this channel's pillars and active trends, then checks them for promises and repeats. They appear here in a minute or two.",
+    "generateQueued": "Generating ideas. They appear here shortly.",
+    "newTitle": "Add your own idea",
+    "titleField": "Title",
+    "angle": "Angle (what makes it worth watching)",
+    "promise": "Packaging promise",
+    "thumbText": "Thumbnail text (≤ 40 characters)",
+    "promiseStatement": "What the viewer will get (one sentence)",
+    "add": "Add idea",
+    "created": "Idea added.",
+    "forChannel": "Channel: {name}",
+    "filter": "Filter ideas",
+    "all": "All",
+    "expires": "Expires with its trend on {date}",
+    "yourPart": "Your part:",
+    "shortlist": "Shortlist",
+    "discard": "Discard",
+    "date": "Date",
+    "schedule": "Schedule",
+    "approve": "Approve",
+    "openProject": "Open project",
+    "reason": "Why make it anyway? (at least 20 characters)",
+    "approveAnyway": "Approve with this reason",
+    "done": {
+      "shortlist": "Shortlisted.",
+      "schedule": "Scheduled.",
+      "approve": "Approved: the project is created and research has started.",
+      "discard": "Discarded."
+    }
+  },
+  "calendarPage": {
+    "prev": "Previous month",
+    "next": "Next month",
+    "allChannels": "All channels",
+    "moved": "Moved to {date}.",
+    "moveLabel": "Move “{title}” to another date",
+    "caption": "Content calendar for {month}",
+    "dragHint": "Drag an idea to another day, or change its date."
+  },
+  "projectsPage": {
+    "title": "Video projects",
+    "hint": "Each approved idea becomes a project. Open one to review its research and script.",
+    "empty": "No projects yet. Approve an idea to start one.",
+    "emptyAction": "Open Idea Generator"
+  },
+  "scriptPage": {
+    "target": "target {s} s",
+    "check": {
+      "research_brief_valid": "Research brief",
+      "no_contradicted_claims": "No contradicted facts",
+      "owner_value_add": "Your own value added",
+      "duration_fits_format": "Length fits the format",
+      "script": "Script"
+    },
+    "cmd": {
+      "start": "Start research",
+      "approve-research": "Approve research",
+      "request-research-changes": "Ask for new research",
+      "approve-script": "Approve script",
+      "request-script-changes": "Send back for changes",
+      "retry": "Retry",
+      "pause": "Pause",
+      "resume": "Resume",
+      "cancel": "Cancel project"
+    },
+    "done": {
+      "start": "Research started.",
+      "approve-research": "Research approved: the script is being written.",
+      "request-research-changes": "New research requested.",
+      "approve-script": "Script approved and locked.",
+      "request-script-changes": "Sent back for changes.",
+      "retry": "Retrying.",
+      "pause": "Paused.",
+      "resume": "Resumed.",
+      "cancel": "Project cancelled."
+    },
+    "overrideTitle": "Accept this claim anyway",
+    "overrideReason": "Why is it fine? (at least 20 characters)",
+    "override": "Accept with a reason",
+    "overridden": "Claim accepted with your reason.",
+    "accepted": "Accepted by you",
+    "verdict": {
+      "SUPPORTED": "Supported",
+      "UNSUPPORTED": "No source",
+      "CONTRADICTED": "Contradicted",
+      "OPINION": "Opinion"
+    },
+    "hookTimer": "Hook",
+    "hookSeconds": "{s} s (aim {low}–{high} s)",
+    "length": "Reads in {m}:{s} · {words} words",
+    "rehookBar": "Timeline with {n} re-hook markers",
+    "rehookHint": "Shaded: the hook. Marks: re-hooks (aim for about 25 %, 50 % and 75 %).",
+    "hook": "Hook (first seconds)",
+    "promiseText": "How the intro keeps the packaging promise",
+    "payoff": "Payoff",
+    "cta": "Call to action (soft)",
+    "ownerSlot": "Your story goes here: replace the [[OWNER: …]] slot with your own words.",
+    "saveVersion": "Save as new version",
+    "saved": "Saved as version {v}. Its facts are being checked.",
+    "valueAdd": "Your own value",
+    "valueHint": "What you add that an AI cannot. At least one field is needed before the script can be approved.",
+    "valueScore": "Value-add score: {score} / 100",
+    "valueSaved": "Saved.",
+    "saveValue": "Save",
+    "va": {
+      "own_experience": "Your experience",
+      "own_opinion": "Your opinion",
+      "own_data": "Your own data",
+      "own_examples": "Your examples",
+      "owner_footage": "I will add my own footage",
+      "owner_photos": "I will add my own photos"
+    },
+    "instruction": "Ask for a new draft (what should change?)",
+    "regenerate": "New draft",
+    "regenerateQueued": "A new draft is being written.",
+    "diff": "Changes up to v{b}",
+    "compareWith": "Compare v{b} with",
+    "brief": "Research brief v{v} · {status}",
+    "briefStatus": {
+      "DRAFT": "Draft",
+      "SUBMITTED": "Waiting for you",
+      "APPROVED": "Approved",
+      "REJECTED": "Sent back"
+    },
+    "openQuestions": "Open questions",
+    "briefClaims": "Facts in the research",
+    "scriptClaims": "Facts in this version",
+    "waitResearch": "The script is written after you approve the research.",
+    "script": "Script",
+    "version": "Version",
+    "author": {
+      "AGENT": "TubeForge",
+      "OWNER": "You"
+    },
+    "locked": "Locked",
+    "factCheck": {
+      "PENDING": "Facts being checked",
+      "DONE": "Facts checked",
+      "NO_SOURCES": "No sources to check against"
+    },
+    "allChecksPass": "All craft checks pass."
   }
 }

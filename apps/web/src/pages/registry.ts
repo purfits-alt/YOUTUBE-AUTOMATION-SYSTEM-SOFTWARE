@@ -103,6 +103,7 @@ export const PAGES: readonly PageDef[] = [
     path: "/channels/:id/ideas",
     group: "create",
     api: "/channels/{id}/ideas",
+    real: true,
     columns: ["title", "format", "pillar", "similarity", "source", "state", "calendarDate"],
     actions: ["generate", "newIdea", "shortlist", "approve", "discard"],
     safety: false,
@@ -114,6 +115,7 @@ export const PAGES: readonly PageDef[] = [
     path: "/calendar",
     group: "create",
     api: "/calendar",
+    real: true,
     columns: ["date", "channel", "title", "state"],
     actions: ["openItem", "filterChannels"],
     safety: false,
@@ -124,7 +126,8 @@ export const PAGES: readonly PageDef[] = [
     num: 11,
     path: "/projects/:id/script",
     group: "create",
-    api: "/projects/{id}/script",
+    api: "/projects/{id}/script/versions",
+    real: true,
     columns: ["claim", "verdict", "sources", "explanation"],
     actions: ["saveVersion", "runFactCheck", "approveScript", "requestChanges"],
     safety: false,
@@ -394,6 +397,7 @@ export function pageHref(page: PageDef, channelId?: string): string {
 export function navHref(page: PageDef, channelId?: string): string {
   if (page.id === "branding") return "/strategies";
   if (page.id === "niche") return "/research/niches";
+  if (page.id === "script") return "/projects";
   return pageHref(page, channelId);
 }
 
