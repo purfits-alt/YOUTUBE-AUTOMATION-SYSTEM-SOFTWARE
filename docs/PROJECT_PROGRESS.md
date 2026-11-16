@@ -915,6 +915,14 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
        - Send me the 10 scores. The target is an average of 4 or more.
 
 
+**Fix after the Phase 7 merge (owner report, 2026-11-16):** Channel Trending › Replicate / Milk crashed on the owner's PC ("Cannot read properties of undefined (reading 'length')").
+- **Cause:** the in-browser sample-data layer (MSW, still used for not-yet-real pages) kept an old Replicate mock, which answered instead of the real API with the old data shape.
+- **Fix:**
+  - removed the stale mocks and their stub-contract paths (Replicate, ideas, calendar, script);
+  - a unit test now fails if any browser mock shadows a real API path;
+  - a browser test opens every Channel Trending tab with the mock worker on, as in production;
+  - pages now show a friendly "Something went wrong" panel with Reload instead of a blank crash.
+
 ## Resource consumption
 
 | Resource | Used |

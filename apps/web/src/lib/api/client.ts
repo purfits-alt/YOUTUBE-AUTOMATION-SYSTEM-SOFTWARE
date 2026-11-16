@@ -149,7 +149,7 @@ export function idempotencyKey(): string {
  * runtime, so it is typed as one representative PageData path; openapi-fetch fills `{id}`.
  */
 export function getPageData(apiPath: string, id: string | undefined, fallbackId: string): Promise<PageData> {
-  const path = apiPath as "/projects/{id}/script";
+  const path = apiPath as "/projects/{id}/storyboard";
   return call(() => stubApi.GET(path, { params: { path: { id: id ?? fallbackId } } }));
 }
 
