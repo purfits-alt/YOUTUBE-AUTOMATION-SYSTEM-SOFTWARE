@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { seed, watchConsole } from "./helpers";
 
 test("theme switch: dark and back to light", async ({ page }) => {
   await page.goto("/");
@@ -42,4 +43,18 @@ test("every sidebar link opens its page", async ({ page }) => {
     await link.click();
     await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   }
+});
+
+// Regression (2026-11-16): with the browser mock worker on (as in production), an old Replicate
+// mock answered instead of the real API and crashed the tab. Every tab must open without errors.
+test("Channel Trending: every tab opens on the real API without errors", async ({ page }) => {
+  const problems = watchConsole(page, [404]);
+  await page.goto(`/channels/${seed().channelId}/trending`);
+  await expect(page.getByRole("heading", { level: 1, name: "Channel Trending" })).toBeVisible();
+  await page.getByRole("tab", { name: "Replicate / Milk" }).click();
+  await expect(page.getByText("Your published videos")).toBeVisible();
+  await page.getByRole("tab", { name: "New Ideas" }).click();
+  await expect(page.getByRole("button", { name: "Generate ideas" }).first()).toBeVisible();
+  await expect(page.getByTestId("route-error")).toHaveCount(0);
+  expect(problems).toEqual([]);
 });

@@ -3,6 +3,7 @@ import { AgentsPage } from "../pages/agents/AgentsPage";
 import { ChannelsPage } from "../pages/channels/ChannelsPage";
 import { OnboardingPage } from "../pages/channels/OnboardingPage";
 import { NotFound } from "../pages/NotFound";
+import { RouteError } from "../pages/RouteError";
 import { NotificationsPage } from "../pages/NotificationsPage";
 import { OverviewPage } from "../pages/OverviewPage";
 import { PageView } from "../pages/PageView";
@@ -52,6 +53,7 @@ export const routes: RouteObject[] = [
         <Layout />
       </AuthGate>
     ),
+    errorElement: <RouteError />,
     children: [
       ...PAGES.map((page) =>
         page.id === "overview"

@@ -236,35 +236,6 @@ export function pageData(page: PageDef, empty: boolean): PageData {
   };
 }
 
-/** Page 32 › Replicate / Milk: own winners and their variation ideas (US-4.6). */
-export function replicateData(empty: boolean): PageData {
-  if (empty) return { stats: [], rows: [], next_cursor: null };
-  const columns = ["title", "variation", "angle", "similarity", "state"] as const;
-  const titles = [
-    "Why octopuses dream",
-    "Why octopuses dream",
-    "The quiet maths of bridges",
-    "Why octopuses dream",
-  ];
-  const similarity = ["38%", "52%", "41%", "61%"];
-  const states = ["SUGGESTED", "SHORTLISTED", "SUGGESTED", "APPROVED"];
-  return {
-    stats: [
-      { key: "winners", label: "Winners to replicate", value: "2", hint: "≥ 2× your median" },
-      { key: "variations", label: "Variation ideas", value: "4", delta: "+3", delta_good: true },
-    ],
-    rows: titles.map((title, i) => {
-      const row: Row = { id: `rep-${String(i + 1)}`, title };
-      for (const col of columns.slice(1)) {
-        const sample = col === "similarity" ? similarity : col === "state" ? states : SAMPLES[col];
-        row[col] = sample?.[i % sample.length] ?? "—";
-      }
-      return row;
-    }),
-    next_cursor: null,
-  };
-}
-
 export function overviewData(empty: boolean): Overview {
   if (empty)
     return { kpis: [], pipeline: [], approvals: [], alerts: [], schedule: [], activity: [], views_14d: [] };
