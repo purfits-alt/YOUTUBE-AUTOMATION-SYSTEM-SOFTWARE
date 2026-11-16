@@ -59,6 +59,9 @@ function candidate(overrides: Partial<CandidateOut> = {}): CandidateOut {
       { kind: "WATCH", code: "PRODUCTION_FEASIBILITY", value: 90, confidence: "LOW" },
     ],
     footer: FOOTER,
+    added_by_owner: false,
+    owner_channel_name: null,
+    target_channel_id: null,
     ...overrides,
   };
 }
@@ -116,6 +119,7 @@ interface ResearchState {
   trends: TrendOut[];
   strategy: StrategyOut;
   approvedChannel: string | null;
+  built?: { name: string; channel_name: string | null; channel_id: string | null };
 }
 
 function initial(): ResearchState {
@@ -218,6 +222,33 @@ export const researchHandlers: HttpHandler[] = [
   }),
   http.post("/api/v1/niches/rescore", () => HttpResponse.json(research.report.candidates_list)),
   http.get("/api/v1/niches/weight-profiles", () => HttpResponse.json(research.profiles)),
+  http.post("/api/v1/niches/build", async ({ request }) => {
+    const body = (await request.json()) as {
+      name: string;
+      channel_name: string | null;
+      channel_id: string | null;
+    };
+    research.built = { name: body.name, channel_name: body.channel_name, channel_id: body.channel_id };
+    return HttpResponse.json(
+      {
+        candidate: candidate({
+          id: "c-own",
+          name: body.name,
+          status: "SHORTLISTED",
+          opportunity_score: "0.00",
+          band: null,
+          criteria: [],
+          remarks: [],
+          added_by_owner: true,
+          owner_channel_name: body.channel_name,
+          target_channel_id: body.channel_id,
+        }),
+        job_id: 11,
+        status: "QUEUED",
+      },
+      { status: 202 },
+    );
+  }),
   http.post("/api/v1/strategies", () => HttpResponse.json({ job_id: 7, status: "QUEUED" }, { status: 202 })),
   http.get("/api/v1/strategies", () => HttpResponse.json([research.strategy])),
   http.get("/api/v1/strategies/:id", () => HttpResponse.json(research.strategy)),

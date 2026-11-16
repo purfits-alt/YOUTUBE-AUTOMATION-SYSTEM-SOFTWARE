@@ -17,7 +17,12 @@ export const CONFIDENCE_TONE: Record<"LOW" | "MEDIUM" | "HIGH", Tone> = {
 };
 
 /** "72.5 ± 10" — the band shows when much of the score rests on low-confidence criteria. */
-export function ScoreText({ c }: { c: Pick<CandidateOut, "opportunity_score" | "band"> }) {
+export function ScoreText({
+  c,
+}: {
+  c: Pick<CandidateOut, "opportunity_score" | "band"> & { added_by_owner?: boolean };
+}) {
+  if (c.added_by_owner) return <Badge tone="info">{t("buildTab.unscored")}</Badge>;
   const value = Number(c.opportunity_score).toFixed(1);
   return (
     <span className="font-semibold tabular-nums">

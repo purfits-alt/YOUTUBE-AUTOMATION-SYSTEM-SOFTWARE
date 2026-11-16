@@ -1076,7 +1076,7 @@
     "approve": "Approve",
     "reject": "Reject",
     "newVersion": "New version",
-    "approveTitle": "Approve and create the channel",
+    "approveTitle": "Approve the blueprint",
     "approveHint": "Approving creates the channel in TubeForge. Next you create it on YouTube and connect it (Channels › Onboarding).",
     "channelName": "Channel name",
     "testChannel": "Start as my test channel (private test uploads only)",
@@ -1104,7 +1104,11 @@
     "calendar": "30-day calendar",
     "day": "Day {d}",
     "risks": "Risks",
-    "growth": "Growth (legitimate tactics only)"
+    "growth": "Growth (legitimate tactics only)",
+    "ownerName": "Your chosen name: {name}",
+    "attachHint": "The blueprint goes to this channel. Its name and YouTube connection stay as they are; its earlier blueprint is replaced.",
+    "approveAttach": "Approve for this channel",
+    "attached": "Blueprint approved for “{name}”."
   },
   "indexPages": {
     "blueprints": "Your blueprints",
@@ -1130,5 +1134,36 @@
     "copy": "Copy",
     "copied": "Copied: {what}",
     "copyFailed": "Could not copy. Select the text and copy it by hand."
+  },
+  "buildTab": {
+    "tabs": "Discovery or build",
+    "tab": {
+      "run": "Run discovery",
+      "build": "Build"
+    },
+    "title": "Build a niche or channel yourself",
+    "hint": "Skip discovery: name the niche you want. TubeForge writes the blueprint (pillars, ideas, branding). Use your own channel name, let TubeForge suggest names, or give the blueprint to a channel you already have.",
+    "niche": "Niche",
+    "nicheHint": "e.g. Open source AI tools",
+    "language": "Language",
+    "summary": "What the channel is about (optional)",
+    "angles": "What makes it yours (optional, comma separated)",
+    "anglesHint": "e.g. my own tests, my voice, side-by-side comparisons",
+    "channel": "Channel",
+    "newChannel": "New channel",
+    "existingChannel": "A channel I already have",
+    "suggestNames": "Let TubeForge suggest channel names",
+    "ownName": "I have a name",
+    "channelName": "Channel name",
+    "pickChannel": "Choose the channel",
+    "choose": "Choose…",
+    "noChannels": "No channels yet. Add one in Channel Manager first.",
+    "existingHint": "For channels you onboarded yourself (Channel Manager › Add channel). Approving the blueprint gives the channel its pillars, so ideas, the calendar, Script Studio and Channel Trending work for it the same way.",
+    "notes": "Notes for TubeForge (optional)",
+    "submit": "Build blueprint",
+    "queued": "Blueprint is being written. It appears under Blueprints in a minute or two.",
+    "done": "“{name}” added; its blueprint is on the way.",
+    "openBlueprints": "Open Blueprints",
+    "unscored": "Added by you · not scored"
   }
 }
