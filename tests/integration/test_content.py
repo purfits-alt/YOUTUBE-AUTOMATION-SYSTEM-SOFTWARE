@@ -330,7 +330,7 @@ def test_idea_to_reviewed_script(db: Session, env: Env, gw: Gateway, model: Scri
     model.replies["A11_SCRIPTWRITING"] = lambda _r, _ids: answers.pop(0)
     result = pipe.run_script(db, gw, project.id, now=NOW)
     a11 = model.users("A11_SCRIPTWRITING")
-    assert len(a11) == 2 and "failed these checks" not in a11[0] and "HOOK_GREETING" in a11[1]
+    assert len(a11) == 2 and "Notes for this draft" not in a11[0] and "HOOK_GREETING" in a11[1]
     assert "Most students track every purchase" not in a11[0]  # contradicted claim not offered
     assert "I logged every purchase" in a11[0]
     assert "480 s ± 10 %" in next(r.system for a, r in model.calls if a == "A11_SCRIPTWRITING")
@@ -348,6 +348,17 @@ def test_idea_to_reviewed_script(db: Session, env: Env, gw: Gateway, model: Scri
     assert project.state == "SCRIPT_REVIEW"
     titles = set(db.scalars(select(Notification.title)))
     assert {"Research brief ready for review", "Script draft ready for review"} <= titles
+
+    # The owner's own edit is fact-checked by its own job (``content.fact_check``).
+    edit = ScriptVersion(id=uuid7(), script_id=version.script_id, version=2, author_type="OWNER", author_id="owner",
+                         body={**version.body, "_fact_check": "PENDING"}, plain_text=version.plain_text,
+                         word_count=version.word_count, est_duration_s=version.est_duration_s,
+                         content_sha256=version.content_sha256)  # fmt: skip
+    db.add(edit)
+    db.commit()
+    assert pipe.fact_check_version(db, gw, edit.id, now=NOW) == 2
+    db.refresh(edit)
+    assert edit.body["_fact_check"] == "DONE" and version.body["_fact_check"] == "DONE"
 
     # A second script run is refused outside SCRIPTING; recent phrases feed later scripts.
     with pytest.raises(PipelineError, match="not SCRIPTING"):

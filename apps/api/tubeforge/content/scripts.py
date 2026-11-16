@@ -10,9 +10,15 @@ from typing import Any
 from tubeforge.content import craft
 
 
+def content(body: dict[str, Any]) -> dict[str, Any]:
+    """The script itself, without TubeForge's bookkeeping keys (those start with ``_``)."""
+    return {k: v for k, v in body.items() if not k.startswith("_")}
+
+
 def fingerprint(body: dict[str, Any]) -> str:
-    """SHA-256 of the canonical JSON body (the approval hash for a locked script)."""
-    canonical = json.dumps(body, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    """SHA-256 of the canonical JSON script (the approval hash for a locked script). Bookkeeping keys
+    such as ``_fact_check`` are not part of it."""
+    canonical = json.dumps(content(body), sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 

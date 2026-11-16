@@ -212,8 +212,11 @@ def start_project(
     *,
     target_duration_s: int | None = None,
     now: datetime | None = None,
+    commit: bool = True,
 ) -> VideoProject:
-    """APPROVED idea → project in RESEARCHING (the orchestrator's step after the owner's approval)."""
+    """APPROVED idea → project in RESEARCHING (the orchestrator's step after the owner's approval).
+    The API passes ``commit=False`` so the approval, the project and the research job share one
+    transaction."""
     idea = db.get_one(VideoIdea, idea_id)
     if idea.state != "APPROVED":
         raise PipelineError("FAILED", "Approve the idea first.")
@@ -240,7 +243,8 @@ def start_project(
         db, MACHINES["video_project"], project.id, "start_research", actor=ORCH,
         idempotency_key=f"start-research:{project.id}", now=now,
     )  # fmt: skip
-    db.commit()
+    if commit:
+        db.commit()
     return project
 
 
@@ -397,7 +401,8 @@ def brief_facts(brief: ResearchBrief) -> list[dict[str, Any]]:
         {
             "id": c.get("id"),
             "sources": len(c.get("source_document_ids", [])),
-            "verdict": str(c.get("verdict", "")).lower(),
+            # An owner override (``/claims/{id}/override``) turns a contradicted claim into an accepted one.
+            "verdict": "overridden" if c.get("override_reason") else str(c.get("verdict", "")).lower(),
         }
         for c in brief.content.get("claims", [])
     ]
@@ -559,6 +564,7 @@ def run_script(
     project_id: uuid.UUID,
     *,
     wpm: int = craft.DEFAULT_WPM,
+    instruction: str = "",
     now: datetime | None = None,
 ) -> ScriptResult:
     project = db.get_one(VideoProject, project_id)
@@ -618,16 +624,27 @@ def run_script(
             raise _outcome_error(out)
         return dict(out.data)
 
-    body = draft({})
+    asked = f"Owner's instruction for this draft: {instruction.strip()[:800]}" if instruction.strip() else ""
+    if asked:
+        latest = db.scalar(
+            select(ScriptVersion)
+            .join(Script, Script.id == ScriptVersion.script_id)
+            .where(Script.project_id == project.id)
+            .order_by(ScriptVersion.version.desc())
+            .limit(1)
+        )
+        if latest is not None:
+            data["current_draft"] = latest.plain_text[:40000]
+    body = draft({"fix_notes": asked} if asked else {})
     findings = check(body)
     repaired = False
     if craft.errors(findings):
         log.info("script.repair", project_id=str(project.id), codes=[f.code for f in craft.errors(findings)])
-        body = draft({"fix_notes": _describe(findings)})
+        body = draft({"fix_notes": "; ".join(filter(None, [asked, _describe(findings)]))[:3000]})
         findings = check(body)
         repaired = True
     words, est = craft.measure(body, wpm)
-    body = {**body, "word_count": words, "est_duration_s": est}  # measured, not the model's numbers
+    body = {**scripts.content(body), "word_count": words, "est_duration_s": est}  # measured by code
     script = db.scalar(select(Script).where(Script.project_id == project.id))
     if script is None:
         script = Script(id=uuid7(), project_id=project.id, channel_id=project.channel_id)
@@ -657,6 +674,7 @@ def run_script(
     db.add(version)
     db.flush()
     docs = _docs_for(db, [str(d["id"]) for d in brief.content.get("documents", [])])
+    version.body = {**version.body, "_fact_check": "DONE" if docs else "NO_SOURCES"}
     if docs:
         _store_claims(
             db, project, "SCRIPT_VERSION", version.id,
@@ -685,3 +703,27 @@ def run_script(
     )
     db.commit()
     return ScriptResult(version, findings, repaired)
+
+
+def fact_check_version(
+    db: Session, gateway: Gateway, version_id: uuid.UUID, *, now: datetime | None = None
+) -> int:
+    """A10 on one script version (the owner's own edits). Marks ``_fact_check`` DONE; returns the
+    number of claims found."""
+    version = db.get_one(ScriptVersion, version_id)
+    script = db.get_one(Script, version.script_id)
+    project = db.get_one(VideoProject, script.project_id)
+    brief = db.scalar(
+        select(ResearchBrief)
+        .where(ResearchBrief.project_id == project.id, ResearchBrief.status == "APPROVED")
+        .order_by(ResearchBrief.version.desc())
+        .limit(1)
+    )
+    docs = _docs_for(db, [str(d["id"]) for d in brief.content.get("documents", [])]) if brief else []
+    rows: list[FactCheckClaim] = []
+    if docs:
+        outcome = _fact_check(db, gateway, project, version.plain_text, docs, now)
+        rows = _store_claims(db, project, "SCRIPT_VERSION", version.id, outcome, docs)
+    version.body = {**version.body, "_fact_check": "DONE" if docs else "NO_SOURCES"}
+    db.commit()
+    return len(rows)

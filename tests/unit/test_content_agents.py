@@ -139,10 +139,10 @@ def test_a11_prompt_carries_targets_and_repair_notes() -> None:
     user = ca.A11.user_message(data)
     assert (
         user.count("</untrusted_source>") == user.count("<untrusted_source")
-        and "failed these checks" not in user
+        and "Notes for this draft" not in user
     )
     fixed = ca.A11.user_message(_script_input(fix_notes="HOOK_LENGTH: the hook is 5 words"))
-    assert "failed these checks: HOOK_LENGTH" in fixed
+    assert "previous draft failed): HOOK_LENGTH" in fixed
 
 
 def test_a11_schema_accepts_the_golden_scripts_and_rejects_bad_ones() -> None:

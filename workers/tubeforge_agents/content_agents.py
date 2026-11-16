@@ -178,6 +178,7 @@ class ScriptInput(BaseModel):
     target_duration_s: int = Field(ge=10, le=3600)
     wpm: int = Field(default=150, ge=80, le=220)
     recent_script_phrases: list[str] = Field(default_factory=list, max_length=40)
+    current_draft: str = Field(default="", max_length=40000)  # the latest version, for an owner's redraft
     fix_notes: str = Field(default="", max_length=3000)  # set by the pipeline after failed checks
 
 
@@ -205,8 +206,8 @@ class ScriptwritingAgent(AgentTask):
         fixes = ""
         if data.fix_notes:
             fixes = (
-                "\nYour previous draft failed these checks: "
-                f"{data.fix_notes}\nWrite the whole script again and fix every one of them."
+                "\nNotes for this draft (an owner's instruction and/or checks your previous draft "
+                f"failed): {data.fix_notes}\nWrite the whole script and follow every one of them."
             )
         return render_user(
             "Working title: {{ title | untrusted('title') }}\n"
@@ -218,7 +219,9 @@ class ScriptwritingAgent(AgentTask):
             "Owner's value-add text (use verbatim in [[OWNER: …]] places): "
             "{{ value_add | untrusted('owner_value_add') }}\n"
             "Style guide: {{ style | untrusted('style_guide') }}\n"
-            "Recent-script phrases to avoid: {{ recent | untrusted('recent_script_phrases') }}{{ fixes }}",
+            "Recent-script phrases to avoid: {{ recent | untrusted('recent_script_phrases') }}"
+            "{% if draft %}\nCurrent draft (revise it; keep what the notes do not ask to change): "
+            "{{ draft | untrusted('current_draft') }}{% endif %}{{ fixes }}",
             {
                 "title": data.title,
                 "promise": data.packaging_promise.model_dump_json(),
@@ -229,6 +232,7 @@ class ScriptwritingAgent(AgentTask):
                 "value_add": json.dumps(data.value_add, ensure_ascii=False) if data.value_add else "(none)",
                 "style": data.style_guide.model_dump_json(),
                 "recent": json.dumps(data.recent_script_phrases, ensure_ascii=False),
+                "draft": data.current_draft,
                 "fixes": fixes,
             },
         )
