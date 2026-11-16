@@ -94,6 +94,18 @@ When steps 8 and 10 are done, the channel becomes **Active**.
   showing your own account the "unverified app" screen, which you can accept for personal use. Verification
   is only needed if other people would use your app, and they won't.
 
+## Adding another channel (a second or external channel)
+You reuse the same Google Cloud project and the same OAuth client. Only two things are different:
+- **Step 6:** if the new channel belongs to a **different Google account** (another Gmail), add that account under
+  **Google Auth Platform › Audience › Test users › Add users**. Without it, Google shows
+  "Access blocked: TubeForge (personal) has not completed the Google verification process … Error 403:
+  access_denied". Up to 100 test users are allowed. Do not press **Publish app** for this.
+- **Step 7:** TubeForge already has the OAuth client, so the step shows "Already saved" and has no fields. Just
+  mark it done.
+- **Step 9:** when Google asks, sign in with the account that owns the new channel. If that account has several
+  channels (brand accounts), pick the right one. TubeForge then shows the channel it found, so you can confirm it.
+- **Quota:** all channels in one Google Cloud project share its daily YouTube quota (10,000 units, 100 uploads).
+
 ## Report back
 Send me (Claude) what you saw in steps 9 and 10, or any error text. **Do not send the client secret.**
 I record the result of the manual test in `PROJECT_PROGRESS.md`.
