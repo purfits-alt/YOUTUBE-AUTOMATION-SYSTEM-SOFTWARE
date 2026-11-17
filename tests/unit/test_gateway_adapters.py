@@ -175,3 +175,16 @@ def test_answers_cut_off_at_the_output_limit_are_flagged(
 ) -> None:
     _, transport = capture(httpx.Response(200, json=body))
     assert adapter(transport).text(REQ, "k").truncated is cut
+
+
+def test_gemma_gets_no_json_mode_and_thoughts_are_dropped() -> None:
+    """Gemma 4 on the Gemini API does not document JSON mode; thinking parts are never the answer."""
+    reply = httpx.Response(
+        200,
+        json={"candidates": [{"content": {"parts": [{"text": "plan…", "thought": True}, {"text": "{}"}]}}]},
+    )
+    seen, transport = capture(reply)
+    gemma = TextRequest(model="gemma-4-31b-it", messages=(Message("user", "hi"),), json_mode=True)
+    out = GeminiAdapter(transport).text(gemma, "k")
+    assert "responseMimeType" not in json.loads(seen[0].content)["generationConfig"]
+    assert out.text == "{}"

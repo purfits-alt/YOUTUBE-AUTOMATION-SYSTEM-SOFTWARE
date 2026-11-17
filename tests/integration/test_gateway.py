@@ -255,7 +255,10 @@ def test_licence_rules_for_monetised_channels(gw: Gateway, db: Session) -> None:
 def test_missing_key_disabled_provider_and_kill_switch_are_skipped(
     gw: Gateway, db: Session, env: Env
 ) -> None:
-    db.query(ProviderCredential).filter(ProviderCredential.provider_code == GEMINI).delete()
+    # No Gemini key at all (a model without its own key would use the provider's key).
+    db.query(ProviderCredential).filter(ProviderCredential.provider_code.like("gemini:%")).delete(
+        synchronize_session=False
+    )
     db.get_one(ProviderRegistry, GROQ).enabled = False
     db.add(KillSwitch(id=uuid7(), scope="PROVIDER", target_id="ollama", reason="t", set_by=env.owner.id))
     db.commit()
@@ -375,9 +378,14 @@ def test_keys_are_encrypted_per_row(gw: Gateway, db: Session, box: SecretBox) ->
     rows = db.scalars(
         select(ProviderCredential).where(ProviderCredential.provider_code.like("gemini:%"))
     ).all()
-    assert len(rows) == 5 and all(b"AIza-test-key" not in r.secret_enc for r in rows)
+    assert len(rows) == 7 and all(b"AIza-test-key" not in r.secret_enc for r in rows)  # incl. Gemma 4
     assert registry.api_key(db, box, GEMINI) == "AIza-test-key"
-    assert not registry.has_key(db, "groq:unknown") and registry.has_key(db, LOCAL)
+    assert not registry.has_key(db, "mystery:model") and registry.has_key(db, LOCAL)
+    # A model registered after the key was entered uses the provider's key (one key per provider).
+    db.query(ProviderCredential).filter(ProviderCredential.provider_code == "gemini:gemma-4-31b-it").delete()
+    db.commit()
+    assert registry.api_key(db, box, "gemini:gemma-4-31b-it") == "AIza-test-key"
+    assert registry.has_key(db, "gemini:gemma-4-31b-it")
 
 
 def test_unknown_or_unlisted_provider(gw: Gateway, db: Session) -> None:

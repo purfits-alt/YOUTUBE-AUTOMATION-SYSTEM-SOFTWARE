@@ -933,10 +933,15 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
 - **Tests:** adapter flags, the doubled retry, and fallback to the next model.
 
 **Owner request (2026-11-17): "add free models that are authentic and give real answers according to our rules and Google, YouTube and AdSense policies".**
-- **Part 1 (done):** every agent chain now tries all 7 registered free models (migration 0014; owner-edited chains untouched).
+- **Part 1 (done):** every agent chain now tries every registered free model (migration 0014; owner-edited chains untouched).
   - Reasoning: Gemini 3.8 Flash → 3.6 Flash → Groq gpt-oss-120b → Gemini 3.5 Flash-Lite → 3.1 Flash-Lite → Groq gpt-oss-20b → local Qwen.
   - Light work: the same models, the lighter ones first.
-- **Part 2 (next):** check new free providers against the rules below, then add only those that pass. The rules:
+- **Part 2 (done, ADR-0030):** new free providers were checked on their official pages against the rules below. Results:
+  - **added:** Gemma 4 (`gemma-4-31b-it`, `gemma-4-26b-a4b-it`; Apache 2.0, free, same Gemini key), so every chain now has 9 models;
+  - **not added:** Groq Qwen (a preview model), Mistral (free API withdrawn), Cerebras (needs a card), OpenRouter free models (prompts may be used for training), GitHub Models (prototyping only);
+  - one key per provider: models added later use the stored key.
+
+  The rules:
   - free with no billing;
   - commercial use of the output allowed;
   - acceptable data use;

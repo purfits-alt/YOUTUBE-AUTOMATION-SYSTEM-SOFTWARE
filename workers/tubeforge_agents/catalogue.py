@@ -1,7 +1,8 @@
 """The 32 agents of AI_AGENT_ARCHITECTURE §2 (+ the HELLO test agent) and their default settings.
 
 Migration 0008 seeds ``agent_configurations`` from a frozen copy of this table, 0011 adds a
-second Gemini model to the default chains and 0014 adds every other registered free model;
+second Gemini model to the default chains and 0014 adds every other free model
+(including Gemma 4);
 a unit test keeps the result equal to this table.
 The owner changes chains and limits later in the Agent Control Center.
 """
@@ -15,11 +16,12 @@ Kind = Literal["LLM", "HYBRID", "DETERMINISTIC", "ADAPTER", "TEST"]
 LOCAL = "ollama:qwen2.5:1.5b"
 G38, G36 = "gemini:gemini-3.8-flash", "gemini:gemini-3.6-flash"
 G35L, G31L = "gemini:gemini-3.5-flash-lite", "gemini:gemini-3.1-flash-lite"
+GM31, GM26 = "gemini:gemma-4-31b-it", "gemini:gemma-4-26b-a4b-it"  # Gemma 4, Apache-2.0 (0014)
 Q120, Q20 = "groq:openai/gpt-oss-120b", "groq:openai/gpt-oss-20b"
 # Every registered free model, best first, the local model last (migrations 0011 and 0014): one
 # model's busy day or bad answer never stops a job while another free model can answer.
-REASONING = [G38, G36, Q120, G35L, G31L, Q20, LOCAL]
-LIGHT = [G35L, G31L, Q20, G36, G38, Q120, LOCAL]
+REASONING = [G38, G36, Q120, GM31, G35L, G31L, Q20, GM26, LOCAL]
+LIGHT = [G35L, G31L, Q20, GM26, G36, G38, Q120, GM31, LOCAL]
 
 
 @dataclass(frozen=True)

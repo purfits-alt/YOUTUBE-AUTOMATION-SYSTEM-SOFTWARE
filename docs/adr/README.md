@@ -31,3 +31,4 @@
 | [ADR-0027](ADR-0027-local-llm-qwen2.5-1.5b.md) | Local LLM fallback: Qwen2.5-1.5B-Instruct on Ollama (Apache-2.0) | Accepted |
 | [ADR-0028](ADR-0028-product-site-on-semrs-subdomain.md) | Product site at tubeforge.semrs.com (web address and static hosting only) | Accepted |
 | [ADR-0029](ADR-0029-local-similarity-model2vec.md) | Local similarity: model2vec static embeddings (potion-multilingual-128M, MIT) with trigram fallback | Accepted |
+| [ADR-0030](ADR-0030-free-model-admission.md) | Free AI model admission rules (free, production, commercial-OK, data use, allowlisted host); Gemma 4 added; all free models in every chain | Accepted |

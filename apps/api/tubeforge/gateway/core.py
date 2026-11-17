@@ -49,13 +49,15 @@ log = get_logger("tubeforge.gateway")
 LOCAL = "ollama:qwen2.5:1.5b"
 # Fallback chains per task type (owner-editable in Settings › provider_chains; agents may override).
 # Every registered free model, best first, the local model last (migrations 0011 and 0014).
+GEMMA_31B, GEMMA_26B = "gemini:gemma-4-31b-it", "gemini:gemma-4-26b-a4b-it"
 REASONING = [
-    "gemini:gemini-3.8-flash", "gemini:gemini-3.6-flash", "groq:openai/gpt-oss-120b",
-    "gemini:gemini-3.5-flash-lite", "gemini:gemini-3.1-flash-lite", "groq:openai/gpt-oss-20b", LOCAL,
+    "gemini:gemini-3.8-flash", "gemini:gemini-3.6-flash", "groq:openai/gpt-oss-120b", GEMMA_31B,
+    "gemini:gemini-3.5-flash-lite", "gemini:gemini-3.1-flash-lite", "groq:openai/gpt-oss-20b", GEMMA_26B,
+    LOCAL,
 ]  # fmt: skip
 LIGHT = [
-    "gemini:gemini-3.5-flash-lite", "gemini:gemini-3.1-flash-lite", "groq:openai/gpt-oss-20b",
-    "gemini:gemini-3.6-flash", "gemini:gemini-3.8-flash", "groq:openai/gpt-oss-120b", LOCAL,
+    "gemini:gemini-3.5-flash-lite", "gemini:gemini-3.1-flash-lite", "groq:openai/gpt-oss-20b", GEMMA_26B,
+    "gemini:gemini-3.6-flash", "gemini:gemini-3.8-flash", "groq:openai/gpt-oss-120b", GEMMA_31B, LOCAL,
 ]  # fmt: skip
 DEFAULT_CHAINS: dict[str, list[str]] = {
     "default": REASONING,
@@ -65,9 +67,11 @@ DEFAULT_CHAINS: dict[str, list[str]] = {
         "gemini:gemini-3.6-flash",
         "gemini:gemini-3.8-flash",
         "groq:openai/gpt-oss-120b",
+        GEMMA_31B,
         "gemini:gemini-3.5-flash-lite",
         "gemini:gemini-3.1-flash-lite",
         "groq:openai/gpt-oss-20b",
+        GEMMA_26B,
         LOCAL,
     ],
     "seo": LIGHT,
