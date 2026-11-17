@@ -96,6 +96,20 @@ def test_ollama_is_local_and_keyless() -> None:
         (503, "overloaded", "TRANSIENT"),
         (400, "bad request", "INVALID"),
         (403, "Your project has billing enabled; charges apply", "PAID_INDICATOR"),
+        (402, "Payment required", "PAID_INDICATOR"),
+        # Free-tier quota messages mention billing: they are limits, not paid signs (2026-11-17).
+        (
+            429,
+            '{"error":{"code":429,"message":"You exceeded your current quota, please check your plan and '
+            'billing details.","status":"RESOURCE_EXHAUSTED"}}',
+            "LIMIT",
+        ),
+        (
+            429,
+            '{"error":{"message":"Rate limit reached for model openai/gpt-oss-120b on tokens per day. '
+            'Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing"}}',
+            "LIMIT",
+        ),
     ],
 )
 def test_error_classification(status: int, body: str, kind: str) -> None:

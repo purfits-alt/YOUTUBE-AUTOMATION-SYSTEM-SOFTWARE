@@ -949,6 +949,17 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
 
   Every model's output still goes through the same checks (schemas, forbidden phrases, evidence and fact checks, auditors).
 
+**Fix (owner report, 2026-11-17): "New ideas could not be generated: gemini-3.8-flash is disabled; … groq gpt-oss-120b: kill switch".**
+- **Cause:** a false A32 alarm.
+  - Free-tier quota errors mention billing: Gemini's 429 says "check your plan and billing details", and Groq's links to its billing page.
+  - The adapter tested for billing words before limits, so an ordinary free daily limit switched the model off. It set a kill switch and sent a "Possible charges" alert.
+  - There were no charges.
+- **Fix:**
+  - limits (429, RESOURCE_EXHAUSTED, quota, rate limit) are now classified first; only other errors with billing wording, or a 402, raise the paid indicator;
+  - Cost & Usage shows a provider's kill switch with its reason and a **Clear kill switch** button (before, provider kill switches could only be cleared through the API);
+  - the agent settings dialog has **Use default list**, which restores TubeForge's default chain (all free models) for chains saved before migration 0014 or edited by hand.
+- **Owner's part:** in Cost & Usage, clear the kill switch on Groq gpt-oss-120b and switch Gemini 3.8 Flash back on. Then, in Agents › Idea Generation › Settings, press **Use default list** › **Save**.
+
 ## Resource consumption
 
 | Resource | Used |

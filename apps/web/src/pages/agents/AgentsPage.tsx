@@ -40,6 +40,7 @@ function ConfigDialog({ agent, onClose }: { agent: AgentOut; onClose: () => void
   const llm = (providers.data ?? []).filter((p) => p.capability === "LLM");
   const [enabled, setEnabled] = useState(agent.enabled);
   const [chain, setChain] = useState<string[]>(agent.provider_chain);
+  const defaults = agent.default_chain ?? [];
   const [calls, setCalls] = useState(String(agent.limits.calls_per_day ?? ""));
   const [tokens, setTokens] = useState(String(agent.limits.tokens_per_day ?? ""));
   const [error, setError] = useState<string | null>(null);
@@ -134,6 +135,14 @@ function ConfigDialog({ agent, onClose }: { agent: AgentOut; onClose: () => void
                   </option>
                 ))}
             </select>
+            {defaults.length > 0 && chain.join() !== defaults.join() && (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                <Button onClick={() => setChain(defaults)} data-testid="chain-default">
+                  {t("agentsPage.useDefault")}
+                </Button>
+                {t("agentsPage.useDefaultHint", { n: defaults.length })}
+              </div>
+            )}
           </fieldset>
         )}
         <div className="grid gap-3 sm:grid-cols-2">

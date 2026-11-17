@@ -851,7 +851,9 @@
       "ABORTED": "Stopped",
       "WAITING_QUOTA": "Waiting for quota"
     },
-    "noRuns": "No agent runs yet. Start a test run of the hello agent above."
+    "noRuns": "No agent runs yet. Start a test run of the hello agent above.",
+    "useDefault": "Use default list",
+    "useDefaultHint": "TubeForge's list for this agent: all {n} free models, best first, your PC last. Save to apply."
   },
   "usagePage": {
     "banner": "This month: {spent} spent · {count} paid providers enabled",
@@ -917,7 +919,10 @@
     },
     "stockCap": "Stock media budget: {cap} (0 = off).",
     "newStockCap": "New stock budget (USD)",
-    "budgetSaved": "Budget saved."
+    "budgetSaved": "Budget saved.",
+    "switchedOff": "Kill switch on: {reason}. TubeForge does not use this model until you clear it.",
+    "clearSwitch": "Clear kill switch",
+    "switchCleared": "Kill switch cleared. Switch the model on if it is off."
   },
   "levels": {
     "LOW": "Low",

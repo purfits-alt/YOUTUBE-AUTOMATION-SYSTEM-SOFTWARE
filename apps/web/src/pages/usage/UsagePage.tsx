@@ -7,7 +7,7 @@ import { useToast } from "../../components/Toasts";
 import { Badge, Button, Card, type Tone } from "../../components/ui";
 import { t } from "../../i18n";
 import { api, call, idempotencyKey, type ProviderOut, type UsageLine } from "../../lib/api/client";
-import { useQuota } from "../../lib/useBackend";
+import { useControls, useQuota } from "../../lib/useBackend";
 import { inputCls, problemText } from "../channels/common";
 import { asProblem, LoadingSkeleton, PageTitle } from "../PageView";
 import { getPage } from "../registry";
@@ -72,6 +72,7 @@ function ModelRow({
   onChanged: () => Promise<void>;
 }) {
   const toast = useToast();
+  const qc = useQueryClient();
   const [rpd, setRpd] = useState(String(limitOf(p, "REQUESTS") ?? ""));
   const [tpd, setTpd] = useState(String(limitOf(p, "TOKENS") ?? ""));
   const used = (metric: string) =>
@@ -112,6 +113,23 @@ function ModelRow({
     }
   };
   const ids = (s: string) => `${s}-${p.code.replace(/[^a-z0-9]/gi, "-")}`;
+  const controls = useControls();
+  const family = p.code.split(":")[0] ?? "";
+  const switches = (controls.data?.kill_switches ?? []).filter(
+    (k) => k.active && k.scope === "PROVIDER" && (k.target_id === p.code || k.target_id === family),
+  );
+  const clearSwitch = async (id: string) => {
+    try {
+      await call(() =>
+        api.DELETE("/api/v1/system/kill-switches/{switch_id}", { params: { path: { switch_id: id } } }),
+      );
+      toast(t("usagePage.switchCleared"));
+      await qc.invalidateQueries({ queryKey: ["controls"] });
+      await onChanged();
+    } catch (e) {
+      toast(problemText(e), "danger");
+    }
+  };
   return (
     <li className="space-y-3 rounded-xl border border-line p-4" data-testid={`provider-${p.code}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -142,6 +160,17 @@ function ModelRow({
           </label>
         </div>
       </div>
+      {switches.map((k) => (
+        <div
+          key={k.id}
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn-text"
+          data-testid={ids("kill-switch")}
+        >
+          <span>{t("usagePage.switchedOff", { reason: k.reason })}</span>
+          <Button onClick={() => void clearSwitch(k.id)}>{t("usagePage.clearSwitch")}</Button>
+        </div>
+      ))}
       <div className="grid gap-3 sm:grid-cols-2">
         <Meter
           label={t("usagePage.requestsToday")}
