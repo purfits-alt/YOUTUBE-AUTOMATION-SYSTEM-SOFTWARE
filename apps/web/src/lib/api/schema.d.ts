@@ -1958,6 +1958,11 @@ export interface components {
         AgentOut: {
             /** Agent Code */
             agent_code: string;
+            /**
+             * Default Chain
+             * @description TubeForge's default chain for this agent (every free model).
+             */
+            default_chain?: string[];
             /** Enabled */
             enabled: boolean;
             /** Etag */

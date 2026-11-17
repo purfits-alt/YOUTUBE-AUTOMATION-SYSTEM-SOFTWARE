@@ -66,6 +66,14 @@
             "title": "Agent Code",
             "type": "string"
           },
+          "default_chain": {
+            "description": "TubeForge's default chain for this agent (every free model).",
+            "items": {
+              "type": "string"
+            },
+            "title": "Default Chain",
+            "type": "array"
+          },
           "enabled": {
             "title": "Enabled",
             "type": "boolean"

@@ -63,11 +63,14 @@ class TextAdapter(Protocol):
 def classify(status: int, body: str, headers: httpx.Headers) -> AdapterError:
     retry = headers.get("retry-after")
     retry_s = float(retry) if retry and retry.replace(".", "", 1).isdigit() else None
-    if PAID_WORDS.search(body):
-        return AdapterError("PAID_INDICATOR", status, "the provider mentions billing or payment")
     lowered = body.lower()
+    # A free-tier limit first: Gemini's "check your plan and billing details" and Groq's link to its
+    # billing page are part of ordinary free quota messages, not signs of a paid path (owner
+    # report 2026-11-17: they switched free models off).
     if status == 429 or "resource_exhausted" in lowered or "quota" in lowered or "rate limit" in lowered:
         return AdapterError("LIMIT", status, "the provider's limit is reached", retry_s)
+    if status == 402 or PAID_WORDS.search(body):
+        return AdapterError("PAID_INDICATOR", status, "the provider mentions billing or payment")
     if status in (401, 403) or "api_key_invalid" in lowered or "invalid api key" in lowered:
         return AdapterError("AUTH", status, "the API key was not accepted")
     if status >= 500:

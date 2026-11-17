@@ -62,6 +62,9 @@ class AgentOut(BaseModel):
     version: str
     prompt_version: str
     provider_chain: list[str]
+    default_chain: list[str] = Field(
+        default_factory=list, description="TubeForge's default chain for this agent (every free model)."
+    )
     limits: AgentLimits
     updated_at: datetime
     etag: str
@@ -146,6 +149,7 @@ def _out(db: Session, cfg: AgentConfiguration, paused: set[str], since: datetime
         version=cfg.version,
         prompt_version=cfg.prompt_version,
         provider_chain=list(cfg.provider_chain or []),
+        default_chain=list(info.chain) if info else [],
         limits=AgentLimits(**{k: v for k, v in (cfg.limits or {}).items() if k in AgentLimits.model_fields}),
         updated_at=cfg.updated_at,
         etag=_etag(cfg),

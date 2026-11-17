@@ -110,6 +110,7 @@ export function testAgent(overrides: Partial<AgentOut> = {}): AgentOut {
     version: "1.0.0",
     prompt_version: "v1.0",
     provider_chain: ["gemini:gemini-3.5-flash-lite", "ollama:qwen2.5:1.5b"],
+    default_chain: ["gemini:gemini-3.5-flash-lite", "groq:openai/gpt-oss-20b", "ollama:qwen2.5:1.5b"],
     limits: { calls_per_day: 20, tokens_per_day: 20000, max_runtime_s: 60 },
     updated_at: "2026-11-09T00:00:00Z",
     etag: "e1",
@@ -361,6 +362,13 @@ export const testApiHandlers: HttpHandler[] = [
     const agent = state.agents.find((a) => a.agent_code === body.target_id);
     if (agent) agent.paused = true;
     return HttpResponse.json(state.controls);
+  }),
+  http.delete("/api/v1/system/kill-switches/:id", ({ params }) => {
+    state.controls = {
+      ...state.controls,
+      kill_switches: state.controls.kill_switches.filter((k) => k.id !== params.id),
+    };
+    return new HttpResponse(null, { status: 204 });
   }),
   http.get("/api/v1/providers", () => HttpResponse.json(state.providers)),
   http.put("/api/v1/providers/:code/credentials", ({ params }) => {

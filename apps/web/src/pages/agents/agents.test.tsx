@@ -3,6 +3,7 @@ import { createMemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 import { App, makeQueryClient } from "../../app/App";
 import { routes } from "../../app/routes";
+import { resetTestApi } from "../../mocks/testApi";
 
 function renderAt(path: string) {
   render(
@@ -27,6 +28,16 @@ describe("Agent Control Center (real API)", () => {
     expect(await screen.findByTestId("agent-run-details")).toHaveTextContent("Hello Ayesha");
   });
 
+  it("restores TubeForge's default list of free models", async () => {
+    renderAt("/agents");
+    const row = await screen.findByTestId("agent-T00_HELLO");
+    fireEvent.click(within(row).getByRole("button", { name: "Settings" }));
+    const dialog = await screen.findByTestId("agent-config-dialog");
+    fireEvent.click(within(dialog).getByTestId("chain-default"));
+    expect(within(dialog).getByTestId("chain-list")).toHaveTextContent("groq:openai/gpt-oss-20b");
+    expect(within(dialog).queryByTestId("chain-default")).not.toBeInTheDocument();
+  });
+
   it("edits limits with If-Match and keeps auditors on", async () => {
     renderAt("/agents");
     const row = await screen.findByTestId("agent-T00_HELLO");
@@ -49,6 +60,30 @@ describe("Agent Control Center (real API)", () => {
 });
 
 describe("Cost & Usage Manager (real API)", () => {
+  it("shows a provider's kill switch with its reason and clears it", async () => {
+    resetTestApi({
+      controls: {
+        emergency_stop: { active: false, reason: null, since: null, by: null },
+        publishing_kill_switch: false,
+        kill_switches: [
+          {
+            id: "ks-1",
+            scope: "PROVIDER",
+            target_id: "gemini:gemini-3.5-flash-lite",
+            active: true,
+            reason: "A32 paid indicator: the provider mentions billing or payment",
+            set_at: "2026-11-17T06:00:00Z",
+          },
+        ],
+      },
+    });
+    renderAt("/usage");
+    const alert = await screen.findByTestId("kill-switch-gemini-gemini-3-5-flash-lite");
+    expect(alert).toHaveTextContent("mentions billing or payment");
+    fireEvent.click(within(alert).getByRole("button", { name: "Clear kill switch" }));
+    expect(await screen.findByText(/Kill switch cleared/)).toBeInTheDocument();
+  });
+
   it("shows the zero-cost banner, saves a key and limits, and starts paid step 1", async () => {
     renderAt("/usage");
     expect(await screen.findByTestId("cost-banner")).toHaveTextContent(
