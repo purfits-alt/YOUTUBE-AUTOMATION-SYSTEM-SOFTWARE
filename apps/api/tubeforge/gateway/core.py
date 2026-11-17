@@ -23,7 +23,7 @@ import json
 import time
 import uuid
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -48,19 +48,39 @@ log = get_logger("tubeforge.gateway")
 
 LOCAL = "ollama:qwen2.5:1.5b"
 # Fallback chains per task type (owner-editable in Settings › provider_chains; agents may override).
-# A second free Gemini model before Groq: each model has its own capacity (migration 0011).
-REASONING = ["gemini:gemini-3.8-flash", "gemini:gemini-3.6-flash", "groq:openai/gpt-oss-120b", LOCAL]
-LIGHT = ["gemini:gemini-3.5-flash-lite", "gemini:gemini-3.1-flash-lite", "groq:openai/gpt-oss-20b", LOCAL]
+# Every registered free model, best first, the local model last (migrations 0011 and 0014).
+GEMMA_31B, GEMMA_26B = "gemini:gemma-4-31b-it", "gemini:gemma-4-26b-a4b-it"
+REASONING = [
+    "gemini:gemini-3.8-flash", "gemini:gemini-3.6-flash", "groq:openai/gpt-oss-120b", GEMMA_31B,
+    "gemini:gemini-3.5-flash-lite", "gemini:gemini-3.1-flash-lite", "groq:openai/gpt-oss-20b", GEMMA_26B,
+    LOCAL,
+]  # fmt: skip
+LIGHT = [
+    "gemini:gemini-3.5-flash-lite", "gemini:gemini-3.1-flash-lite", "groq:openai/gpt-oss-20b", GEMMA_26B,
+    "gemini:gemini-3.6-flash", "gemini:gemini-3.8-flash", "groq:openai/gpt-oss-120b", GEMMA_31B, LOCAL,
+]  # fmt: skip
 DEFAULT_CHAINS: dict[str, list[str]] = {
     "default": REASONING,
     "script_draft": REASONING,
     "research": REASONING,
-    "ideas": ["gemini:gemini-3.6-flash", "gemini:gemini-3.8-flash", "groq:openai/gpt-oss-120b", LOCAL],
+    "ideas": [
+        "gemini:gemini-3.6-flash",
+        "gemini:gemini-3.8-flash",
+        "groq:openai/gpt-oss-120b",
+        GEMMA_31B,
+        "gemini:gemini-3.5-flash-lite",
+        "gemini:gemini-3.1-flash-lite",
+        "groq:openai/gpt-oss-20b",
+        GEMMA_26B,
+        LOCAL,
+    ],
     "seo": LIGHT,
     "classify": LIGHT,
     "hello": ["gemini:gemini-3.5-flash-lite", "groq:openai/gpt-oss-20b", LOCAL],
 }
 TRANSIENT_WAITS_S = (5.0, 15.0)
+# Largest answer the Gateway asks for when retrying a cut-off answer (free Gemini and Groq models allow more).
+MAX_OUTPUT_CAP = 32768
 _sleep = time.sleep  # replaced in tests
 
 REPAIR_PROMPT = (
@@ -166,6 +186,7 @@ class Gateway:
         channel = db.get(Channel, channel_id) if channel_id else None
         skipped: list[str] = []
         limit_resets: list[datetime] = []
+        invalid: list[str] = []
         est_in = estimate_tokens(system, messages, 0)
         for code in chain or chain_for(db, task):
             provider = db.get(ProviderRegistry, code)
@@ -227,6 +248,11 @@ class Gateway:
                     f"{code}: {exc.metric.lower()} per {exc.period.lower()} limit ({exc.limit}) reached"
                 )
                 self._notify_limit(db, code, exc.resets_at, exc.period, now)
+            except GatewayInvalidOutputError as exc:
+                # A model that cannot produce valid output for this task: try the next one in the chain.
+                db.rollback()
+                invalid.append(str(exc))
+                skipped.append(f"{code}: invalid output — {str(exc)[:200]}")
             except AdapterError as exc:
                 skipped.append(f"{code}: {exc.kind.lower()} — {exc.detail}")
                 if exc.kind == "LIMIT":
@@ -244,8 +270,10 @@ class Gateway:
                         "An AI provider refused the API key",
                         f"{code}: {exc.detail}. Check the key in Cost & Usage.",
                     )
-        if limit_resets:
+        if limit_resets:  # another model may still answer once its limit resets
             raise GatewayLimitError(min(limit_resets), skipped)
+        if invalid:
+            raise GatewayInvalidOutputError("; ".join(invalid)[:1000])
         raise GatewayUnavailableError(skipped)
 
     def _call_retrying(self, db: Session, adapter: TextAdapter, *args: Any) -> GatewayResult:
@@ -302,6 +330,25 @@ class Gateway:
         data: Any = None
         if validator is not None:
             data, errors = _check(validator, response.text)
+            if errors and response.truncated and request.max_output_tokens < MAX_OUTPUT_CAP:
+                # Cut off at the output limit: a repair under the same limit would be cut off too.
+                # Ask again once with twice the room instead.
+                log.info("gateway.truncated_retry", provider=code, task=task, max=request.max_output_tokens)
+                bigger = replace(
+                    request, max_output_tokens=min(MAX_OUTPUT_CAP, request.max_output_tokens * 2)
+                )
+                response, more_in, more_out, _ = self._one(
+                    db, adapter, code, bigger, key, task, channel_id, agent_run_id, now
+                )
+                tokens_in += more_in
+                tokens_out += more_out
+                repaired = True
+                data, errors = _check(validator, response.text)
+                if errors:
+                    raise GatewayInvalidOutputError(
+                        f"{code} returned invalid JSON twice: {'; '.join(errors[:3])}"
+                        + (" (answer cut off at the output limit)" if response.truncated else "")
+                    )
             if errors:
                 repaired = True
                 fix = TextRequest(

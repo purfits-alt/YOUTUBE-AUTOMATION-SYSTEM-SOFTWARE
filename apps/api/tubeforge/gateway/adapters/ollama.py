@@ -36,4 +36,5 @@ class OllamaAdapter(HttpAdapter):
             tokens_in=int(data.get("prompt_eval_count", 0)),
             tokens_out=int(data.get("eval_count", 0)),
             headers=dict(resp.headers),
+            truncated=data.get("done_reason") == "length",
         )

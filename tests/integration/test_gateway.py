@@ -53,13 +53,15 @@ class FakeProvider:
         self.hosts: frozenset[str] = frozenset()
         self.needs_key = needs_key
         self.calls: list[tuple[TextRequest, str | None]] = []
-        self.replies: list[str | Exception] = []
+        self.replies: list[str | Exception | TextResponse] = []
 
     def text(self, request: TextRequest, api_key: str | None) -> TextResponse:
         self.calls.append((request, api_key))
         reply = self.replies.pop(0) if self.replies else f'{{"greeting": "hi from {self.family}"}}'
         if isinstance(reply, Exception):
             raise reply
+        if isinstance(reply, TextResponse):
+            return reply
         return TextResponse(reply, 12, 8)
 
 
@@ -253,7 +255,10 @@ def test_licence_rules_for_monetised_channels(gw: Gateway, db: Session) -> None:
 def test_missing_key_disabled_provider_and_kill_switch_are_skipped(
     gw: Gateway, db: Session, env: Env
 ) -> None:
-    db.query(ProviderCredential).filter(ProviderCredential.provider_code == GEMINI).delete()
+    # No Gemini key at all (a model without its own key would use the provider's key).
+    db.query(ProviderCredential).filter(ProviderCredential.provider_code.like("gemini:%")).delete(
+        synchronize_session=False
+    )
     db.get_one(ProviderRegistry, GROQ).enabled = False
     db.add(KillSwitch(id=uuid7(), scope="PROVIDER", target_id="ollama", reason="t", set_by=env.owner.id))
     db.commit()
@@ -295,6 +300,34 @@ def test_one_repair_then_failure(gw: Gateway, db: Session, fakes: dict[str, Fake
     with pytest.raises(GatewayInvalidOutputError):
         call(gw, db, [GEMINI])
     assert limits.used(db, GEMINI, "REQUESTS", limits.period_key("DAY", limits.PT, NOW)) == 4
+
+
+def test_cut_off_answer_is_retried_with_more_room(
+    gw: Gateway, db: Session, fakes: dict[str, FakeProvider]
+) -> None:
+    """Owner report (2026-11-17): a long blueprint was cut off at the output limit, so the repair
+    (same limit) was cut off too. A cut-off answer is asked again once with twice the room."""
+    fakes["gemini"].replies = [
+        TextResponse('{"greeting": "hel', 12, 1024, truncated=True),
+        '{"greeting": "hello"}',
+    ]
+    res = call(gw, db, [GEMINI], max_output_tokens=1024)
+    assert res.data == {"greeting": "hello"} and res.repaired
+    assert [r.max_output_tokens for r, _ in fakes["gemini"].calls] == [1024, 2048]
+    assert "valid JSON" not in fakes["gemini"].calls[1][0].messages[-1].content  # not a repair prompt
+
+
+def test_invalid_output_falls_back_to_the_next_model(
+    gw: Gateway, db: Session, fakes: dict[str, FakeProvider]
+) -> None:
+    fakes["gemini"].replies = ["not json", "still not json"]
+    res = call(gw, db, [GEMINI, LOCAL])
+    assert res.provider_code == LOCAL and res.data == {"greeting": "hi from ollama"}
+    assert any(s.startswith(f"{GEMINI}: invalid output") for s in res.skipped)
+    fakes["gemini"].replies = ["not json", "still not json"]
+    fakes["ollama"].replies = ["nope", "nope again"]
+    with pytest.raises(GatewayInvalidOutputError, match="invalid JSON twice"):
+        call(gw, db, [GEMINI, LOCAL])
 
 
 def test_provider_errors_fall_back(gw: Gateway, db: Session, fakes: dict[str, FakeProvider]) -> None:
@@ -345,9 +378,14 @@ def test_keys_are_encrypted_per_row(gw: Gateway, db: Session, box: SecretBox) ->
     rows = db.scalars(
         select(ProviderCredential).where(ProviderCredential.provider_code.like("gemini:%"))
     ).all()
-    assert len(rows) == 5 and all(b"AIza-test-key" not in r.secret_enc for r in rows)
+    assert len(rows) == 7 and all(b"AIza-test-key" not in r.secret_enc for r in rows)  # incl. Gemma 4
     assert registry.api_key(db, box, GEMINI) == "AIza-test-key"
-    assert not registry.has_key(db, "groq:unknown") and registry.has_key(db, LOCAL)
+    assert not registry.has_key(db, "mystery:model") and registry.has_key(db, LOCAL)
+    # A model registered after the key was entered uses the provider's key (one key per provider).
+    db.query(ProviderCredential).filter(ProviderCredential.provider_code == "gemini:gemma-4-31b-it").delete()
+    db.commit()
+    assert registry.api_key(db, box, "gemini:gemma-4-31b-it") == "AIza-test-key"
+    assert registry.has_key(db, "gemini:gemma-4-31b-it")
 
 
 def test_unknown_or_unlisted_provider(gw: Gateway, db: Session) -> None:

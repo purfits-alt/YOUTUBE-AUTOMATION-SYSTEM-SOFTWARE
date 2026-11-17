@@ -44,8 +44,14 @@ def test_catalogue_has_the_32_agents_and_matches_the_seed_migration() -> None:
         "A32_COST_MONITOR",
     }
     swaps = {json.dumps(old): new for old, new in _migration("0011").CHANGES}
+    swaps14 = {json.dumps(old): new for old, new in _migration("0014").CHANGES}
+
+    def chain_now(chain: list[str]) -> list[str]:
+        after11 = swaps.get(json.dumps(chain), chain)
+        return swaps14.get(json.dumps(after11), after11)
+
     seeded = [
-        (code, name, auditor, prompt, swaps.get(json.dumps(chain), chain), limits)
+        (code, name, auditor, prompt, chain_now(chain), limits)
         for code, name, auditor, prompt, chain, limits in _migration("0008").AGENTS
     ]
     assert seeded == [(a.code, a.name, a.auditor, a.prompt_version, a.chain, a.limits) for a in AGENTS]

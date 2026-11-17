@@ -24,7 +24,13 @@ class GeminiAdapter(HttpAdapter):
             "generationConfig": {
                 "maxOutputTokens": request.max_output_tokens,
                 "temperature": request.temperature,
-                **({"responseMimeType": "application/json"} if request.json_mode else {}),
+                # Gemma models on the Gemini API do not document JSON mode: they get the JSON-only
+                # instruction in the prompt, and the Gateway checks (and repairs) the answer.
+                **(
+                    {"responseMimeType": "application/json"}
+                    if request.json_mode and not request.model.startswith("gemma-")
+                    else {}
+                ),
             },
         }
         if request.system:
@@ -39,8 +45,9 @@ class GeminiAdapter(HttpAdapter):
         parts = (candidates[0].get("content") or {}).get("parts") or []
         usage = data.get("usageMetadata") or {}
         return TextResponse(
-            text="".join(str(p.get("text", "")) for p in parts),
+            text="".join(str(p.get("text", "")) for p in parts if not p.get("thought")),
             tokens_in=int(usage.get("promptTokenCount", 0)),
             tokens_out=int(usage.get("candidatesTokenCount", 0)),
             headers=dict(resp.headers),
+            truncated=candidates[0].get("finishReason") == "MAX_TOKENS",
         )

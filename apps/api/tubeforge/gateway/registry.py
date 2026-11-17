@@ -77,12 +77,28 @@ def delete_family_key(db: Session, fam: str) -> None:
     db.flush()
 
 
-def api_key(db: Session, box: SecretBox, code: str) -> str | None:
+def _credential(db: Session, code: str) -> ProviderCredential | None:
+    """The key stored for this model, or else one stored for another model of the same provider
+    (one key per provider: a model registered after the key was entered uses it too)."""
     row = db.get(ProviderCredential, code)
+    if row is not None:
+        return row
+    return db.scalar(
+        select(ProviderCredential)
+        .where(ProviderCredential.provider_code.like(f"{family(code)}:%"))
+        .order_by(ProviderCredential.provider_code)
+        .limit(1)
+    )
+
+
+def api_key(db: Session, box: SecretBox, code: str) -> str | None:
+    row = _credential(db, code)
     if row is None:
         return None
-    return box.open(row.secret_enc, key_id=row.key_id, purpose="provider-key", associated=_aad(code)).decode()
+    return box.open(
+        row.secret_enc, key_id=row.key_id, purpose="provider-key", associated=_aad(row.provider_code)
+    ).decode()
 
 
 def has_key(db: Session, code: str) -> bool:
-    return family(code) in KEYLESS_FAMILIES or db.get(ProviderCredential, code) is not None
+    return family(code) in KEYLESS_FAMILIES or _credential(db, code) is not None

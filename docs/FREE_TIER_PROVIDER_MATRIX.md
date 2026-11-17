@@ -68,7 +68,12 @@ Tier: **L** local · **F** permanent free cloud tier · **P** paid / trial (disa
 | **Groq free plan**: `openai/gpt-oss-120b`, `openai/gpt-oss-20b` (exact IDs re-checked 2026-11-09), qwen3.8-27b | F | Docs list 30 RPM / 1K RPD / 8K TPM / 200K TPD per model, but the page says these are "base limits for the Developer plan". **Exact free limits only in the console.** | Groq terms | Check | Unknown | 🟡 |
 | **Ollama** runtime | L | Hardware only | MIT | Yes | Local, nothing leaves the PC | ✅ |
 | **Qwen2.5-1.5B-Instruct** via Ollama (`qwen2.5:1.5b`) | L | ~1 GB RAM (Q4) | **Apache-2.0** ([model card](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct), checked 2026-11-09). Qwen2.5-**3B** is *qwen-research* (not commercial), so it is not used | Yes | Local | ✅ chosen in Phase 5 (ADR-0027) |
-| Mistral free tier, OpenRouter free models | F? | — | — | — | — | ❌ not evaluated (host not allowlisted). Kept as future candidates. |
+| **Gemma 4 on the Gemini API**: `gemma-4-31b-it`, `gemma-4-26b-a4b-it` (checked 2026-11-17) | F | "Free of charge"; **no paid tier**; limits per project in AI Studio | **Apache 2.0** weights ([model card](https://ai.google.dev/gemma/docs/core/model_card_4)); Gemini API Additional Terms | Yes (Google claims no rights in outputs) | ⚠️ free tier: content used to improve Google products | ✅ added (ADR-0030, migration 0014) |
+| Groq `qwen/qwen3.8-27b` | F | — | — | — | — | ⛔ preview model ("evaluation purposes only"), not used (ADR-0030) |
+| Mistral free tier | — | Free API access withdrawn in late 2026 (reports) | — | — | — | ⛔ not used (ADR-0030) |
+| Cerebras | — | Trial with a payment method only | — | — | — | ⛔ not used (no billing) |
+| OpenRouter `:free` models | F | 20 RPM, 50 RPD | Per provider | Varies | ⚠️ several free routes may train on prompts | ⛔ not used (ADR-0030) |
+| GitHub Models | F | Small per-request caps | GitHub terms | Prototyping only | — | ⛔ not used (no production use) |
 
 > ⚠️ **Billing trap (Gemini):** linking a billing account to a Google Cloud project **automatically moves it to a paid tier** (Tier 1), and paid tiers then auto-upgrade with spending. **Rule:** the Gemini API key comes from a dedicated Google Cloud project that **never** has billing linked. The YouTube project also has no billing. The setup guide states this in bold.
 

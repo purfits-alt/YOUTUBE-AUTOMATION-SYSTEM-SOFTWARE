@@ -923,6 +923,32 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
   - a browser test opens every Channel Trending tab with the mock worker on, as in production;
   - pages now show a friendly "Something went wrong" panel with Reload instead of a blank crash.
 
+**Fix (owner report, 2026-11-17): "The blueprint could not be made — gemini returned invalid JSON twice (Unterminated string)".**
+- **Cause:** the blueprint answer (50 ideas + calendar) hit the output limit, so Gemini stopped mid-answer. The repair asked again under the same limit and was cut off too, and the Gateway then gave up instead of trying the next free provider.
+- **Fix (AI_AGENT_ARCHITECTURE Gateway rules):**
+  - adapters report a cut-off answer (Gemini `MAX_TOKENS`, Groq `length`, Ollama `length`);
+  - a cut-off answer is asked again once with twice the room (cap 32,768), instead of the repair prompt;
+  - a model that still returns invalid output is skipped and the next model in the chain is tried;
+  - A06's allowance is raised from 12,000 to 24,000 tokens.
+- **Tests:** adapter flags, the doubled retry, and fallback to the next model.
+
+**Owner request (2026-11-17): "add free models that are authentic and give real answers according to our rules and Google, YouTube and AdSense policies".**
+- **Part 1 (done):** every agent chain now tries every registered free model (migration 0014; owner-edited chains untouched).
+  - Reasoning: Gemini 3.8 Flash → 3.6 Flash → Groq gpt-oss-120b → Gemini 3.5 Flash-Lite → 3.1 Flash-Lite → Groq gpt-oss-20b → local Qwen.
+  - Light work: the same models, the lighter ones first.
+- **Part 2 (done, ADR-0030):** new free providers were checked on their official pages against the rules below. Results:
+  - **added:** Gemma 4 (`gemma-4-31b-it`, `gemma-4-26b-a4b-it`; Apache 2.0, free, same Gemini key), so every chain now has 9 models;
+  - **not added:** Groq Qwen (a preview model), Mistral (free API withdrawn), Cerebras (needs a card), OpenRouter free models (prompts may be used for training), GitHub Models (prototyping only);
+  - one key per provider: models added later use the stored key.
+
+  The rules:
+  - free with no billing;
+  - commercial use of the output allowed;
+  - acceptable data use;
+  - no policy conflict with Google, YouTube or AdSense.
+
+  Every model's output still goes through the same checks (schemas, forbidden phrases, evidence and fact checks, auditors).
+
 ## Resource consumption
 
 | Resource | Used |

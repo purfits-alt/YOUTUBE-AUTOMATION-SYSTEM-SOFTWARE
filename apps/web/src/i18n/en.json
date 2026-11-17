@@ -765,7 +765,7 @@
     "clientSecret": "Client secret (if Google shows one)",
     "clientSecretHint": "Write-only: TubeForge never shows it again.",
     "saveClient": "Save OAuth client",
-    "clientRegistered": "OAuth client “{label}” is saved:",
+    "clientRegistered": "Already saved — one OAuth client serves all your channels, so there is nothing to enter for this channel. Mark this step done. Saved client “{label}”:",
     "publishing": {
       "TESTING": "Testing mode (7-day sign-in)",
       "IN_PRODUCTION": "In production"
@@ -774,7 +774,7 @@
     "privacyInvalid": "Enter a full https:// address.",
     "connect": "Connect with Google",
     "reconnect": "Reconnect with Google",
-    "connectHint": "Google opens in this tab and sends you back here. TubeForge asks only for upload and read access.",
+    "connectHint": "Google opens in this tab and sends you back here. TubeForge asks only for upload and read access. Sign in with the Google account that owns this channel; while your Google Cloud app is in Testing, that account must be listed under Google Auth Platform › Audience › Test users, or Google shows “Access blocked … Error 403: access_denied”.",
     "connectedAs": "Connected as {handle}.",
     "expiresHint": "Testing mode: Google ends this sign-in around {when}. Reconnect before then.",
     "readingIdentity": "Reading which YouTube channel you signed in to…",
