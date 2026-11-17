@@ -70,7 +70,7 @@ class AgentOut(BaseModel):
 
 class AgentPatch(BaseModel):
     enabled: bool | None = None
-    provider_chain: list[str] | None = Field(default=None, max_length=6)
+    provider_chain: list[str] | None = Field(default=None, max_length=16)  # every free model (ADR-0030)
     limits: AgentLimits | None = None
 
 
