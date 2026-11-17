@@ -970,6 +970,11 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
   - research also searches the names and key words in the title;
   - Script Studio has **Research again**, with optional extra search words (`retry-research`), and failure notifications say so.
 
+**Fix (owner report, 2026-11-17): "Research refused the task — the sources discuss unrelated topics such as science misconceptions, San Francisco history, phonograph records".**
+- **Cause:** loose Wikipedia searches for "temperature and top-P sampling" returned unrelated pages, and all of them went to A09 (which correctly refused).
+- **Fix:** research now reads up to 12 candidate articles, ranks them by similarity to the topic, and keeps only the relevant ones (model2vec ≥ 0.30), at most 6. Articles found with the owner's extra search words are always kept. With too few relevant articles, the message asks for the names of Wikipedia articles as extra search words.
+- **Owner's quick workaround for that project:** **Research again** with "Top-p sampling, Softmax function, Large language model".
+
 ## Resource consumption
 
 | Resource | Used |
