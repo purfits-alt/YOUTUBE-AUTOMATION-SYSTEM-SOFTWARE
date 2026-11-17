@@ -31,6 +31,7 @@ const STEPS = [
 ] as const;
 type Command =
   | "start"
+  | "retry-research"
   | "approve-research"
   | "request-research-changes"
   | "approve-script"
@@ -59,7 +60,7 @@ function ProjectPanel({
 }: {
   project: ProjectOut;
   channelName: string;
-  onCommand: (cmd: Command) => void;
+  onCommand: (cmd: Command, note?: string) => void;
 }) {
   const current = STEPS.indexOf(project.state as (typeof STEPS)[number]);
   const promise = project.packaging_promise as {
@@ -122,23 +123,51 @@ function ProjectPanel({
         </div>
       )}
       <div className="mt-3 flex flex-wrap gap-2" data-testid="commands">
-        {(project.allowed_commands ?? []).map((cmd) => (
-          <Button
-            key={cmd}
-            variant={
-              cmd.startsWith("approve") || cmd === "start"
-                ? "primary"
-                : cmd === "cancel"
-                  ? "ghost"
-                  : "secondary"
-            }
-            onClick={() => onCommand(cmd as Command)}
-          >
-            {t(`scriptPage.cmd.${cmd}`)}
-          </Button>
-        ))}
+        {(project.allowed_commands ?? []).map((cmd) =>
+          cmd === "retry-research" ? (
+            <RetryResearch key={cmd} onRetry={(words) => onCommand("retry-research", words)} />
+          ) : (
+            <Button
+              key={cmd}
+              variant={
+                cmd.startsWith("approve") || cmd === "start"
+                  ? "primary"
+                  : cmd === "cancel"
+                    ? "ghost"
+                    : "secondary"
+              }
+              onClick={() => onCommand(cmd as Command)}
+            >
+              {t(`scriptPage.cmd.${cmd}`)}
+            </Button>
+          ),
+        )}
       </div>
     </section>
+  );
+}
+
+/** Research found too little or was refused: run it again, optionally with extra search words. */
+function RetryResearch({ onRetry }: { onRetry: (words: string) => void }) {
+  const [words, setWords] = useState("");
+  return (
+    <div className="flex w-full flex-wrap items-end gap-2" data-testid="retry-research">
+      <div className="min-w-0 flex-1">
+        <label htmlFor="retry-words" className="block text-sm font-medium">
+          {t("scriptPage.extraWords")}
+        </label>
+        <input
+          id="retry-words"
+          className={inputCls}
+          value={words}
+          placeholder={t("scriptPage.extraWordsHint")}
+          onChange={(e) => setWords(e.target.value)}
+        />
+      </div>
+      <Button variant="primary" onClick={() => onRetry(words.trim())}>
+        {t("scriptPage.cmd.retry-research")}
+      </Button>
+    </div>
   );
 }
 
@@ -587,13 +616,13 @@ export function ScriptStudioPage() {
     for (const key of ["project", "versions", "version", "briefs", "claims"])
       void qc.invalidateQueries({ queryKey: [key, id] });
   };
-  const command = async (cmd: Command) => {
+  const command = async (cmd: Command, note?: string) => {
     try {
       await call(() =>
         api.POST("/api/v1/projects/{project_id}/commands/{cmd}", {
           params: { path: { project_id: id, cmd } },
           headers: { "Idempotency-Key": idempotencyKey() },
-          body: {},
+          body: note ? { note } : {},
         }),
       );
       toast(t(`scriptPage.done.${cmd}`));
@@ -618,7 +647,9 @@ export function ScriptStudioPage() {
       {project.isError && (
         <ProblemDisplay problem={asProblem(project.error)} onRetry={() => void project.refetch()} />
       )}
-      {p && <ProjectPanel project={p} channelName={channelName} onCommand={(c) => void command(c)} />}
+      {p && (
+        <ProjectPanel project={p} channelName={channelName} onCommand={(c, note) => void command(c, note)} />
+      )}
       {brief && (
         <Card
           title={t("scriptPage.brief", {

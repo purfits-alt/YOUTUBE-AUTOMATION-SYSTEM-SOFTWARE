@@ -19621,6 +19621,7 @@
             "schema": {
               "enum": [
                 "start",
+                "retry-research",
                 "approve-research",
                 "request-research-changes",
                 "approve-script",

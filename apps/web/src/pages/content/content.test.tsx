@@ -116,3 +116,22 @@ describe("Script Studio (real API)", () => {
     );
   });
 });
+
+describe("Script Studio while researching", () => {
+  it("runs research again with extra search words", async () => {
+    content.project = {
+      ...content.project,
+      state: "RESEARCHING",
+      allowed_commands: ["retry-research", "pause", "cancel"],
+      checks: [],
+    };
+    content.versions = [];
+    renderAt("/projects/p-101/script");
+    const box = await screen.findByTestId("retry-research");
+    fireEvent.change(within(box).getByLabelText(/Extra search words/), {
+      target: { value: "Code Llama, VS Code" },
+    });
+    fireEvent.click(within(box).getByRole("button", { name: "Research again" }));
+    expect(await screen.findByText(/Research is running again/)).toBeInTheDocument();
+  });
+});

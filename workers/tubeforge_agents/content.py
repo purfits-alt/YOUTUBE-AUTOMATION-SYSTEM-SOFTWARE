@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import re
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -54,7 +55,13 @@ from tubeforge.research.sources import SourceUnavailableError
 from tubeforge.research.wiki_articles import LANGUAGES, WikipediaArticles
 from tubeforge_agents.base import RunOutcome, run_agent
 from tubeforge_agents.content_agents import A08, A09, A10, A11
-from tubeforge_agents.discovery import PipelineError, _outcome_error, _run_clean, channel_pillars
+from tubeforge_agents.discovery import (
+    PipelineError,
+    _outcome_error,
+    _run_clean,
+    channel_brief,
+    channel_pillars,
+)
 from tubeforge_agents.discovery_agents import DocIn
 
 log = get_logger("tubeforge.content")
@@ -65,6 +72,7 @@ RENDER_PROFILE = {"LONG": {"profile": "LONG_1080"}, "SHORT": {"profile": "SHORT_
 RECENT_TITLES = 80
 MAX_ARTICLES = 6
 MIN_DOCUMENTS = 2
+MAX_QUERIES = 8
 # Text that reads like an instruction to the model (prompt injection copied from a source).
 INSTRUCTION_LIKE = re.compile(
     r"(?i)(\bsystem\s*:|\bignore (?:all |the |any |previous |prior )*(?:rules|instructions)\b"
@@ -132,6 +140,7 @@ def generate_ideas(
         "language": channel.content_language if channel.content_language in LANGUAGES else "en",
         "count": count,
         "pillars": pillars,
+        "channel_brief": channel_brief(db, channel),
         "format": fmt,
         "pillar": pillar,
         "recent_titles": [i.title for i in existing[:RECENT_TITLES]],
@@ -292,6 +301,30 @@ def collect_articles(
     return _docs_for(db, ids), skipped
 
 
+STOPWORDS = frozenset({
+    "a", "an", "the", "and", "or", "for", "to", "of", "in", "on", "at", "by", "with", "from", "how",
+    "why", "what", "when", "which", "who", "your", "my", "our", "i", "you", "we", "is", "are", "was",
+    "be", "it", "this", "that", "these", "those", "vs", "versus", "into", "using", "use", "guide",
+    "tips", "best", "top", "new", "free", "explained", "step", "steps", "setup", "set", "up",
+})  # fmt: skip
+
+
+def search_terms(title: str) -> list[str]:
+    """Shorter Wikipedia searches from a long title: the names in it (CodeLlama, DeepSeek-Coder,
+    VS Code) and the remaining key words, so research finds articles a whole-title search misses."""
+    words = re.findall(r"[\w][\w.+#-]*", title, flags=re.UNICODE)
+    names = [
+        w
+        for w in words
+        if len(w) >= 3 and (w[0].isupper() or any(c.isdigit() for c in w)) and w.lower() not in STOPWORDS
+    ]
+    keys = [w for w in words if w.lower() not in STOPWORDS and len(w) >= 3]
+    out = list(dict.fromkeys(names))[:4]
+    if len(keys) >= 2:
+        out.append(" ".join(keys[:4]))
+    return out
+
+
 def _normal(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().lower()
 
@@ -414,6 +447,7 @@ def run_research(
     fetcher: ResearchFetcher,
     project_id: uuid.UUID,
     *,
+    extra_queries: Sequence[str] = (),
     now: datetime | None = None,
 ) -> ResearchResult:
     project = db.get_one(VideoProject, project_id)
@@ -422,12 +456,17 @@ def run_research(
     channel = db.get_one(Channel, project.channel_id)
     language = channel.content_language if channel.content_language in LANGUAGES else "en"
     idea = db.get(VideoIdea, project.idea_id) if project.idea_id else None
-    queries = [project.working_title]
+    promise = project.packaging_promise or {}
+    queries = [
+        *(q.strip() for q in extra_queries if q.strip()),
+        project.working_title,
+        *search_terms(project.working_title),
+    ]
     if idea is not None and idea.pillar:
         queries.append(idea.pillar)
-    promise = project.packaging_promise or {}
     if promise.get("title_idea"):
         queries.append(str(promise["title_idea"]))
+    queries = list(dict.fromkeys(queries))[:MAX_QUERIES]
     try:
         docs, skipped = collect_articles(db, fetcher, language, queries)
     except SourceUnavailableError as exc:
@@ -436,7 +475,8 @@ def run_research(
         raise PipelineError(
             "FAILED",
             f"Only {len(docs)} source document(s) found for “{project.working_title}”; at least "
-            f"{MIN_DOCUMENTS} are needed. Try a clearer working title.",
+            f"{MIN_DOCUMENTS} are needed. Press Research again with extra search words, "
+            "or edit the working title.",
         )
     data = {
         "language": language,

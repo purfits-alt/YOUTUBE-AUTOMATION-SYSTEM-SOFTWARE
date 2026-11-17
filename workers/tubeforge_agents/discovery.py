@@ -268,14 +268,57 @@ def run_discovery(
 
 
 # ---------------------------------------------------------------------------------------- A03
-def channel_pillars(db: Session, channel_id: uuid.UUID) -> list[str]:
+def channel_blueprint(db: Session, channel_id: uuid.UUID) -> ChannelStrategy | None:
+    """The channel's approved blueprint; else the newest blueprint the owner built for this channel
+    on the Build tab (not yet approved), so its niche still guides the content agents."""
     row = db.scalar(
         select(ChannelStrategy)
         .where(ChannelStrategy.channel_id == channel_id, ChannelStrategy.status == "APPROVED")
         .order_by(ChannelStrategy.version.desc())
         .limit(1)
     )
+    if row is not None:
+        return row
+    for cand in db.scalars(select(NicheCandidate).order_by(NicheCandidate.created_at.desc()).limit(200)):
+        target = next((c.get("channel_id") for c in cand.criteria if c.get("code") == "_OWNER_BUILD"), None)
+        if target != str(channel_id):
+            continue
+        found = db.scalar(
+            select(ChannelStrategy)
+            .where(
+                ChannelStrategy.niche_candidate_id == cand.id,
+                ChannelStrategy.status.in_(("DRAFT", "PROPOSED")),
+            )
+            .order_by(ChannelStrategy.version.desc())
+            .limit(1)
+        )
+        if found is not None:
+            return found
+    return None
+
+
+def channel_pillars(db: Session, channel_id: uuid.UUID) -> list[str]:
+    row = channel_blueprint(db, channel_id)
     return [str(p["name"]) for p in (row.blueprint.get("pillars", []) if row else [])][:7]
+
+
+def channel_brief(db: Session, channel: Channel) -> str:
+    """What the channel is about, for the content agents: niche, positioning, audience, pillars."""
+    row = channel_blueprint(db, channel.id)
+    lines = [f"Channel: {channel.name}"]
+    if row is not None:
+        b = row.blueprint
+        niche = b.get("niche") or {}
+        if niche.get("name"):
+            lines.append(f"Niche: {niche['name']}")
+        if b.get("positioning"):
+            lines.append(f"Positioning: {str(b['positioning'])[:400]}")
+        audience = b.get("target_audience") or {}
+        if isinstance(audience, dict) and audience.get("description"):
+            lines.append(f"Audience: {str(audience['description'])[:300]}")
+        for p in b.get("pillars", [])[:7]:
+            lines.append(f"Pillar: {p.get('name', '')} — {str(p.get('description', ''))[:150]}")
+    return "\n".join(lines)[:1500]
 
 
 def run_trend_scan(

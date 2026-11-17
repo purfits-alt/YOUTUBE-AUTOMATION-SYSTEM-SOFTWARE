@@ -45,6 +45,7 @@ class IdeaInput(BaseModel):
     language: Language = "en"
     count: int = Field(ge=1, le=20)
     pillars: list[str] = Field(min_length=1, max_length=7)
+    channel_brief: str = Field(default="", max_length=1500)  # niche, positioning, audience, pillars
     format: Format | None = None  # None: rotate
     pillar: str | None = None
     recent_titles: list[str] = Field(default_factory=list, max_length=80)
@@ -68,6 +69,7 @@ class IdeaGenerationAgent(AgentTask):
         assert isinstance(data, IdeaInput)
         return render_user(
             "Count: {{ count }}. Format: {{ fmt }}. Pillar: {{ pillar }}.\n"
+            "What this channel is about (every idea must fit it): {{ brief | untrusted('channel_brief') }}\n"
             "Channel pillars: {{ pillars | untrusted('pillars') }}\n"
             "Recent titles on this channel (do not repeat them): {{ recent | untrusted('recent_titles') }}\n"
             "Trends you may use (copy the id into trend_item_id): {{ trends | untrusted('trends') }}\n"
@@ -79,6 +81,7 @@ class IdeaGenerationAgent(AgentTask):
                 "fmt": data.format or "rotate LONG and SHORT",
                 "pillar": data.pillar or "spread across the pillars",
                 "pillars": json.dumps(data.pillars, ensure_ascii=False),
+                "brief": data.channel_brief or "(not given)",
                 "recent": json.dumps(data.recent_titles, ensure_ascii=False),
                 "trends": json.dumps([t.model_dump() for t in data.trends], ensure_ascii=False),
                 "variation": data.variation_of.model_dump_json() if data.variation_of else "",

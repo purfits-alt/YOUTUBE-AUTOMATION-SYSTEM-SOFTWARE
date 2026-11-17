@@ -258,6 +258,7 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 - **Creating a project.** `POST /projects` creates an owner project without an idea (state IDEA). Passing `idea_id` answers 409 `USE_IDEA_APPROVE`.
 - **Commands.**
   - `start` (the orchestrator moves IDEA → RESEARCHING) queues `content.research`.
+  - `retry-research {note?}` (RESEARCHING only, no state change) queues research again. The note is up to 5 comma-separated extra search words, used first. It is for when the brief could not be made: too few sources, or A09 refused.
   - `approve-research` reads the latest SUBMITTED brief's claims for the guard (a contradicted claim needs a claim override). The brief becomes APPROVED and `content.script` is queued.
   - `request-research-changes` rejects the brief and re-queues research.
   - `approve-script` locks the latest version and sets `locked_script_version_id`. The guard facts come from the database: contradicted claims without an override, value-add fields filled and measured duration. If the version is still being fact-checked it answers 409 `FACT_CHECK_PENDING`.
