@@ -171,7 +171,7 @@
                 "items": {
                   "type": "string"
                 },
-                "maxItems": 6,
+                "maxItems": 16,
                 "type": "array"
               },
               {
