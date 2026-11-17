@@ -39,4 +39,5 @@ class GroqAdapter(HttpAdapter):
             tokens_in=int(usage.get("prompt_tokens", 0)),
             tokens_out=int(usage.get("completion_tokens", 0)),
             headers=dict(resp.headers),
+            truncated=choices[0].get("finish_reason") == "length",
         )

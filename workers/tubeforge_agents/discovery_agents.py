@@ -174,7 +174,8 @@ class ChannelStrategyAgent(AgentTask):
     code: ClassVar[str] = "A06_CHANNEL_STRATEGY"
     task_type: ClassVar[str] = "ideas"
     temperature: ClassVar[float] = 0.5
-    max_output_tokens: ClassVar[int] = 12000
+    # 50 ideas + a 30-day calendar + pillars and risks: ~10–16k tokens in verbose niches (wellness).
+    max_output_tokens: ClassVar[int] = 24000
     input_model: ClassVar[type[BaseModel]] = StrategyInput
 
     def context(self, data: BaseModel, channel: Channel | None) -> dict[str, Any]:

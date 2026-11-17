@@ -38,6 +38,7 @@ class TextResponse:
     tokens_in: int
     tokens_out: int
     headers: dict[str, str] = field(default_factory=dict)
+    truncated: bool = False  # the provider stopped at max_output_tokens (the answer is cut off)
 
 
 class AdapterError(Exception):

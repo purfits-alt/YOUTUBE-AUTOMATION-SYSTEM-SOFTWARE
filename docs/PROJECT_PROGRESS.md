@@ -923,6 +923,15 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
   - a browser test opens every Channel Trending tab with the mock worker on, as in production;
   - pages now show a friendly "Something went wrong" panel with Reload instead of a blank crash.
 
+**Fix (owner report, 2026-11-17): "The blueprint could not be made — gemini returned invalid JSON twice (Unterminated string)".**
+- **Cause:** the blueprint answer (50 ideas + calendar) hit the output limit, so Gemini stopped mid-answer. The repair asked again under the same limit and was cut off too, and the Gateway then gave up instead of trying the next free provider.
+- **Fix (AI_AGENT_ARCHITECTURE Gateway rules):**
+  - adapters report a cut-off answer (Gemini `MAX_TOKENS`, Groq `length`, Ollama `length`);
+  - a cut-off answer is asked again once with twice the room (cap 32,768), instead of the repair prompt;
+  - a model that still returns invalid output is skipped and the next model in the chain is tried;
+  - A06's allowance is raised from 12,000 to 24,000 tokens.
+- **Tests:** adapter flags, the doubled retry, and fallback to the next model.
+
 ## Resource consumption
 
 | Resource | Used |

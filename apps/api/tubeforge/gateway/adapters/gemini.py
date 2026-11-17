@@ -43,4 +43,5 @@ class GeminiAdapter(HttpAdapter):
             tokens_in=int(usage.get("promptTokenCount", 0)),
             tokens_out=int(usage.get("candidatesTokenCount", 0)),
             headers=dict(resp.headers),
+            truncated=candidates[0].get("finishReason") == "MAX_TOKENS",
         )
