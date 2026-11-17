@@ -13,7 +13,7 @@
 What this agent is allowed to use and touch.
 - **Tools:** Gateway.text, font registry
 - **Permissions:** W: channel_strategies (section)
-- **AI model chain (tried in order):** gemini:gemini-3.8-flash → gemini:gemini-3.6-flash → groq:openai/gpt-oss-120b → ollama:qwen2.5:1.5b
+- **AI model chain (tried in order):** gemini:gemini-3.8-flash → gemini:gemini-3.6-flash → groq:openai/gpt-oss-120b → gemini:gemini-3.5-flash-lite → gemini:gemini-3.1-flash-lite → groq:openai/gpt-oss-20b → ollama:qwen2.5:1.5b
 
 ## TubeForge Instructions
 These apply to every TubeForge agent (AGENT_PROMPTS §1 preamble and AI_AGENT_ARCHITECTURE §3):
