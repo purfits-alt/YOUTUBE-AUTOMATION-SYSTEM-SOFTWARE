@@ -12518,7 +12518,7 @@ export interface operations {
             header?: never;
             path: {
                 project_id: string;
-                cmd: "start" | "approve-research" | "request-research-changes" | "approve-script" | "request-script-changes" | "approve-cut" | "request-cut-changes" | "retry" | "pause" | "resume" | "cancel" | "choose-fix-path";
+                cmd: "start" | "retry-research" | "approve-research" | "request-research-changes" | "approve-script" | "request-script-changes" | "approve-cut" | "request-cut-changes" | "retry" | "pause" | "resume" | "cancel" | "choose-fix-path";
             };
             cookie?: never;
         };

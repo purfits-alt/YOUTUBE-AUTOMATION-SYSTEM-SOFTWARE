@@ -68,14 +68,14 @@ DEFAULT_DURATION_S = {"LONG": 480, "SHORT": 45}
 EDITABLE_STATES = {"IDEA", "RESEARCHING", "RESEARCH_REVIEW", "SCRIPTING", "SCRIPT_REVIEW"}
 SCRIPT_EDIT_STATES = {"SCRIPTING", "SCRIPT_REVIEW"}
 Command = Literal[
-    "start", "approve-research", "request-research-changes", "approve-script", "request-script-changes",
+    "start", "retry-research", "approve-research", "request-research-changes", "approve-script", "request-script-changes",
     "approve-cut", "request-cut-changes", "retry", "pause", "resume", "cancel", "choose-fix-path",
 ]  # fmt: skip
 LATER = {"approve-cut", "request-cut-changes", "choose-fix-path"}
 # Which command the owner can use in which state (the engine still decides).
 COMMANDS_BY_STATE: dict[str, list[str]] = {
     "IDEA": ["start", "cancel"],
-    "RESEARCHING": ["pause", "cancel"],
+    "RESEARCHING": ["retry-research", "pause", "cancel"],
     "RESEARCH_REVIEW": ["approve-research", "request-research-changes", "pause", "cancel"],
     "SCRIPTING": ["pause", "cancel"],
     "SCRIPT_REVIEW": ["approve-script", "request-script-changes", "pause", "cancel"],
@@ -567,6 +567,29 @@ def project_command(
     if (replayed := idem.replay()) is not None:
         return replayed
     project = _project(db, project_id, lock=True)
+    if cmd == "retry-research":
+        # Research found too little or was refused: run it again (optionally with the owner's extra
+        # search words). No state change: the project stays in RESEARCHING.
+        if project.state != "RESEARCHING":
+            raise ProblemError(
+                409,
+                "INVALID_TRANSITION",
+                "Not now",
+                "Research can be run again while the project is researching.",
+            )
+        extra = [w.strip() for w in (body.note or "").replace("\n", ",").split(",") if w.strip()][:5]
+        job = defer_in_transaction(
+            db,
+            "content.research",
+            queue="agents",
+            args={"project_id": str(project.id), "extra_queries": extra},
+        )
+        _audit(request, db, p, "project.retry-research", project, extra_queries=extra)
+        out = CommandOut(project=project_out(db, project), transition_id=None, job_ids=[job] if job else [])
+        response.status_code = 202
+        idem.store(202, out.model_dump(mode="json"))
+        db.commit()
+        return out
     machine = MACHINES["video_project"]
     actor: Actor = p.actor
     payload: dict[str, Any] = {}

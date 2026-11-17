@@ -1302,7 +1302,8 @@
       "retry": "Retry",
       "pause": "Pause",
       "resume": "Resume",
-      "cancel": "Cancel project"
+      "cancel": "Cancel project",
+      "retry-research": "Research again"
     },
     "done": {
       "start": "Research started.",
@@ -1313,7 +1314,8 @@
       "retry": "Retrying.",
       "pause": "Paused.",
       "resume": "Resumed.",
-      "cancel": "Project cancelled."
+      "cancel": "Project cancelled.",
+      "retry-research": "Research is running again. The brief appears here in a minute or two."
     },
     "overrideTitle": "Accept this claim anyway",
     "overrideReason": "Why is it fine? (at least 20 characters)",
@@ -1379,7 +1381,9 @@
       "DONE": "Facts checked",
       "NO_SOURCES": "No sources to check against"
     },
-    "allChecksPass": "All craft checks pass."
+    "allChecksPass": "All craft checks pass.",
+    "extraWords": "Extra search words (optional, comma separated)",
+    "extraWordsHint": "e.g. Code Llama, Visual Studio Code, autocomplete"
   },
   "routeError": {
     "title": "Something went wrong on this page",

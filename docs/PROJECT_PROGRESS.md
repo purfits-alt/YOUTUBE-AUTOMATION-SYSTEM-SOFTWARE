@@ -960,6 +960,16 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
   - the agent settings dialog has **Use default list**, which restores TubeForge's default chain (all free models) for chains saved before migration 0014 or edited by hand.
 - **Owner's part:** in Cost & Usage, clear the kill switch on Groq gpt-oss-120b and switch Gemini 3.8 Flash back on. Then, in Agents › Idea Generation › Settings, press **Use default list** › **Save**.
 
+**Fix (owner report, 2026-11-17): an off-niche idea on PurfitsWellnessHub ("local code completion servers, CodeLlama, DeepSeek-Coder"), then "The research brief could not be made / Research refused the task".**
+- **Causes:**
+  - A08 received only the pillar names (or "General" when no blueprint was approved), so it did not know the channel's niche;
+  - research searched Wikipedia with the whole long title only;
+  - A09 correctly refused with too little evidence, and the owner had no way to run research again.
+- **Fix:**
+  - A08 gets a channel brief (niche, positioning, audience, pillars) and must stay inside it. Before approval, the blueprint built for the channel on the Build tab is used;
+  - research also searches the names and key words in the title;
+  - Script Studio has **Research again**, with optional extra search words (`retry-research`), and failure notifications say so.
+
 ## Resource consumption
 
 | Resource | Used |

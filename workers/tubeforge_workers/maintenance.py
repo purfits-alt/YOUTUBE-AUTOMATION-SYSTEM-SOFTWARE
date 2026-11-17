@@ -225,7 +225,10 @@ def _content_failed(db: Session, kind: str, subject_id: str, link: str, exc: Any
         event_type=f"content.{kind}_failed",
         severity="INFO" if exc.status in ("WAITING_QUOTA", "STOPPED") else "WARNING",
         title=titles[kind],
-        body=exc.message[:300],
+        body=(
+            exc.message[:240]
+            + (" — Open the project and press Research again." if kind == "research" else "")
+        )[:300],
         dedup_key=f"content:{kind}:{subject_id}:{exc.status}",
         link=link,
     )
@@ -263,14 +266,16 @@ def content_ideas(
     return status
 
 
-def content_research(project_id: str) -> str:
+def content_research(project_id: str, extra_queries: list[str] | None = None) -> str:
     """content.research: Wikipedia articles → A09 brief → A10 → RESEARCH_REVIEW."""
     from tubeforge_agents.content import run_research
     from tubeforge_agents.discovery import PipelineError
 
     with _research() as (db, gateway, fetcher):
         try:
-            result = run_research(db, gateway, fetcher, uuid.UUID(project_id))
+            result = run_research(
+                db, gateway, fetcher, uuid.UUID(project_id), extra_queries=extra_queries or []
+            )
         except PipelineError as exc:
             return _content_failed(db, "research", project_id, f"/projects/{project_id}/script", exc)
     log.info("content.research", project_id=project_id, brief=str(result.brief.id))

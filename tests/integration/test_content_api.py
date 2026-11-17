@@ -231,6 +231,13 @@ def test_project_from_research_to_locked_script(
     cmd = f"/api/v1/projects/{pid}/commands"
     started = client.post(f"{cmd}/start", headers=idem(h))
     assert started.status_code == 202 and started.json()["project"]["state"] == "RESEARCHING"
+    assert "retry-research" in started.json()["project"]["allowed_commands"]
+    again = client.post(f"{cmd}/retry-research", json={"note": "Code Llama, VS Code"}, headers=idem(h))
+    assert again.status_code == 202 and again.json()["project"]["state"] == "RESEARCHING"
+    (args,) = env.sql(
+        "SELECT args FROM procrastinate_jobs WHERE task_name LIKE '%content.research' ORDER BY id DESC LIMIT 1"
+    )[0]
+    assert args["extra_queries"] == ["Code Llama", "VS Code"]  # type: ignore[index]
     assert client.post(f"{cmd}/approve-cut", headers=idem(h)).json()["code"] == "NOT_AVAILABLE_YET"
 
     project = db.get_one(VideoProject, uuid.UUID(pid))

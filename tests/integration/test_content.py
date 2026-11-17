@@ -189,6 +189,7 @@ def test_ideas_are_scored_for_similarity_and_checked(
 
     users = model.users("A08_IDEA_GENERATION")
     assert len(users) == 2 and "How I budget as a student in 2026" in users[0]  # recent titles shown
+    assert "What this channel is about" in users[0] and "Channel: Open Node Test" in users[0]
     assert str(trend.id) in users[0] and "guaranteed" in users[1]  # forbidden phrase retried once
     titles = [i.title for i in result.ideas]
     assert titles == [
@@ -382,3 +383,39 @@ def test_research_needs_two_sources_and_refusals_fail(
     db.refresh(project)
     assert project.state == "RESEARCHING"
     assert db.scalar(select(ResearchBrief).where(ResearchBrief.project_id == project.id)) is None
+
+
+def test_search_terms_and_build_tab_blueprint_guide_the_content_agents(db: Session) -> None:
+    """Owner report 2026-11-17: ideas off the channel's niche and research that found nothing."""
+    from tubeforge_agents.discovery import channel_brief, channel_pillars
+
+    from tubeforge.db.models import ChannelStrategy, NicheCandidate, NicheReport
+
+    assert pipe.search_terms("Set up a local code completion server with CodeLlama, DeepSeek-Coder") == [
+        "CodeLlama",
+        "DeepSeek-Coder",
+        "local code completion server",
+    ]
+    assert pipe.search_terms("5 morning stretches for back pain relief") == ["morning stretches back pain"]
+    ch = channel(db)
+    report = NicheReport(id=uuid7(), params={"manual": True}, status="DONE")
+    db.add(report)
+    db.flush()
+    cand = NicheCandidate(id=uuid7(), report_id=report.id, name="Wellness at home", summary="s", language="en",
+                          criteria=[{"code": "_OWNER_BUILD", "channel_name": None, "channel_id": str(ch.id)}],
+                          opportunity_score=Decimal("0"), inauthentic_risk="MEDIUM", production_difficulty="MEDIUM",
+                          status="SHORTLISTED")  # fmt: skip
+    db.add(cand)
+    db.flush()
+    blueprint = {"niche": {"name": "Wellness at home"}, "positioning": "Calm, practical routines.",
+                 "pillars": [{"name": "Stretching", "description": "Short daily routines"}]}  # fmt: skip
+    db.add(
+        ChannelStrategy(
+            id=uuid7(), niche_candidate_id=cand.id, version=1, status="DRAFT", blueprint=blueprint
+        )
+    )
+    db.commit()
+    # Not approved yet, but built for this channel on the Build tab: its niche already guides ideas.
+    assert channel_pillars(db, ch.id) == ["Stretching"]
+    brief = channel_brief(db, ch)
+    assert "Niche: Wellness at home" in brief and "Pillar: Stretching — Short daily routines" in brief
