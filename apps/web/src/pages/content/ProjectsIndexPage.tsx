@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
+import { JobProgress } from "../../components/JobProgress";
 import { ProblemDisplay } from "../../components/ProblemDisplay";
 import { StateCard } from "../../components/StateCard";
 import { Badge, Card } from "../../components/ui";
@@ -21,12 +22,21 @@ export function ProjectsIndexPage() {
           params: { query: { limit: 100, ...(channelId ? { channel_id: channelId } : {}) } },
         }),
       ),
+    refetchInterval: (q) =>
+      q.state.data?.items.some((p) => p.progress && ["QUEUED", "RUNNING"].includes(p.progress.status))
+        ? 3000
+        : false,
   });
   const list = projects.data?.items ?? [];
   return (
     <div className="space-y-4" data-testid="page-projects">
       <PageTitle page={getPage("script")} />
-      <p className="text-sm text-muted">{t("projectsPage.hint")}</p>
+      <p className="text-sm text-muted">
+        {t("projectsPage.hint")}{" "}
+        <Link className="text-accent underline" to="/pipeline">
+          {t("projectsPage.pipeline")}
+        </Link>
+      </p>
       {projects.isPending && <LoadingSkeleton />}
       {projects.isError && (
         <ProblemDisplay problem={asProblem(projects.error)} onRetry={() => void projects.refetch()} />
@@ -44,18 +54,25 @@ export function ProjectsIndexPage() {
         <Card>
           <ul className="divide-y divide-line" data-testid="project-list">
             {list.map((p) => (
-              <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                <Link
-                  className="font-medium text-accent underline"
-                  to={`/projects/${p.id}/script`}
-                  dir="auto"
-                >
-                  {p.working_title}
-                </Link>
-                <span className="flex items-center gap-2 text-sm">
-                  <Badge tone="neutral">{t(`content.format.${p.format}`)}</Badge>
-                  <Badge tone="info">{t(`content.projectState.${p.state}`)}</Badge>
-                </span>
+              <li key={p.id} className="space-y-1.5 py-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Link
+                    className="font-medium text-accent underline"
+                    to={`/projects/${p.id}/script`}
+                    dir="auto"
+                  >
+                    {p.working_title}
+                  </Link>
+                  <span className="flex items-center gap-2 text-sm">
+                    <Badge tone="neutral">{t(`content.format.${p.format}`)}</Badge>
+                    <Badge tone="info">{t(`content.projectState.${p.state}`)}</Badge>
+                  </span>
+                </div>
+                {p.progress && (
+                  <div className="max-w-md">
+                    <JobProgress job={p.progress} compact />
+                  </div>
+                )}
               </li>
             ))}
           </ul>

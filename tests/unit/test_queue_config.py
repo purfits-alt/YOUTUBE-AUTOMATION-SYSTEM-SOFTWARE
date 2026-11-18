@@ -43,3 +43,4 @@ def test_research_jobs_run_on_the_agents_queue_and_trends_daily() -> None:
     crons = {p.task.name.split(":")[-1]: p.cron for p in app.periodic_registry.periodic_tasks.values()}
     assert crons["a03.trend_scan"] == "0 1 * * *"  # 06:00 PKT
     assert crons["mnt.retention.purge_research_docs"] == "50 * * * *"
+    assert crons["mnt.retention.purge_job_progress"] == "40 3 * * *"  # ADR-0031

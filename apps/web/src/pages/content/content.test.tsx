@@ -135,3 +135,65 @@ describe("Script Studio while researching", () => {
     expect(await screen.findByText(/Research is running again/)).toBeInTheDocument();
   });
 });
+
+describe("Pipeline (ADR-0031)", () => {
+  it("shows every station, the live job with its %, and what comes next", async () => {
+    renderAt("/pipeline");
+    const board = await screen.findByTestId("stations");
+    const research = within(board).getByTestId("station-research");
+    expect(within(research).getByTestId("box-inbox")).toHaveTextContent("from Approved idea");
+    expect(within(research).getByTestId("box-progress")).toHaveTextContent(
+      "In progress1Run a code assistant on your own PC · 35%",
+    );
+    expect(within(research).getByTestId("box-forwarded")).toHaveTextContent("to Check the research");
+    // The script under review passed research and script writing: complete there, forwarded on.
+    expect(within(research).getByTestId("box-complete")).toHaveTextContent("Complete1");
+    const writing = within(board).getByTestId("station-script");
+    expect(within(writing).getByTestId("box-forwarded")).toHaveTextContent(
+      "Forwarded1to Approve the scriptWhy octopuses dream",
+    );
+    const review = within(board).getByTestId("station-script_review");
+    expect(review).toHaveTextContent("You");
+    expect(within(review).getByTestId("box-inbox")).toHaveTextContent(
+      "Inbox1from Script writingWhy octopuses dream",
+    );
+    expect(within(board).getByTestId("station-storyboard")).toHaveTextContent("Phase 8");
+
+    const working = screen.getByTestId("pipeline-p-102");
+    expect(working).toHaveAttribute("data-activity", "WORKING");
+    const bar = within(working).getByRole("progressbar");
+    expect(bar).toHaveAttribute("aria-valuenow", "35");
+    expect(working).toHaveTextContent("Reading articles (4 of 9)");
+    expect(working).toHaveTextContent("about 75 s left");
+    expect(within(working).getByTestId("next")).toHaveTextContent("Check the research (your turn)");
+    expect(within(working).getByRole("listitem", { current: "step" })).toHaveTextContent("Research: now");
+
+    const waiting = screen.getByTestId("pipeline-p-101");
+    expect(waiting).toHaveAttribute("data-activity", "YOUR_TURN");
+    expect(within(waiting).getByTestId("next")).toHaveTextContent("Storyboard — arrives in Phase 8");
+    expect(screen.getByTestId("pipeline-jobs")).toHaveTextContent("New ideas");
+  });
+
+  it("shows the live bar in Script Studio and on the projects list", async () => {
+    renderAt("/projects/p-102/script");
+    const live = await screen.findByTestId("project-progress");
+    expect(within(live).getByRole("progressbar")).toHaveAttribute("aria-valuenow", "35");
+    expect(live).toHaveTextContent("Reading articles (4 of 9)");
+  });
+
+  it("writes the script again with an instruction", async () => {
+    content.project = {
+      ...content.project,
+      state: "SCRIPTING",
+      allowed_commands: ["retry-script", "pause", "cancel"],
+      checks: [],
+    };
+    renderAt("/projects/p-101/script");
+    const box = await screen.findByTestId("retry-script");
+    fireEvent.change(within(box).getByLabelText(/Instruction for the new draft/), {
+      target: { value: "Shorter hook" },
+    });
+    fireEvent.click(within(box).getByRole("button", { name: "Write again" }));
+    expect(await screen.findByText(/The script is being written again/)).toBeInTheDocument();
+  });
+});

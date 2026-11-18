@@ -119,6 +119,7 @@ Each phase lists its steps and **your part** for that module.
 | D — Pages: Idea Generator, Content Calendar, Script Studio, Channel Trending tabs; browser tests; phase report | ✅ |
 | Owner request (2026-11-16): **Build** tab beside Run discovery (your own channel name or TubeForge's names, or a channel you already have) | ✅ |
 | Owner request (2026-11-16): channels onboarded outside discovery go through the same ideas, calendar, Script Studio and Trending pages (blueprint can be attached to them) | ✅ |
+| Owner request (2026-11-18): **Pipeline** page: state board (per station: inbox from the previous station, in progress, complete, forwarded to the next), live % and stage of every job, what comes next, stopped or stalled jobs shown with the reason; live bar in Script Studio; **Write again** for the script (ADR-0031) | ✅ |
 | Your part, now: run the Phase 7 demo (`PROJECT_PROGRESS.md`, Phase 7 report, item 11) and rate 10 scripts for "sounds human" (≥ 4/5), then reply "approved" | ⬜ |
 
 ## Phase 8 — Storyboards, visuals, voice & stock ⬜

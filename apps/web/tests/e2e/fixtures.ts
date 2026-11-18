@@ -4,7 +4,7 @@
  * routes × states, axe and visual tests; the real flows are covered by the Python integration tests
  * and stateful.spec.ts. Shapes follow packages/shared/openapi.json.
  */
-import { content, versionSummary } from "../../src/mocks/contentApi";
+import { content, pipelineOut, versionSummary } from "../../src/mocks/contentApi";
 
 const NOW = "2026-11-10T06:00:00Z";
 const FOOTER = "Estimates based on cited sources. Not a prediction of views, subscribers or earnings.";
@@ -159,4 +159,6 @@ export const SUCCESS_FIXTURES: Record<string, Record<string, unknown>> = {
     "/api/v1/projects/p-101/claims": content.claims,
     "/api/v1/projects/p-101/value-add": content.valueAdd,
   },
+  // A video being researched (live %) and one waiting for the owner (ADR-0031).
+  pipeline: { "/api/v1/pipeline": pipelineOut() },
 };

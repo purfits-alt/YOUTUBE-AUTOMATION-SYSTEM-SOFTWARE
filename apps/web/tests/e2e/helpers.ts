@@ -19,6 +19,11 @@ export function seed(): { channelId: string } {
 /** Real pages whose main endpoint returns a plain array (not a cursor page). */
 const ARRAY_PAGES = new Set(["agents", "usage", "discovery", "trends", "lookup", "script"]);
 
+/** Real pages whose main endpoint returns an object of its own shape. */
+const EMPTY_BODIES: Record<string, unknown> = {
+  pipeline: { stations: [], projects: [], jobs: [], refresh_s: 20, built_phase: 7 },
+};
+
 /** Pages with no empty state (FRONTEND_SPECIFICATION: "Empty state: N/A" / steps always exist). */
 export const NO_EMPTY_STATE = new Set(["settings", "onboarding", "niche", "branding"]);
 
@@ -111,7 +116,9 @@ async function interceptRealPage(page: Page, def: PageDef, state: State): Promis
         status: 200,
         contentType: "application/json",
         // List endpoints of the Phase 5 pages return arrays; the others return a page.
-        body: JSON.stringify(ARRAY_PAGES.has(def.id) ? [] : { items: [], next_cursor: null }),
+        body: JSON.stringify(
+          EMPTY_BODIES[def.id] ?? (ARRAY_PAGES.has(def.id) ? [] : { items: [], next_cursor: null }),
+        ),
       });
     },
   );

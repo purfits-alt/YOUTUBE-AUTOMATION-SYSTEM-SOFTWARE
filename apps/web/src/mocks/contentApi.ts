@@ -4,6 +4,7 @@
  * FastAPI backend; the Python integration tests cover the real behaviour.
  */
 import { http, HttpResponse, type HttpHandler } from "msw";
+import type { components } from "../lib/api/schema";
 import type {
   BriefOut,
   ClaimOut,
@@ -98,7 +99,118 @@ const longScript = {
   word_count: 1175,
 };
 
+type JobProgressOut = components["schemas"]["JobProgressOut"];
+type PipelineOut = components["schemas"]["PipelineOut"];
+type BoardItem = components["schemas"]["BoardItemOut"];
+
+type StationRow = [key: string, label: string, who: "TUBEFORGE" | "OWNER", phase: number, states: string[]];
+const FIRST: StationRow = ["research", "Research", "TUBEFORGE", 7, ["IDEA", "RESEARCHING"]];
+/** The production line (mirror of tubeforge.api.v1.pipeline.STATIONS). */
+const STATIONS: StationRow[] = [
+  FIRST,
+  ["research_review", "Check the research", "OWNER", 7, ["RESEARCH_REVIEW"]],
+  ["script", "Script writing", "TUBEFORGE", 7, ["SCRIPTING"]],
+  ["script_review", "Approve the script", "OWNER", 7, ["SCRIPT_REVIEW"]],
+  ["storyboard", "Storyboard", "TUBEFORGE", 8, ["STORYBOARDING"]],
+  ["visuals", "Visuals", "TUBEFORGE", 8, ["ASSET_GENERATION"]],
+  ["voice", "Voice-over", "TUBEFORGE", 8, ["VOICEOVER"]],
+  ["edit", "Video edit", "TUBEFORGE", 9, ["ASSEMBLY"]],
+  ["cut_review", "Check the rough cut", "OWNER", 9, ["ROUGH_CUT_REVIEW", "EXTERNAL_EDITING"]],
+  ["render", "Render", "TUBEFORGE", 9, ["RENDERING"]],
+  ["package", "Thumbnail & SEO", "TUBEFORGE", 10, ["PACKAGING"]],
+  ["audit", "Quality & policy checks", "TUBEFORGE", 11, ["QC_AUDIT", "BLOCKED"]],
+  ["approval", "Approve publishing", "OWNER", 12, ["READY_FOR_APPROVAL", "APPROVED"]],
+  ["upload", "Upload", "TUBEFORGE", 12, ["UPLOADING", "PROCESSING", "SCHEDULED", "PRIVATE_DONE"]],
+  ["analytics", "Analytics", "TUBEFORGE", 13, ["PUBLISHED", "ANALYZING", "ARCHIVED"]],
+];
+
+function station(i: number, count = 0) {
+  const [key, label, who, phase] = STATIONS[i] ?? FIRST;
+  return { key, label, who, phase, ready: phase <= 7, count };
+}
+
+/** GET /pipeline from the mock projects (the real rules live in the API, ADR-0031). */
+export function pipelineOut(): PipelineOut {
+  const counts = STATIONS.map(() => 0);
+  const projects = [content.project, content.researching].map((p) => {
+    const index = Math.max(
+      0,
+      STATIONS.findIndex(([, , , , states]) => states.includes(p.state)),
+    );
+    counts[index] = (counts[index] ?? 0) + 1;
+    const [, , who, phase] = STATIONS[index] ?? FIRST;
+    const progress = p.progress ?? null;
+    const activity: PipelineOut["projects"][number]["activity"] =
+      phase > 7
+        ? "NOT_BUILT"
+        : who === "OWNER"
+          ? "YOUR_TURN"
+          : progress?.status === "RUNNING"
+            ? "WORKING"
+            : progress?.status === "FAILED"
+              ? "STOPPED"
+              : progress
+                ? "QUEUED"
+                : "STALLED";
+    return {
+      id: p.id,
+      title: p.working_title,
+      channel_id: p.channel_id,
+      channel_name: "Open Node AI",
+      format: p.format,
+      state: p.state,
+      station: STATIONS[index]?.[0] ?? "research",
+      activity,
+      progress,
+      next: index + 1 < STATIONS.length ? station(index + 1) : null,
+      steps: STATIONS.map(([key], i) => ({
+        key,
+        status: i < index ? "done" : i === index ? "current" : i === index + 1 ? "next" : "later",
+      })) as PipelineOut["projects"][number]["steps"],
+      link: `/projects/${p.id}/script`,
+      updated_at: p.updated_at,
+    };
+  });
+  const busy = [content.researching.progress, ...content.jobs].some(
+    (j) => j && (j.status === "RUNNING" || j.status === "QUEUED"),
+  );
+  // State board: the same buckets as tubeforge.api.v1.pipeline._board.
+  const boards = STATIONS.map((_, i) => ({
+    received_from: i > 0 ? (STATIONS[i - 1]?.[1] ?? null) : "Approved idea",
+    forwards_to: STATIONS[i + 1]?.[1] ?? null,
+    inbox: [] as BoardItem[],
+    in_progress: [] as BoardItem[],
+    attention: 0,
+    complete: 0,
+    forwarded: [] as BoardItem[],
+  }));
+  projects.forEach((item) => {
+    const at = STATIONS.findIndex(([key]) => key === item.station);
+    const entry: BoardItem = {
+      id: item.id,
+      title: item.title,
+      activity: item.activity,
+      pct: item.progress?.pct ?? null,
+    };
+    const card = boards[at];
+    if (!card) return;
+    if (["QUEUED", "YOUR_TURN", "NOT_BUILT", "PAUSED"].includes(item.activity)) card.inbox.push(entry);
+    else card.in_progress.push(entry);
+    boards.slice(0, at).forEach((b) => (b.complete += 1));
+    boards[at - 1]?.forwarded.push(entry);
+  });
+  return {
+    stations: STATIONS.map((_, i) => ({ ...station(i, counts[i]), board: boards[i] ?? null })),
+    projects,
+    jobs: content.jobs,
+    refresh_s: busy ? 3 : 20,
+    built_phase: 7,
+  };
+}
+
 interface ContentState {
+  researching: ProjectOut;
+  jobs: JobProgressOut[];
   ideas: IdeaOut[];
   project: ProjectOut;
   versions: VersionOut[];
@@ -140,6 +252,53 @@ function initial(): ContentState {
       { code: "duration_fits_format", ok: true, message: null },
     ],
   };
+  const researchJob: JobProgressOut = {
+    id: "jp-1",
+    kind: "content.research",
+    label: "Research",
+    entity_type: "video_project",
+    entity_id: "p-102",
+    project_id: "p-102",
+    status: "RUNNING",
+    pct: 35,
+    stage: "Reading articles (4 of 9)",
+    message: null,
+    hint: null,
+    eta_s: 75,
+    queued_at: NOW,
+    started_at: NOW,
+    updated_at: NOW,
+    finished_at: null,
+    link: "/projects/p-102/script",
+  };
+  const researching: ProjectOut = {
+    ...project,
+    id: "p-102",
+    idea_id: null,
+    state: "RESEARCHING",
+    working_title: "Run a code assistant on your own PC",
+    packaging_promise: null,
+    allowed_commands: ["retry-research", "pause", "cancel"],
+    checks: [],
+    progress: researchJob,
+  };
+  const jobs: JobProgressOut[] = [
+    {
+      ...researchJob,
+      id: "jp-2",
+      kind: "content.ideas",
+      label: "New ideas",
+      entity_type: "channel",
+      entity_id: CHANNEL,
+      project_id: null,
+      status: "QUEUED",
+      pct: 0,
+      stage: "Waiting for a free worker",
+      eta_s: null,
+      started_at: null,
+      link: `/channels/${CHANNEL}/ideas`,
+    },
+  ];
   const version: VersionOut = {
     id: "sv-1",
     version: 1,
@@ -179,6 +338,8 @@ function initial(): ContentState {
       }),
     ],
     project,
+    researching,
+    jobs,
     versions: [version],
     briefs: [
       {
@@ -386,8 +547,13 @@ export const contentHandlers: HttpHandler[] = [
     const it = content.ideas.find((i) => i.id === params.id);
     return HttpResponse.json({ ...it, date, project_state: null });
   }),
-  http.get("/api/v1/projects", () => HttpResponse.json({ items: [content.project], next_cursor: null })),
-  http.get("/api/v1/projects/:id", () => HttpResponse.json(content.project)),
+  http.get("/api/v1/projects", () =>
+    HttpResponse.json({ items: [content.project, content.researching], next_cursor: null }),
+  ),
+  http.get("/api/v1/projects/:id", ({ params }) =>
+    HttpResponse.json(params.id === content.researching.id ? content.researching : content.project),
+  ),
+  http.get("/api/v1/pipeline", () => HttpResponse.json(pipelineOut())),
   http.post("/api/v1/projects/:id/commands/:cmd", ({ params }) => {
     if (params.cmd === "approve-script" && content.project.checks?.some((c) => !c.ok))
       return problem(409, "GUARD_FAILED", "Add your own value: 0 of 1 owner fields filled.");

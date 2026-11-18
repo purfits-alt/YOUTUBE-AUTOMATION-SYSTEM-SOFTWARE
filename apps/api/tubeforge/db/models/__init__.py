@@ -787,6 +787,25 @@ class AgentRun(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class JobProgress(Base):
+    """Live progress of one queued/running job, for the pipeline view (ADR-0031)."""
+
+    __tablename__ = "job_progress"
+    id: Mapped[uuid.UUID] = _id()
+    kind: Mapped[str] = mapped_column(Text)
+    entity_type: Mapped[str] = mapped_column(Text)
+    entity_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    status: Mapped[str] = mapped_column(Text)
+    pct: Mapped[int] = mapped_column(SmallInteger, default=0)
+    stage: Mapped[str] = mapped_column(Text)
+    message: Mapped[str | None] = mapped_column(Text)
+    queued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 __all__ = [
     "AgentConfiguration",
     "AgentRun",
@@ -800,6 +819,7 @@ __all__ = [
     "DataDeletionTask",
     "GatewayCache",
     "IdempotencyKey",
+    "JobProgress",
     "KillSwitch",
     "MediaAsset",
     "Notification",

@@ -1169,6 +1169,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pipeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pipeline
+         * @description Every active video project on the production line, with live job progress.
+         */
+        get: operations["pipeline_api_v1_pipeline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects": {
         parameters: {
             query?: never;
@@ -2122,6 +2142,23 @@ export interface components {
              */
             expires_at: string;
         };
+        /** BoardItemOut */
+        BoardItemOut: {
+            /**
+             * Activity
+             * @enum {string}
+             */
+            activity: "QUEUED" | "WORKING" | "STALLED" | "STOPPED" | "WAITING" | "YOUR_TURN" | "NOT_BUILT" | "PAUSED" | "BLOCKED" | "DONE";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Pct */
+            pct?: number | null;
+            /** Title */
+            title: string;
+        };
         /** BriefOut */
         BriefOut: {
             /** Content */
@@ -2835,6 +2872,58 @@ export interface components {
             /** Youtube Channel Id */
             youtube_channel_id: string;
         };
+        /** JobProgressOut */
+        JobProgressOut: {
+            /**
+             * Entity Id
+             * Format: uuid
+             */
+            entity_id: string;
+            /** Entity Type */
+            entity_type: string;
+            /** Eta S */
+            eta_s?: number | null;
+            /** Finished At */
+            finished_at: string | null;
+            /** Hint */
+            hint?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Link */
+            link?: string | null;
+            /** Message */
+            message: string | null;
+            /** Pct */
+            pct: number;
+            /** Project Id */
+            project_id: string | null;
+            /**
+             * Queued At
+             * Format: date-time
+             */
+            queued_at: string;
+            /** Stage */
+            stage: string;
+            /** Started At */
+            started_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "QUEUED" | "RUNNING" | "DONE" | "FAILED" | "WAITING" | "STALLED";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** KeyIn */
         KeyIn: {
             /**
@@ -3198,6 +3287,71 @@ export interface components {
             /** New */
             new: string;
         };
+        /** PipelineOut */
+        PipelineOut: {
+            /**
+             * Built Phase
+             * @default 7
+             */
+            built_phase: number;
+            /** Jobs */
+            jobs: components["schemas"]["JobProgressOut"][];
+            /** Projects */
+            projects: components["schemas"]["PipelineProjectOut"][];
+            /** Refresh S */
+            refresh_s: number;
+            /** Stations */
+            stations: components["schemas"]["StationOut"][];
+        };
+        /** PipelineProjectOut */
+        PipelineProjectOut: {
+            /**
+             * Activity
+             * @enum {string}
+             */
+            activity: "QUEUED" | "WORKING" | "STALLED" | "STOPPED" | "WAITING" | "YOUR_TURN" | "NOT_BUILT" | "PAUSED" | "BLOCKED" | "DONE";
+            /**
+             * Channel Id
+             * Format: uuid
+             */
+            channel_id: string;
+            /** Channel Name */
+            channel_name: string;
+            /** Format */
+            format: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Link */
+            link: string;
+            next: components["schemas"]["StationOut"] | null;
+            progress: components["schemas"]["JobProgressOut"] | null;
+            /** State */
+            state: string;
+            /** Station */
+            station: string;
+            /** Steps */
+            steps: components["schemas"]["PipelineStepOut"][];
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PipelineStepOut */
+        PipelineStepOut: {
+            /** Key */
+            key: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "done" | "current" | "next" | "later";
+        };
         /** PrivateOnlyIn */
         PrivateOnlyIn: {
             /** Enabled */
@@ -3335,6 +3489,8 @@ export interface components {
             } | null;
             /** Parent Project Id */
             parent_project_id: string | null;
+            /** @description The live job of the current station (ADR-0031), if any. */
+            progress?: components["schemas"]["JobProgressOut"] | null;
             /** Render Profile */
             render_profile: {
                 [key: string]: unknown;
@@ -3907,6 +4063,71 @@ export interface components {
             channel_id: string;
             /** Features */
             features?: ("upload" | "readonly" | "captions" | "playlists" | "metadata" | "comments" | "analytics")[];
+        };
+        /**
+         * StationBoardOut
+         * @description One station's card on the state board (owner request 2026-11-18).
+         */
+        StationBoardOut: {
+            /**
+             * Attention
+             * @description In progress but stopped, stalled or blocked.
+             * @default 0
+             */
+            attention: number;
+            /**
+             * Complete
+             * @description Videos that finished this station.
+             * @default 0
+             */
+            complete: number;
+            /**
+             * Forwarded
+             * @description Finished here and now at the next station.
+             */
+            forwarded?: components["schemas"]["BoardItemOut"][];
+            /**
+             * Forwards To
+             * @description Label of the station work is handed to.
+             */
+            forwards_to: string | null;
+            /**
+             * In Progress
+             * @description Being worked on here.
+             */
+            in_progress?: components["schemas"]["BoardItemOut"][];
+            /**
+             * Inbox
+             * @description Arrived here, not started yet.
+             */
+            inbox?: components["schemas"]["BoardItemOut"][];
+            /**
+             * Received From
+             * @description Label of the station the inbox comes from.
+             */
+            received_from: string | null;
+        };
+        /** StationOut */
+        StationOut: {
+            board?: components["schemas"]["StationBoardOut"] | null;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Phase */
+            phase: number;
+            /** Ready */
+            ready: boolean;
+            /**
+             * Who
+             * @enum {string}
+             */
+            who: "TUBEFORGE" | "OWNER";
         };
         /** Step1In */
         Step1In: {
@@ -12019,6 +12240,97 @@ export interface operations {
             };
         };
     };
+    pipeline_api_v1_pipeline_get: {
+        parameters: {
+            query?: {
+                channel_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PipelineOut"];
+                };
+            };
+            /** @description VALIDATION_ERROR (field errors in errors[]) or a bad header */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description State conflict (e.g. IDEMPOTENCY_IN_PROGRESS) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description NOT_READY (master key or database missing) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     list_projects_api_v1_projects_get: {
         parameters: {
             query?: {
@@ -12518,7 +12830,7 @@ export interface operations {
             header?: never;
             path: {
                 project_id: string;
-                cmd: "start" | "retry-research" | "approve-research" | "request-research-changes" | "approve-script" | "request-script-changes" | "approve-cut" | "request-cut-changes" | "retry" | "pause" | "resume" | "cancel" | "choose-fix-path";
+                cmd: "start" | "retry-research" | "retry-script" | "approve-research" | "request-research-changes" | "approve-script" | "request-script-changes" | "approve-cut" | "request-cut-changes" | "retry" | "pause" | "resume" | "cancel" | "choose-fix-path";
             };
             cookie?: never;
         };

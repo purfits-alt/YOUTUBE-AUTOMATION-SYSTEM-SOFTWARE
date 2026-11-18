@@ -6,6 +6,7 @@ import { NotFound } from "../pages/NotFound";
 import { RouteError } from "../pages/RouteError";
 import { NotificationsPage } from "../pages/NotificationsPage";
 import { OverviewPage } from "../pages/OverviewPage";
+import { PipelinePage } from "../pages/PipelinePage";
 import { PageView } from "../pages/PageView";
 import { PAGES } from "../pages/registry";
 import { ChannelTrendingPage } from "../pages/ChannelTrendingPage";
@@ -44,6 +45,7 @@ const REAL_PAGES: Record<string, () => React.JSX.Element> = {
   ideas: () => <IdeasPage />,
   calendar: () => <CalendarPage />,
   script: () => <ScriptStudioPage />,
+  pipeline: () => <PipelinePage />,
 };
 
 export const routes: RouteObject[] = [

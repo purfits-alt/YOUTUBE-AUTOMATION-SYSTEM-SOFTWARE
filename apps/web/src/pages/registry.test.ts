@@ -5,12 +5,12 @@ import { hasKey } from "../i18n";
 import { GROUP_ORDER, PAGES, pageHref } from "./registry";
 
 describe("page registry", () => {
-  it("has the 32 pages of FRONTEND_SPECIFICATION (31 + Channel Trending, US-4.6), numbered 1..32", () => {
-    expect(PAGES).toHaveLength(32);
+  it("has the 33 pages of FRONTEND_SPECIFICATION (31 + Channel Trending, US-4.6, + Pipeline, ADR-0031)", () => {
+    expect(PAGES).toHaveLength(33);
     expect(PAGES.map((p) => p.num).sort((a, b) => a - b)).toEqual(
-      Array.from({ length: 32 }, (_, i) => i + 1),
+      Array.from({ length: 33 }, (_, i) => i + 1),
     );
-    expect(new Set(PAGES.map((p) => p.path)).size).toBe(32);
+    expect(new Set(PAGES.map((p) => p.path)).size).toBe(33);
   });
 
   it("puts project pages 11–18 under /projects/:id and gives them the project header", () => {
@@ -53,6 +53,7 @@ describe("page registry", () => {
       "agents",
       "security",
       "settings",
+      "pipeline",
     ]);
   });
 

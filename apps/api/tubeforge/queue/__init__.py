@@ -112,4 +112,7 @@ def defer_in_transaction(
             job_id = db.execute(stmt, params).scalar_one()
     except IntegrityError:
         return None
+    from tubeforge import progress  # the pipeline view shows it as waiting (ADR-0031)
+
+    progress.queued(db, name, args)
     return int(job_id)
