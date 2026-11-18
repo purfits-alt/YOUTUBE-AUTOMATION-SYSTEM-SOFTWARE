@@ -273,32 +273,64 @@ def _docs_for(db: Session, ids: list[str]) -> list[DocIn]:
     return out
 
 
+# Minimum relevance of an article to the video topic (same 0–1 cosine as the idea checks, ADR-0029).
+# model2vec: unrelated text scores ~0.0, related ~0.5; trigrams score lower overall.
+RELEVANCE_MIN = {"model2vec": 0.30, "trigram": 0.05}
+MAX_CANDIDATES = 12
+
+
 def collect_articles(
-    db: Session, fetcher: ResearchFetcher, language: str, queries: list[str]
+    db: Session,
+    fetcher: ResearchFetcher,
+    language: str,
+    queries: list[str],
+    *,
+    topic: str = "",
+    pinned_queries: Sequence[str] = (),
 ) -> tuple[list[DocIn], list[str]]:
+    """Search Wikipedia, read up to ``MAX_CANDIDATES`` articles and keep the ``MAX_ARTICLES`` most
+    relevant to ``topic``. Articles found with the owner's own search words are always kept; others
+    must reach ``RELEVANCE_MIN`` (owner report 2026-11-17: loose searches returned unrelated pages
+    such as San Francisco history for a video about AI sampling settings)."""
     wiki = WikipediaArticles(db, fetcher)
     titles: list[str] = []
+    pinned: set[str] = set()
     skipped: list[str] = []
     for q in queries:
         if not q.strip():
             continue
         try:
             for t in wiki.search(language, q, limit=4):
+                if q in pinned_queries:
+                    pinned.add(t)
                 if t not in titles:
                     titles.append(t)
         except (FetchError, FetchBlockedError) as exc:
             skipped.append(f"search '{q[:60]}': {exc}")
-    ids: list[str] = []
-    for t in titles[:MAX_ARTICLES]:
+    found: list[tuple[str, str]] = []
+    for t in titles[:MAX_CANDIDATES]:
         try:
             art = wiki.article(language, t)
         except (FetchError, FetchBlockedError) as exc:
             skipped.append(f"{t}: {exc}")
             continue
         if art is not None:
-            ids.append(art.document_id)
+            found.append((t, art.document_id))
     db.commit()
-    return _docs_for(db, ids), skipped
+    docs = _docs_for(db, [doc_id for _, doc_id in found])
+    if not topic.strip() or not docs:
+        return docs[:MAX_ARTICLES], skipped
+    sim = similarity.get_similarity()
+    floor = RELEVANCE_MIN.get(sim.method, 0.0)
+    scores = sim.against(topic, [f"{d.title or ''}\n{d.text[:1500]}" for d in docs])
+    ranked = sorted(zip(docs, scores, [t for t, _ in found], strict=True), key=lambda x: -x[1])
+    kept: list[DocIn] = []
+    for doc, score, title in ranked:
+        if title in pinned or score >= floor:
+            kept.append(doc)
+        else:
+            skipped.append(f"{title}: not about this topic ({score:.2f})")
+    return kept[:MAX_ARTICLES], skipped
 
 
 STOPWORDS = frozenset({
@@ -468,15 +500,27 @@ def run_research(
         queries.append(str(promise["title_idea"]))
     queries = list(dict.fromkeys(queries))[:MAX_QUERIES]
     try:
-        docs, skipped = collect_articles(db, fetcher, language, queries)
+        docs, skipped = collect_articles(
+            db,
+            fetcher,
+            language,
+            queries,
+            topic=" ".join(
+                filter(
+                    None,
+                    [project.working_title, idea.angle if idea else "", promise.get("promise_statement")],
+                )
+            ),
+            pinned_queries=[q.strip() for q in extra_queries if q.strip()],
+        )
     except SourceUnavailableError as exc:
         raise PipelineError("STOPPED" if exc.code == "STOPPED" else "FAILED", exc.message) from exc
     if len(docs) < MIN_DOCUMENTS:
         raise PipelineError(
             "FAILED",
-            f"Only {len(docs)} source document(s) found for “{project.working_title}”; at least "
-            f"{MIN_DOCUMENTS} are needed. Press Research again with extra search words, "
-            "or edit the working title.",
+            f"Only {len(docs)} Wikipedia article(s) about “{project.working_title}” were found; at least "
+            f"{MIN_DOCUMENTS} are needed. Press Research again and add the names of Wikipedia articles "
+            "on this topic as extra search words, or edit the working title.",
         )
     data = {
         "language": language,

@@ -419,3 +419,53 @@ def test_search_terms_and_build_tab_blueprint_guide_the_content_agents(db: Sessi
     assert channel_pillars(db, ch.id) == ["Stretching"]
     brief = channel_brief(db, ch)
     assert "Niche: Wellness at home" in brief and "Pillar: Stretching — Short daily routines" in brief
+
+
+class TopicEncoder:
+    """Stand-in embedding: AI-sampling words point one way, everything else another."""
+
+    def encode(self, texts: list[str]) -> list[list[float]]:
+        return [
+            [1.0, 0.0] if re.search(r"sampling|temperature|token", t, re.I) else [0.0, 1.0] for t in texts
+        ]
+
+
+def test_research_keeps_only_articles_about_the_topic(db: Session) -> None:
+    """Owner report 2026-11-17: loose Wikipedia searches returned San Francisco history and phonograph
+    records for a video about temperature and top-p sampling; those reached A09."""
+    texts = {
+        "Top-p sampling": "Top-p sampling picks the next token from the smallest set whose probability exceeds p.",
+        "Softmax function": "With a temperature parameter the softmax function controls sampling randomness.",
+        "History of San Francisco": "San Francisco grew quickly during the gold rush.",
+        "Phonograph record": "A phonograph record is an analog sound storage medium.",
+    }
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.path == "/w/rest.php/v1/search/page":
+            q = req.url.params["q"]
+            hits = ["Phonograph record"] if q == "Phonograph record" else list(texts)
+            return httpx.Response(200, json={"pages": [{"title": t} for t in hits]})
+        title = req.url.params["titles"]
+        return httpx.Response(200, json={"query": {"pages": [{"title": title, "extract": texts[title] * 3}]}})
+
+    similarity.reset_similarity(similarity.EmbeddingSimilarity(TopicEncoder()))
+    dns = resolver({"en.wikipedia.org": ["185.15.59.224"]})
+    with ResearchFetcher(transport=httpx.MockTransport(handler), resolver=dns, contact="") as f:
+        docs, skipped = pipe.collect_articles(
+            db, f, "en", ["temperature top-p"], topic="How temperature and top-p sampling change AI answers"
+        )
+        assert {d.title for d in docs} == {
+            "Top-p sampling — Wikipedia (en)",
+            "Softmax function — Wikipedia (en)",
+        }
+        assert any(s.startswith("History of San Francisco: not about this topic") for s in skipped)
+        # The owner's own search words are trusted even when the score is low.
+        pinned, _ = pipe.collect_articles(
+            db,
+            f,
+            "en",
+            ["Phonograph record"],
+            topic="temperature sampling",
+            pinned_queries=["Phonograph record"],
+        )
+        assert [d.title for d in pinned] == ["Phonograph record — Wikipedia (en)"]
