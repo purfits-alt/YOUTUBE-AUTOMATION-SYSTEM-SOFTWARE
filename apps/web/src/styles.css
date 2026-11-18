@@ -223,3 +223,18 @@ dialog::backdrop {
   transform-origin: left;
   animation: tf-grow 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
+
+/* Live job progress (ADR-0031): a soft moving sheen on a running bar. */
+@keyframes tf-sheen {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+.tf-progress-live {
+  background-image: linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 0.35) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: tf-sheen 1.8s linear infinite;
+}

@@ -1,4 +1,4 @@
-// Generated from the page table in docs/FRONTEND_SPECIFICATION.md (§1–§31). Text lives in i18n/en.json.
+// Generated from the page table in docs/FRONTEND_SPECIFICATION.md (§1–§33). Text lives in i18n/en.json.
 import type { GroupKey, PageDef, PageId } from "./types";
 
 export const PAGES: readonly PageDef[] = [
@@ -367,6 +367,18 @@ export const PAGES: readonly PageDef[] = [
     columns: ["title", "published", "views", "multiple", "engagedViews", "ctr", "avd"],
     actions: ["refreshAnalytics", "replicateThis"],
     safety: true,
+    projectScoped: false,
+  },
+  {
+    id: "pipeline",
+    num: 33,
+    path: "/pipeline",
+    group: "home",
+    api: "/pipeline",
+    real: true,
+    columns: ["title", "state"],
+    actions: ["refresh"],
+    safety: false,
     projectScoped: false,
   },
 ];

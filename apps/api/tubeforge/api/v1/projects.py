@@ -30,6 +30,7 @@ from tubeforge.api.idempotency import Idempotency
 from tubeforge.api.pagination import Limit, Page, clamp_limit
 from tubeforge.api.v1.channels import get_channel, if_match, rejected, uuid_cursor
 from tubeforge.api.v1.ideas import PackagingPromise, Text
+from tubeforge.api.v1.pipeline import JobProgressOut, project_progress
 from tubeforge.audit import Actor, record
 from tubeforge.content import craft, scripts, value_add
 from tubeforge.db.ids import uuid7
@@ -68,7 +69,7 @@ DEFAULT_DURATION_S = {"LONG": 480, "SHORT": 45}
 EDITABLE_STATES = {"IDEA", "RESEARCHING", "RESEARCH_REVIEW", "SCRIPTING", "SCRIPT_REVIEW"}
 SCRIPT_EDIT_STATES = {"SCRIPTING", "SCRIPT_REVIEW"}
 Command = Literal[
-    "start", "retry-research", "approve-research", "request-research-changes", "approve-script", "request-script-changes",
+    "start", "retry-research", "retry-script", "approve-research", "request-research-changes", "approve-script", "request-script-changes",
     "approve-cut", "request-cut-changes", "retry", "pause", "resume", "cancel", "choose-fix-path",
 ]  # fmt: skip
 LATER = {"approve-cut", "request-cut-changes", "choose-fix-path"}
@@ -77,7 +78,7 @@ COMMANDS_BY_STATE: dict[str, list[str]] = {
     "IDEA": ["start", "cancel"],
     "RESEARCHING": ["retry-research", "pause", "cancel"],
     "RESEARCH_REVIEW": ["approve-research", "request-research-changes", "pause", "cancel"],
-    "SCRIPTING": ["pause", "cancel"],
+    "SCRIPTING": ["retry-script", "pause", "cancel"],
     "SCRIPT_REVIEW": ["approve-script", "request-script-changes", "pause", "cancel"],
     "PAUSED": ["resume", "cancel"],
     "FAILED": ["retry", "cancel"],
@@ -114,6 +115,9 @@ class ProjectOut(BaseModel):
     allowed_commands: list[str] = Field(default_factory=list)
     checks: list[GuardOut] = Field(
         default_factory=list, description="Guards of the next owner gate, from current data."
+    )
+    progress: JobProgressOut | None = Field(
+        default=None, description="The live job of the current station (ADR-0031), if any."
     )
 
 
@@ -369,7 +373,9 @@ def project_out(db: Session, row: VideoProject) -> ProjectOut:
     commands = COMMANDS_BY_STATE.get(
         row.state, ["cancel"] if row.state not in ("ARCHIVED", "CANCELLED") else []
     )
-    return ProjectOut(**data, allowed_commands=commands, checks=_checks(db, row))
+    return ProjectOut(
+        **data, allowed_commands=commands, checks=_checks(db, row), progress=project_progress(db, row)
+    )
 
 
 def _queue(db: Session, state: str, project: VideoProject, instruction: str = "") -> list[int]:
@@ -567,24 +573,35 @@ def project_command(
     if (replayed := idem.replay()) is not None:
         return replayed
     project = _project(db, project_id, lock=True)
-    if cmd == "retry-research":
-        # Research found too little or was refused: run it again (optionally with the owner's extra
-        # search words). No state change: the project stays in RESEARCHING.
-        if project.state != "RESEARCHING":
+    if cmd in ("retry-research", "retry-script"):
+        # The job found too little, was refused or stopped: run it again. No state change: the
+        # project stays in RESEARCHING (optionally with the owner's extra search words) or SCRIPTING
+        # (optionally with the owner's instruction for the draft).
+        state, name = (
+            ("RESEARCHING", "content.research")
+            if cmd == "retry-research"
+            else ("SCRIPTING", "content.script")
+        )
+        if project.state != state:
             raise ProblemError(
                 409,
                 "INVALID_TRANSITION",
                 "Not now",
-                "Research can be run again while the project is researching.",
+                "Research can be run again while the project is researching."
+                if cmd == "retry-research"
+                else "The script can be written again while the project is in script writing.",
             )
-        extra = [w.strip() for w in (body.note or "").replace("\n", ",").split(",") if w.strip()][:5]
-        job = defer_in_transaction(
-            db,
-            "content.research",
-            queue="agents",
-            args={"project_id": str(project.id), "extra_queries": extra},
-        )
-        _audit(request, db, p, "project.retry-research", project, extra_queries=extra)
+        args: dict[str, Any] = {"project_id": str(project.id)}
+        if cmd == "retry-research":
+            extra = [w.strip() for w in (body.note or "").replace("\n", ",").split(",") if w.strip()][:5]
+            args["extra_queries"] = extra
+            details: dict[str, Any] = {"extra_queries": extra}
+        else:
+            if body.note and body.note.strip():
+                args["instruction"] = body.note.strip()
+            details = {"instruction": bool(body.note and body.note.strip())}
+        job = defer_in_transaction(db, name, queue="agents", args=args)
+        _audit(request, db, p, f"project.{cmd}", project, **details)
         out = CommandOut(project=project_out(db, project), transition_id=None, job_ids=[job] if job else [])
         response.status_code = 202
         idem.store(202, out.model_dump(mode="json"))

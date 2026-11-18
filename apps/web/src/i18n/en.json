@@ -539,6 +539,12 @@
       "purpose": "Double down on what works for this channel: your own outliers, new videos from your winners, and fresh ideas.",
       "empty": "No outliers yet — they appear once your videos have 7 days of analytics.",
       "emptyAction": "Refresh analytics"
+    },
+    "pipeline": {
+      "title": "Pipeline",
+      "purpose": "Every video on one production line: what is being worked on now, how far it is, and what comes next.",
+      "empty": "No videos are in production yet. Approve an idea to start one.",
+      "emptyAction": "Open Idea Generator"
     }
   },
   "login": {
@@ -1282,7 +1288,8 @@
     "title": "Video projects",
     "hint": "Each approved idea becomes a project. Open one to review its research and script.",
     "empty": "No projects yet. Approve an idea to start one.",
-    "emptyAction": "Open Idea Generator"
+    "emptyAction": "Open Idea Generator",
+    "pipeline": "See the whole production line."
   },
   "scriptPage": {
     "target": "target {s} s",
@@ -1303,7 +1310,8 @@
       "pause": "Pause",
       "resume": "Resume",
       "cancel": "Cancel project",
-      "retry-research": "Research again"
+      "retry-research": "Research again",
+      "retry-script": "Write again"
     },
     "done": {
       "start": "Research started.",
@@ -1315,7 +1323,8 @@
       "pause": "Paused.",
       "resume": "Resumed.",
       "cancel": "Project cancelled.",
-      "retry-research": "Research is running again. The brief appears here in a minute or two."
+      "retry-research": "Research is running again. The brief appears here in a minute or two.",
+      "retry-script": "The script is being written again. The new draft appears here in a minute or two."
     },
     "overrideTitle": "Accept this claim anyway",
     "overrideReason": "Why is it fine? (at least 20 characters)",
@@ -1383,12 +1392,80 @@
     },
     "allChecksPass": "All craft checks pass.",
     "extraWords": "Extra search words (optional, comma separated)",
-    "extraWordsHint": "e.g. Code Llama, Visual Studio Code, autocomplete"
+    "extraWordsHint": "e.g. Code Llama, Visual Studio Code, autocomplete",
+    "scriptNote": "Instruction for the new draft (optional)",
+    "scriptNoteHint": "For example: a shorter hook, simpler words"
   },
   "routeError": {
     "title": "Something went wrong on this page",
     "body": "The rest of TubeForge still works. Reload the page; if it happens again, send a screenshot of this message.",
     "detail": "Details:",
     "reload": "Reload"
+  },
+  "pipeline": {
+    "hint": "Videos move from station to station by themselves. The line stops only where you decide (marked “You”).",
+    "you": "You",
+    "tubeforge": "TubeForge",
+    "arrives": "Phase {phase}",
+    "now": "Now",
+    "next": "Next",
+    "nextLater": "{label} — arrives in Phase {phase}",
+    "nextYou": "{label} (your turn)",
+    "nextAuto": "{label} (starts by itself)",
+    "end": "Last station",
+    "left": "about {t} left",
+    "seconds": "{n} s",
+    "minutes": "{n} min",
+    "live": "Updates every {s} seconds",
+    "progress": "{label}: {pct}% done",
+    "open": "Open",
+    "otherWork": "Other work",
+    "otherHint": "Ideas, discovery and blueprints from the last 24 hours.",
+    "activity": {
+      "QUEUED": "Waiting for a worker",
+      "WORKING": "Working",
+      "STALLED": "Not moving",
+      "STOPPED": "Stopped",
+      "WAITING": "Waiting for a free-tier limit",
+      "YOUR_TURN": "Your turn",
+      "NOT_BUILT": "Waiting for the next phase",
+      "PAUSED": "Paused",
+      "BLOCKED": "Blocked by a check",
+      "DONE": "Published"
+    },
+    "explain": {
+      "YOUR_TURN": "Open the project to review and approve. The next station starts as soon as you approve.",
+      "STALLED": "Nothing is working on this right now. Open the project and press Research again or Write again.",
+      "STOPPED": "Open the project to see why and try again.",
+      "NOT_BUILT": "This video is ready for the next station, which arrives in Phase {phase}.",
+      "PAUSED": "Open the project and press Resume to continue."
+    },
+    "status": {
+      "QUEUED": "Waiting",
+      "RUNNING": "Running",
+      "DONE": "Done",
+      "FAILED": "Stopped",
+      "WAITING": "Waiting for a limit",
+      "STALLED": "Not moving"
+    },
+    "steps": "Stations of {title}",
+    "step": {
+      "done": "done",
+      "current": "now",
+      "next": "next",
+      "later": "later"
+    },
+    "board": {
+      "title": "State board",
+      "inbox": "Inbox",
+      "from": "from {name}",
+      "inProgress": "In progress",
+      "attention": "{n} need attention",
+      "complete": "Complete",
+      "forwarded": "Forwarded",
+      "to": "to {name}",
+      "more": "+ {n} more"
+    },
+    "videos": "Videos on the line"
   }
 }

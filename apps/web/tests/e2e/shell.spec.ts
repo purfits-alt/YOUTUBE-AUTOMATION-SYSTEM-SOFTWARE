@@ -36,8 +36,8 @@ test("every sidebar link opens its page", async ({ page }) => {
   await page.goto("/");
   const nav = page.getByRole("navigation", { name: "Main navigation" });
   const links = nav.getByRole("link");
-  await expect(links).toHaveCount(32);
-  for (let i = 0; i < 32; i++) {
+  await expect(links).toHaveCount(33);
+  for (let i = 0; i < 33; i++) {
     const link = links.nth(i);
     const name = ((await link.textContent()) ?? "").replace(/^\d+/, "").trim();
     await link.click();
@@ -55,6 +55,17 @@ test("Channel Trending: every tab opens on the real API without errors", async (
   await expect(page.getByText("Your published videos")).toBeVisible();
   await page.getByRole("tab", { name: "New Ideas" }).click();
   await expect(page.getByRole("button", { name: "Generate ideas" }).first()).toBeVisible();
+  await expect(page.getByTestId("route-error")).toHaveCount(0);
+  expect(problems).toEqual([]);
+});
+
+// Owner request 2026-11-18 (ADR-0031): the production line opens on the real API.
+test("Pipeline: the production line opens on the real API without errors", async ({ page }) => {
+  const problems = watchConsole(page);
+  await page.goto("/pipeline");
+  await expect(page.getByRole("heading", { level: 1, name: "Pipeline" })).toBeVisible();
+  await expect(page.getByTestId("station-research")).toBeVisible();
+  await expect(page.getByTestId("station-storyboard")).toContainText("Phase 8");
   await expect(page.getByTestId("route-error")).toHaveCount(0);
   expect(problems).toEqual([]);
 });

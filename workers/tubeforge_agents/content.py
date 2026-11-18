@@ -28,6 +28,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from tubeforge import progress
 from tubeforge.audit import Actor
 from tubeforge.content import craft, scripts, similarity
 from tubeforge.db.ids import uuid7
@@ -153,7 +154,9 @@ def generate_ideas(
             "format": variation.format,
             "kind": variation.kind,
         }
+    progress.report(10, f"Writing {count} ideas for this channel")
     outcome = _run_clean(db, gateway, A08, data, now, channel_id)
+    progress.report(70, "Comparing the ideas with your earlier videos")
     sim = similarity.get_similarity()
     limits = similarity.limits_for(sim)
     result = IdeasResult(method=sim.method)
@@ -296,9 +299,12 @@ def collect_articles(
     titles: list[str] = []
     pinned: set[str] = set()
     skipped: list[str] = []
-    for q in queries:
+    for i, q in enumerate(queries):
         if not q.strip():
             continue
+        progress.report(
+            5 + 15 * i // max(1, len(queries)), f"Searching Wikipedia ({i + 1} of {len(queries)})"
+        )
         try:
             for t in wiki.search(language, q, limit=4):
                 if q in pinned_queries:
@@ -308,7 +314,9 @@ def collect_articles(
         except (FetchError, FetchBlockedError) as exc:
             skipped.append(f"search '{q[:60]}': {exc}")
     found: list[tuple[str, str]] = []
-    for t in titles[:MAX_CANDIDATES]:
+    reading = titles[:MAX_CANDIDATES]
+    for i, t in enumerate(reading):
+        progress.report(20 + 25 * i // max(1, len(reading)), f"Reading articles ({i + 1} of {len(reading)})")
         try:
             art = wiki.article(language, t)
         except (FetchError, FetchBlockedError) as exc:
@@ -320,6 +328,7 @@ def collect_articles(
     docs = _docs_for(db, [doc_id for _, doc_id in found])
     if not topic.strip() or not docs:
         return docs[:MAX_ARTICLES], skipped
+    progress.report(46, "Keeping the articles about this topic")
     sim = similarity.get_similarity()
     floor = RELEVANCE_MIN.get(sim.method, 0.0)
     scores = sim.against(topic, [f"{d.title or ''}\n{d.text[:1500]}" for d in docs])
@@ -499,6 +508,7 @@ def run_research(
     if promise.get("title_idea"):
         queries.append(str(promise["title_idea"]))
     queries = list(dict.fromkeys(queries))[:MAX_QUERIES]
+    progress.report(3, "Choosing search words")
     try:
         docs, skipped = collect_articles(
             db,
@@ -532,6 +542,7 @@ def run_research(
         },
         "documents": [d.model_dump() for d in docs],
     }
+    progress.report(50, f"Writing the research brief from {len(docs)} articles")
     outcome = run_agent(
         db,
         gateway,
@@ -566,6 +577,7 @@ def run_research(
     )
     db.add(brief)
     db.flush()
+    progress.report(75, f"Fact-checking {len(content['claims'])} claims")
     text = "\n".join(f"{c['id']}: {c['text']}" for c in content["claims"])
     checked = _store_claims(
         db, project, "RESEARCH_BRIEF", brief.id, _fact_check(db, gateway, project, text, docs, now), docs
@@ -576,6 +588,7 @@ def run_research(
         "skipped": skipped[:20],
     }
     brief.status = "SUBMITTED"
+    progress.report(95, "Sending the brief to you for review")
     engine.transition(
         db, MACHINES["video_project"], project.id, "research_done", actor=Actor("AGENT", A09.code),
         payload={"research_done": True, "fact_check_done": True},
@@ -719,10 +732,13 @@ def run_script(
         )
         if latest is not None:
             data["current_draft"] = latest.plain_text[:40000]
+    progress.report(10, "Writing the script draft")
     body = draft({"fix_notes": asked} if asked else {})
+    progress.report(45, "Checking the draft (hook, timing, facts)")
     findings = check(body)
     repaired = False
     if craft.errors(findings):
+        progress.report(50, "Fixing what the checks found")
         log.info("script.repair", project_id=str(project.id), codes=[f.code for f in craft.errors(findings)])
         body = draft({"fix_notes": "; ".join(filter(None, [asked, _describe(findings)]))[:3000]})
         findings = check(body)
@@ -759,6 +775,7 @@ def run_script(
     db.flush()
     docs = _docs_for(db, [str(d["id"]) for d in brief.content.get("documents", [])])
     version.body = {**version.body, "_fact_check": "DONE" if docs else "NO_SOURCES"}
+    progress.report(80, "Fact-checking the script")
     if docs:
         _store_claims(
             db, project, "SCRIPT_VERSION", version.id,
@@ -806,6 +823,7 @@ def fact_check_version(
     docs = _docs_for(db, [str(d["id"]) for d in brief.content.get("documents", [])]) if brief else []
     rows: list[FactCheckClaim] = []
     if docs:
+        progress.report(20, "Fact-checking your edited script")
         outcome = _fact_check(db, gateway, project, version.plain_text, docs, now)
         rows = _store_claims(db, project, "SCRIPT_VERSION", version.id, outcome, docs)
     version.body = {**version.body, "_fact_check": "DONE" if docs else "NO_SOURCES"}

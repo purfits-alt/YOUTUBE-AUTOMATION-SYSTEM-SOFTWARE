@@ -253,12 +253,22 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 | POST | `/projects/{id}/script/versions` 🔁 | ScriptVersionIn (owner edit → new version) | `content.edit` |
 | POST | `/projects/{id}/script/regenerate` 🔁⚙ | `{section?, instruction}` | `content.edit` |
 
+*Pipeline (owner request 2026-11-18, ADR-0031, `api/v1/pipeline.py`):*
+- `GET /pipeline?channel_id=` (content.view) returns `PipelineOut`:
+  - `stations`: the 15 stations (`key`, `label`, `who` TUBEFORGE|OWNER, `phase`, `ready`, `count`) with a `board` per station: `received_from`, `forwards_to`, `inbox`, `in_progress` (items with `pct`), `attention`, `complete`, `forwarded`.
+  - `projects`: each active non-test project with its `station`, `activity` (QUEUED, WORKING, STALLED, STOPPED, WAITING, YOUR_TURN, NOT_BUILT, PAUSED, BLOCKED, DONE), live `progress`, `next` station and `steps`.
+  - `jobs`: recent jobs not tied to a project (ideas, discovery, blueprint);
+  - `refresh_s`: 3 while something is queued or running, else 20.
+- `ProjectOut.progress` is the live job of the project's current station (`JobProgressOut`: `kind`, `label`, `status`, `pct`, `stage`, `message`, `hint`, `eta_s`, times, `link`).
+- Workers record progress in `job_progress` (DATABASE_SCHEMA §9). Queuing a tracked job adds a QUEUED row in the same transaction.
+
 *Phase 7 step C (`api/v1/projects.py`):*
 - **Project view.** `ProjectOut` adds `allowed_commands` and `checks`: the guards of the next owner gate (research or script), evaluated from current data.
 - **Creating a project.** `POST /projects` creates an owner project without an idea (state IDEA). Passing `idea_id` answers 409 `USE_IDEA_APPROVE`.
 - **Commands.**
   - `start` (the orchestrator moves IDEA → RESEARCHING) queues `content.research`.
   - `retry-research {note?}` (RESEARCHING only, no state change) queues research again. The note is up to 5 comma-separated extra search words, used first. It is for when the brief could not be made: too few sources, or A09 refused.
+  - `retry-script {note?}` (SCRIPTING only, no state change; owner request 2026-11-18) queues the script again, with the note as the owner's instruction for the draft. It is for when the draft could not be made or the job stopped.
   - `approve-research` reads the latest SUBMITTED brief's claims for the guard (a contradicted claim needs a claim override). The brief becomes APPROVED and `content.script` is queued.
   - `request-research-changes` rejects the brief and re-queues research.
   - `approve-script` locks the latest version and sets `locked_script_version_id`. The guard facts come from the database: contradicted claims without an override, value-add fields filled and measured duration. If the version is still being fact-checked it answers 409 `FACT_CHECK_PENDING`.

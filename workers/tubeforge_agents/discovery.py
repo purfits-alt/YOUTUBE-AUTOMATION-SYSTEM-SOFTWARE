@@ -25,6 +25,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from tubeforge import progress
 from tubeforge.db.ids import uuid7
 from tubeforge.db.models import (
     Channel,
@@ -197,6 +198,7 @@ def run_discovery(
     result: dict[str, Any] = {}
     try:
         try:
+            progress.report(10, "Collecting research signals")
             got = collect(db, fetcher, params, today=now.date())
         except SourceUnavailableError as exc:
             raise PipelineError("STOPPED" if exc.code == "STOPPED" else "FAILED", exc.message) from exc
@@ -212,6 +214,7 @@ def run_discovery(
             "documents": [d.model_dump() for d in got.documents],
             "metrics": got.metrics,
         }
+        progress.report(40, "Finding niche ideas")
         outcome = run_agent(db, gateway, A02, data, idempotent=False, now=now)
         report.agent_run_id = outcome.run.id
         if outcome.data is None:
@@ -564,7 +567,9 @@ def generate_blueprint(
         "language": cand.language,
         "originality_angles": angles,
     }
+    progress.report(10, "Writing branding ideas")
     branding = _run_clean(db, gateway, A07, {"niche": niche}, now)
+    progress.report(40, "Writing the channel blueprint")
     strategy = _run_clean(db, gateway, A06, {"niche": niche, "owner_notes": owner_notes}, now)
     blueprint = bp.compose(
         {"candidate_id": str(cand.id), "name": cand.name, "language": cand.language},

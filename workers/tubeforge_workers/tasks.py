@@ -43,6 +43,11 @@ def make_blueprint() -> procrastinate.Blueprint:
             maintenance.RESEARCH_PURGE_CRON,
             maintenance.purge_research_documents,
         ),
+        (
+            "mnt.retention.purge_job_progress",
+            maintenance.PROGRESS_PURGE_CRON,
+            maintenance.purge_job_progress,
+        ),
         ("orch.reconcile", maintenance.RECONCILE_CRON, maintenance.reconcile),
         ("orch.approvals_expire", maintenance.APPROVALS_CRON, maintenance.expire_approvals),
         ("a32.usage_scan", maintenance.A32_CRON, maintenance.a32_usage_scan),

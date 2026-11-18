@@ -975,6 +975,23 @@ CREATE TABLE job_meta (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE job_progress (
+  id uuid PRIMARY KEY,
+  kind text NOT NULL,
+  entity_type text NOT NULL CHECK (entity_type IN ('video_project','channel','niche_report','niche_candidate','script_version')),
+  entity_id uuid NOT NULL,
+  project_id uuid NULL,
+  status text NOT NULL CHECK (status IN ('QUEUED','RUNNING','DONE','FAILED','WAITING')),
+  pct smallint NOT NULL DEFAULT 0 CHECK (pct BETWEEN 0 AND 100),
+  stage text NOT NULL,
+  message text NULL,
+  queued_at timestamptz NOT NULL DEFAULT now(),
+  started_at timestamptz NULL,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  finished_at timestamptz NULL
+);
+CREATE TRIGGER job_progress_updated_at BEFORE UPDATE ON job_progress FOR EACH ROW EXECUTE FUNCTION tf_set_updated_at();
+
 CREATE TABLE provider_registry (
   code text PRIMARY KEY,
   capability text NOT NULL CHECK (capability IN ('LLM','TTS','VOICE_CLONE','STT','IMAGE','VIDEO_GEN','STOCK','NOTIFY','RESEARCH')),
@@ -1174,6 +1191,9 @@ CREATE INDEX ON quota_ledger (gcp_project, pt_day, bucket);
 CREATE INDEX ON agent_runs (agent_code, started_at DESC);
 CREATE INDEX ON agent_runs (project_id);
 CREATE INDEX ON workflow_transitions (entity_type, entity_id, occurred_at);
+CREATE INDEX ON job_progress (entity_id, queued_at DESC);
+CREATE INDEX ON job_progress (project_id, queued_at DESC);
+CREATE INDEX ON job_progress (status, updated_at DESC);
 CREATE INDEX ON usage_records (provider_code, period_key, metric);
 CREATE INDEX ON notifications (user_id, read_at, created_at DESC);
 CREATE INDEX ON notifications (dedup_key, created_at DESC);

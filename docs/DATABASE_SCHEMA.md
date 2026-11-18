@@ -681,6 +681,23 @@ CREATE TABLE job_meta (                               -- our extra job info, key
   wait_state text NULL CHECK (wait_state IN ('WAITING_RESOURCES','WAITING_QUOTA')), wait_until timestamptz NULL,
   checkpoint jsonb NULL, created_at
 );
+
+CREATE TABLE job_progress (                           -- live pipeline progress (owner request 2026-11-18, ADR-0031)
+  id uuid PRIMARY KEY,
+  kind text NOT NULL,                                 -- task name, e.g. 'content.research'
+  entity_type text NOT NULL CHECK (entity_type IN ('video_project','channel','niche_report','niche_candidate','script_version')),
+  entity_id uuid NOT NULL,
+  project_id uuid NULL,                               -- the video project this job moves, when there is one
+  status text NOT NULL CHECK (status IN ('QUEUED','RUNNING','DONE','FAILED','WAITING')),
+  pct smallint NOT NULL DEFAULT 0 CHECK (pct BETWEEN 0 AND 100),
+  stage text NOT NULL,                                -- plain words for the owner: 'Reading 4 of 6 articles'
+  message text NULL,                                  -- why it failed or waits
+  queued_at timestamptz NOT NULL DEFAULT now(), started_at timestamptz NULL,
+  updated_at timestamptz NOT NULL DEFAULT now(), finished_at timestamptz NULL
+);
+CREATE INDEX ON job_progress (entity_id, queued_at DESC);
+CREATE INDEX ON job_progress (project_id, queued_at DESC);
+CREATE INDEX ON job_progress (status, updated_at DESC);
 ```
 
 ## 10. Providers, usage, costs
@@ -850,3 +867,4 @@ erDiagram
 | `intermediate_cleanup_offer` | daily | intermediates 30 days after publish → owner-confirmed cleanup (OQ-1) |
 | `voice_profile_purge` | hourly | hard-delete samples and embeddings of profiles with `deleted_at` set |
 | `oauth_pending_cleanup` | 10 min | delete expired PKCE rows |
+| `purge_job_progress` | daily | delete `job_progress` rows finished more than 30 days ago (ADR-0031) |
