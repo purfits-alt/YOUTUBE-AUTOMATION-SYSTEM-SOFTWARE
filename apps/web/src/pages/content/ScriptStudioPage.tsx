@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { Dialog } from "../../components/Dialog";
+import { JobProgress } from "../../components/JobProgress";
 import { ProblemDisplay } from "../../components/ProblemDisplay";
 import { StateCard } from "../../components/StateCard";
 import { useToast } from "../../components/Toasts";
@@ -32,6 +33,7 @@ const STEPS = [
 type Command =
   | "start"
   | "retry-research"
+  | "retry-script"
   | "approve-research"
   | "request-research-changes"
   | "approve-script"
@@ -109,6 +111,11 @@ function ProjectPanel({
           </li>
         )}
       </ol>
+      {project.progress && (
+        <div className="mt-3 max-w-xl" data-testid="project-progress">
+          <JobProgress job={project.progress} />
+        </div>
+      )}
       {(project.checks ?? []).length > 0 && (
         <div className="mt-3" data-testid="checks">
           <p className="text-sm font-medium">{t("project.guards")}</p>
@@ -124,8 +131,8 @@ function ProjectPanel({
       )}
       <div className="mt-3 flex flex-wrap gap-2" data-testid="commands">
         {(project.allowed_commands ?? []).map((cmd) =>
-          cmd === "retry-research" ? (
-            <RetryResearch key={cmd} onRetry={(words) => onCommand("retry-research", words)} />
+          cmd === "retry-research" || cmd === "retry-script" ? (
+            <RetryBox key={cmd} cmd={cmd} onRetry={(note) => onCommand(cmd, note)} />
           ) : (
             <Button
               key={cmd}
@@ -147,25 +154,33 @@ function ProjectPanel({
   );
 }
 
-/** Research found too little or was refused: run it again, optionally with extra search words. */
-function RetryResearch({ onRetry }: { onRetry: (words: string) => void }) {
-  const [words, setWords] = useState("");
+/** A job found too little, was refused or stopped: run it again — research with optional extra
+ * search words, the script with an optional instruction for the new draft. */
+function RetryBox({
+  cmd,
+  onRetry,
+}: {
+  cmd: "retry-research" | "retry-script";
+  onRetry: (note: string) => void;
+}) {
+  const [note, setNote] = useState("");
+  const research = cmd === "retry-research";
   return (
-    <div className="flex w-full flex-wrap items-end gap-2" data-testid="retry-research">
+    <div className="flex w-full flex-wrap items-end gap-2" data-testid={cmd}>
       <div className="min-w-0 flex-1">
-        <label htmlFor="retry-words" className="block text-sm font-medium">
-          {t("scriptPage.extraWords")}
+        <label htmlFor={`${cmd}-note`} className="block text-sm font-medium">
+          {t(research ? "scriptPage.extraWords" : "scriptPage.scriptNote")}
         </label>
         <input
-          id="retry-words"
+          id={`${cmd}-note`}
           className={inputCls}
-          value={words}
-          placeholder={t("scriptPage.extraWordsHint")}
-          onChange={(e) => setWords(e.target.value)}
+          value={note}
+          placeholder={t(research ? "scriptPage.extraWordsHint" : "scriptPage.scriptNoteHint")}
+          onChange={(e) => setNote(e.target.value)}
         />
       </div>
-      <Button variant="primary" onClick={() => onRetry(words.trim())}>
-        {t("scriptPage.cmd.retry-research")}
+      <Button variant="primary" onClick={() => onRetry(note.trim())}>
+        {t(`scriptPage.cmd.${cmd}`)}
       </Button>
     </div>
   );
@@ -581,6 +596,9 @@ export function ScriptStudioPage() {
     queryKey: ["project", id],
     queryFn: () =>
       call(() => api.GET("/api/v1/projects/{project_id}", { params: { path: { project_id: id } } })),
+    // Live while a job works on this project (ADR-0031); the page follows it to the next station.
+    refetchInterval: (q) =>
+      q.state.data?.progress && ["QUEUED", "RUNNING"].includes(q.state.data.progress.status) ? 3000 : false,
   });
   const versions = useQuery({
     queryKey: ["versions", id],
@@ -616,6 +634,16 @@ export function ScriptStudioPage() {
     for (const key of ["project", "versions", "version", "briefs", "claims"])
       void qc.invalidateQueries({ queryKey: [key, id] });
   };
+  // When the job finishes or the project moves on, load the new brief, draft and claims by themselves.
+  const step = `${project.data?.state ?? ""}:${project.data?.progress?.status ?? ""}`;
+  const lastStep = useRef(step);
+  useEffect(() => {
+    if (lastStep.current !== step && lastStep.current !== ":") {
+      for (const key of ["versions", "version", "briefs", "claims"])
+        void qc.invalidateQueries({ queryKey: [key, id] });
+    }
+    lastStep.current = step;
+  }, [step, id, qc]);
   const command = async (cmd: Command, note?: string) => {
     try {
       await call(() =>

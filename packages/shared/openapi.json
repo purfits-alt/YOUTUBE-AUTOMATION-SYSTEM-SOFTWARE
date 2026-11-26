@@ -557,6 +557,53 @@
         "title": "AuthorizationOut",
         "type": "object"
       },
+      "BoardItemOut": {
+        "properties": {
+          "activity": {
+            "enum": [
+              "QUEUED",
+              "WORKING",
+              "STALLED",
+              "STOPPED",
+              "WAITING",
+              "YOUR_TURN",
+              "NOT_BUILT",
+              "PAUSED",
+              "BLOCKED",
+              "DONE"
+            ],
+            "title": "Activity",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pct"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "activity"
+        ],
+        "title": "BoardItemOut",
+        "type": "object"
+      },
       "BriefOut": {
         "properties": {
           "content": {
@@ -2538,6 +2585,160 @@
         "title": "IdentityOut",
         "type": "object"
       },
+      "JobProgressOut": {
+        "properties": {
+          "entity_id": {
+            "format": "uuid",
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "entity_type": {
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "eta_s": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eta S"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "pct": {
+            "title": "Pct",
+            "type": "integer"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "queued_at": {
+            "format": "date-time",
+            "title": "Queued At",
+            "type": "string"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "enum": [
+              "QUEUED",
+              "RUNNING",
+              "DONE",
+              "FAILED",
+              "WAITING",
+              "STALLED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label",
+          "entity_type",
+          "entity_id",
+          "project_id",
+          "status",
+          "pct",
+          "stage",
+          "message",
+          "queued_at",
+          "started_at",
+          "updated_at",
+          "finished_at"
+        ],
+        "title": "JobProgressOut",
+        "type": "object"
+      },
       "KeyIn": {
         "properties": {
           "secret": {
@@ -3601,6 +3802,175 @@
         "title": "PasswordIn",
         "type": "object"
       },
+      "PipelineOut": {
+        "properties": {
+          "built_phase": {
+            "default": 7,
+            "title": "Built Phase",
+            "type": "integer"
+          },
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/JobProgressOut"
+            },
+            "title": "Jobs",
+            "type": "array"
+          },
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/PipelineProjectOut"
+            },
+            "title": "Projects",
+            "type": "array"
+          },
+          "refresh_s": {
+            "title": "Refresh S",
+            "type": "integer"
+          },
+          "stations": {
+            "items": {
+              "$ref": "#/components/schemas/StationOut"
+            },
+            "title": "Stations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "stations",
+          "projects",
+          "jobs",
+          "refresh_s"
+        ],
+        "title": "PipelineOut",
+        "type": "object"
+      },
+      "PipelineProjectOut": {
+        "properties": {
+          "activity": {
+            "enum": [
+              "QUEUED",
+              "WORKING",
+              "STALLED",
+              "STOPPED",
+              "WAITING",
+              "YOUR_TURN",
+              "NOT_BUILT",
+              "PAUSED",
+              "BLOCKED",
+              "DONE"
+            ],
+            "title": "Activity",
+            "type": "string"
+          },
+          "channel_id": {
+            "format": "uuid",
+            "title": "Channel Id",
+            "type": "string"
+          },
+          "channel_name": {
+            "title": "Channel Name",
+            "type": "string"
+          },
+          "format": {
+            "title": "Format",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "link": {
+            "title": "Link",
+            "type": "string"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobProgressOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "station": {
+            "title": "Station",
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/PipelineStepOut"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "channel_id",
+          "channel_name",
+          "format",
+          "state",
+          "station",
+          "activity",
+          "progress",
+          "next",
+          "steps",
+          "link",
+          "updated_at"
+        ],
+        "title": "PipelineProjectOut",
+        "type": "object"
+      },
+      "PipelineStepOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "done",
+              "current",
+              "next",
+              "later"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "status"
+        ],
+        "title": "PipelineStepOut",
+        "type": "object"
+      },
       "PrivateOnlyIn": {
         "properties": {
           "enabled": {
@@ -3968,6 +4338,17 @@
               }
             ],
             "title": "Parent Project Id"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobProgressOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The live job of the current station (ADR-0031), if any."
           },
           "render_profile": {
             "additionalProperties": true,
@@ -5584,6 +5965,129 @@
           "channel_id"
         ],
         "title": "StartIn",
+        "type": "object"
+      },
+      "StationBoardOut": {
+        "description": "One station's card on the state board (owner request 2026-11-18).",
+        "properties": {
+          "attention": {
+            "default": 0,
+            "description": "In progress but stopped, stalled or blocked.",
+            "title": "Attention",
+            "type": "integer"
+          },
+          "complete": {
+            "default": 0,
+            "description": "Videos that finished this station.",
+            "title": "Complete",
+            "type": "integer"
+          },
+          "forwarded": {
+            "description": "Finished here and now at the next station.",
+            "items": {
+              "$ref": "#/components/schemas/BoardItemOut"
+            },
+            "title": "Forwarded",
+            "type": "array"
+          },
+          "forwards_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Label of the station work is handed to.",
+            "title": "Forwards To"
+          },
+          "in_progress": {
+            "description": "Being worked on here.",
+            "items": {
+              "$ref": "#/components/schemas/BoardItemOut"
+            },
+            "title": "In Progress",
+            "type": "array"
+          },
+          "inbox": {
+            "description": "Arrived here, not started yet.",
+            "items": {
+              "$ref": "#/components/schemas/BoardItemOut"
+            },
+            "title": "Inbox",
+            "type": "array"
+          },
+          "received_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Label of the station the inbox comes from.",
+            "title": "Received From"
+          }
+        },
+        "required": [
+          "received_from",
+          "forwards_to"
+        ],
+        "title": "StationBoardOut",
+        "type": "object"
+      },
+      "StationOut": {
+        "properties": {
+          "board": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StationBoardOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "count": {
+            "default": 0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "phase": {
+            "title": "Phase",
+            "type": "integer"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "who": {
+            "enum": [
+              "TUBEFORGE",
+              "OWNER"
+            ],
+            "title": "Who",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "who",
+          "phase",
+          "ready"
+        ],
+        "title": "StationOut",
         "type": "object"
       },
       "Step1In": {
@@ -18743,6 +19247,147 @@
         ]
       }
     },
+    "/api/v1/pipeline": {
+      "get": {
+        "description": "Every active video project on the production line, with live job progress.",
+        "operationId": "pipeline_api_v1_pipeline_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "channel_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Channel Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PipelineOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR (field errors in errors[]) or a bad header"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "State conflict (e.g. IDEMPOTENCY_IN_PROGRESS)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_READY (master key or database missing)"
+          }
+        },
+        "summary": "Pipeline",
+        "tags": [
+          "pipeline"
+        ]
+      }
+    },
     "/api/v1/projects": {
       "get": {
         "operationId": "list_projects_api_v1_projects_get",
@@ -19622,6 +20267,7 @@
               "enum": [
                 "start",
                 "retry-research",
+                "retry-script",
                 "approve-research",
                 "request-research-changes",
                 "approve-script",

@@ -30,7 +30,7 @@
 ### 0.2 Navigation groups
 | Group | Pages |
 |---|---|
-| Home | 1 Overview |
+| Home | 1 Overview · 33 Pipeline |
 | Discover | 2 Channel Discovery · 5 Niche Research · 6 Trend Intelligence · 7 Competitor Research |
 | Channels | 3 Channel Manager · 4 Onboarding · 8 Branding Studio · 32 Channel Trending |
 | Create | 9 Idea Generator · 10 Content Calendar · 11 Script Studio · 12 Storyboard · 13 Video Studio · 14 Visual Assets · 15 Voiceover · 16 Thumbnails · 17 SEO · 18 Captions |
@@ -752,7 +752,29 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 - **New Ideas** lists the channel's suggested ideas, with Generate.
 - **Outliers** stays sample data until Phase 13 (own analytics) and says so on the page.
 
-## 33. Test plan for the frontend (Phase 2 onward)
+## 33. Pipeline
+*Owner request, 2026-11-18 (ADR-0031): "there is no proper pipeline for the workflow of the whole system". The page shows the whole production line, live.*
+
+| Item | Specification |
+|---|---|
+| **Route** | `/pipeline` (menu: Home) |
+| **Purpose** | Show every video on one production line: what is being worked on now, how far it is (%), what comes next, and where the line waits for the owner. |
+| **Layout — desktop** | **State board** first: one card per station (15, in order: Research → Check the research → Script writing → Approve the script → Storyboard → Visuals → Voice-over → Video edit → Check the rough cut → Render → Thumbnail & SEO → Quality & policy checks → Approve publishing → Upload → Analytics). Each card has four boxes: **Inbox** ("from <previous station>", videos that arrived and have not started), **In progress** (with % and "N need attention" when stopped, stalled or blocked), **Complete** (videos that finished this station) and **Forwarded** ("to <next station>", videos handed on and now at the next station). Owner stations are marked "You"; stations of later phases are marked "Phase N". Then **Videos on the line**: per video, a dot per station (done, now, next, later), **Now** (live job: label, status, % bar, stage in plain words, time left) and **Next** (next station; "your turn", "starts by itself" or "arrives in Phase N"). Then **Other work** (ideas, discovery, blueprints of the last 24 h). |
+| **Layout — mobile** | Cards stack in one column. |
+| **Components** | StateBoard, JobProgress (also used in Script Studio and on the projects list), step dots. |
+| **Buttons & actions** | Refresh; links to each video's Script Studio and to the page of each other job. |
+| **API calls** | GET /pipeline (polled: every 3 s while a job runs, 20 s otherwise: `refresh_s`). |
+| **Real-time events** | Polling (ADR-0031); `job.progress` over SSE may come later on the same data. |
+| **Permissions** | content.view |
+| **Empty state** | "No videos are in production yet. Approve an idea to start one." |
+| **Loading state** | Skeleton. |
+| **Error state** | Problem card with Retry. |
+| **Success state** | State board and the list of videos. A job queued for more than 2 minutes, or running with no news for 10 minutes, shows a hint (is TubeForge running? restart it). A stopped job shows its reason. |
+| **Compliance** | Read-only. Owner stations still need the owner's approval; the page never moves a video itself. |
+
+**Script Studio** shows the same live bar under the stepper and follows the project to the next station by itself (the new brief or draft loads when the job finishes). In **Script writing** it offers **Write again** with an optional instruction (`retry-script`). The projects list shows a compact bar per project.
+
+## 34. Test plan for the frontend (Phase 2 onward)
 - **Phase 2 (shell):** all 31 routes render with mocked data in all four states. A Playwright test visits each route × state via MSW (Mock Service Worker) scenarios.
 - **Emergency Stop** button is visible on every route (Playwright asserts it on all 31).
 - **axe** accessibility scan per route: no serious or critical violations.

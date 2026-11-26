@@ -14,6 +14,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from tubeforge import progress
 from tubeforge.config import get_settings
 from tubeforge.db.session import get_engine
 from tubeforge.gateway.core import Gateway
@@ -34,6 +35,7 @@ RECONCILE_CRON = "*/2 * * * *"
 APPROVALS_CRON = "5 * * * *"
 A32_CRON = "*/15 * * * *"
 RESEARCH_PURGE_CRON = "50 * * * *"
+PROGRESS_PURGE_CRON = "40 3 * * *"
 TREND_SCAN_CRON = "0 1 * * *"  # 06:00 PKT (UTC+5), CHANNEL_DISCOVERY_SPEC §5
 
 log = get_logger("tubeforge.jobs")
@@ -94,6 +96,11 @@ def purge_research_documents(timestamp: int) -> int:
     return _run("mnt.retention.purge_research_docs", lambda db, *_: purge_expired(db))
 
 
+def purge_job_progress(timestamp: int) -> int:
+    """mnt.retention.purge_job_progress: finished pipeline progress rows older than 30 days."""
+    return _run("mnt.retention.purge_job_progress", lambda db, *_: progress.purge_finished(db))
+
+
 def reconcile(timestamp: int) -> dict[str, Any]:
     """orch.reconcile: re-enqueue lost or stalled jobs exactly once (WORKFLOW_STATE_MACHINE rule 3)."""
     return asdict(_run("orch.reconcile", lambda db, *_: reconciler.reconcile(db)))
@@ -145,12 +152,30 @@ def _research() -> Iterator[tuple[Session, Gateway, ResearchFetcher]]:
         yield db, Gateway(SecretBox(default_store(settings.env))), fetcher
 
 
+@contextmanager
+def _tracked(kind: str, **args: Any) -> Iterator[None]:
+    """Show this job's live progress in the pipeline (ADR-0031)."""
+    with progress.track(get_engine(get_settings().database_url), kind, args):
+        yield
+
+
+def _stopped(exc: Any) -> None:
+    """A pipeline step stopped: WAITING for a free-tier limit or Emergency Stop, else FAILED."""
+    progress.finish("WAITING" if exc.status in ("WAITING_QUOTA", "STOPPED") else "FAILED", exc.message)
+
+
 def discover(report_id: str) -> str:
     """research.discover: one niche discovery report (A02)."""
     from tubeforge_agents.discovery import run_discovery
 
-    with _research() as (db, gateway, fetcher):
-        status = run_discovery(db, gateway, fetcher, uuid.UUID(report_id)).status
+    with _tracked("research.discover", report_id=report_id), _research() as (db, gateway, fetcher):
+        report = run_discovery(db, gateway, fetcher, uuid.UUID(report_id))
+        status = report.status
+        if status != "DONE":
+            progress.finish(
+                "WAITING" if status in ("WAITING_QUOTA", "STOPPED") else "FAILED",
+                str(report.params.get("result", {}).get("error") or f"Discovery ended as {status}."),
+            )
     log.info("research.discover", report_id=report_id, status=status)
     return status
 
@@ -159,10 +184,11 @@ def blueprint(candidate_id: str, owner_notes: str = "") -> str:
     """research.blueprint: A07 + A06 → blueprint DRAFT for a shortlisted candidate."""
     from tubeforge_agents.discovery import PipelineError, generate_blueprint
 
-    with _research() as (db, gateway, _fetcher):
+    with _tracked("research.blueprint", candidate_id=candidate_id), _research() as (db, gateway, _fetcher):
         try:
             result = generate_blueprint(db, gateway, uuid.UUID(candidate_id), owner_notes=owner_notes)
         except PipelineError as exc:
+            _stopped(exc)
             notify_owners(
                 db,
                 event_type="research.blueprint_failed",
@@ -215,6 +241,7 @@ def trend_scan(timestamp: int) -> dict[str, int]:
 
 def _content_failed(db: Session, kind: str, subject_id: str, link: str, exc: Any) -> str:
     """A content job could not finish: tell the owner why (quota waits and stops are not failures)."""
+    _stopped(exc)
     titles = {
         "ideas": "New ideas could not be generated",
         "research": "The research brief could not be made",
@@ -227,7 +254,10 @@ def _content_failed(db: Session, kind: str, subject_id: str, link: str, exc: Any
         title=titles[kind],
         body=(
             exc.message[:240]
-            + (" — Open the project and press Research again." if kind == "research" else "")
+            + {
+                "research": " — Open the project and press Research again.",
+                "script": " — Open the project and press Write again.",
+            }.get(kind, "")
         )[:300],
         dedup_key=f"content:{kind}:{subject_id}:{exc.status}",
         link=link,
@@ -248,7 +278,7 @@ def content_ideas(
     from tubeforge_agents.content import Variation, generate_ideas
     from tubeforge_agents.discovery import PipelineError
 
-    with _research() as (db, gateway, _fetcher):
+    with _tracked("content.ideas", channel_id=channel_id), _research() as (db, gateway, _fetcher):
         try:
             result = generate_ideas(
                 db,
@@ -271,7 +301,7 @@ def content_research(project_id: str, extra_queries: list[str] | None = None) ->
     from tubeforge_agents.content import run_research
     from tubeforge_agents.discovery import PipelineError
 
-    with _research() as (db, gateway, fetcher):
+    with _tracked("content.research", project_id=project_id), _research() as (db, gateway, fetcher):
         try:
             result = run_research(
                 db, gateway, fetcher, uuid.UUID(project_id), extra_queries=extra_queries or []
@@ -288,7 +318,7 @@ def content_script(project_id: str, instruction: str = "") -> str:
     from tubeforge_agents.content import run_script
     from tubeforge_agents.discovery import PipelineError
 
-    with _research() as (db, gateway, _fetcher):
+    with _tracked("content.script", project_id=project_id), _research() as (db, gateway, _fetcher):
         try:
             result = run_script(db, gateway, uuid.UUID(project_id), instruction=instruction)
         except PipelineError as exc:
@@ -302,7 +332,7 @@ def content_fact_check(version_id: str) -> str:
     from tubeforge_agents.content import fact_check_version
     from tubeforge_agents.discovery import PipelineError
 
-    with _research() as (db, gateway, _fetcher):
+    with _tracked("content.fact_check", version_id=version_id), _research() as (db, gateway, _fetcher):
         try:
             found = fact_check_version(db, gateway, uuid.UUID(version_id))
         except PipelineError as exc:

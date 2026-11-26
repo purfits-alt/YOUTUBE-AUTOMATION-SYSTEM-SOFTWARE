@@ -32,6 +32,7 @@ from tubeforge.api.v1 import lookups as lookups_v1
 from tubeforge.api.v1 import niches as niches_v1
 from tubeforge.api.v1 import notifications as notifications_v1
 from tubeforge.api.v1 import oauth as oauth_v1
+from tubeforge.api.v1 import pipeline as pipeline_v1
 from tubeforge.api.v1 import projects as projects_v1
 from tubeforge.api.v1 import providers as providers_v1
 from tubeforge.api.v1 import research as research_v1
@@ -183,6 +184,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(trends_v1.router, prefix="/api/v1")
     app.include_router(ideas_v1.router, prefix="/api/v1")
     app.include_router(projects_v1.router, prefix="/api/v1")
+    app.include_router(pipeline_v1.router, prefix="/api/v1")
     app.include_router(oauth_v1.callback_router)
     # Google clients (tests replace these with mocked transports).
     app.state.google_oauth = GoogleOAuth()

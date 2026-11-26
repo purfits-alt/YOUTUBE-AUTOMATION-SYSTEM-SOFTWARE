@@ -975,6 +975,21 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
 - **Fix:** research now reads up to 12 candidate articles, ranks them by similarity to the topic, and keeps only the relevant ones (model2vec ≥ 0.30), at most 6. Articles found with the owner's extra search words are always kept. With too few relevant articles, the message asks for the names of Wikipedia articles as extra search words.
 - **Owner's quick workaround for that project:** **Research again** with "Top-p sampling, Softmax function, Large language model".
 
+**Owner request (2026-11-18): a proper pipeline for the whole system** — "if one runs its action, it stays in work in progress (not shown how much % is done); after completion it should move to the next station and show what is coming next"; then "a state board on top: each module with a card of inbox (from the previous module, by name), in progress, complete and forwarded to the next module (by name)" (ADR-0031).
+- **Plan:** progress table written by workers → pipeline API → Pipeline page, live bars in Script Studio and on the projects list; fix the dead end where a stopped script job could not be run again.
+- **Done:**
+  - `job_progress` table (migration 0015). Queuing a tracked job records it as waiting. Research, script, fact check, ideas, discovery and blueprint jobs report a % and a stage in plain words while they run ("Reading articles (4 of 9)"), then done, stopped (with the reason) or waiting (free-tier limit).
+  - `GET /pipeline`: 15 stations, each with its state board card (**Inbox** from the previous station, **In progress**, **Complete**, **Forwarded** to the next station), and every video's station, live progress, next station and who acts there. Hints when a job waits more than 2 minutes or shows no news for 10 minutes. Time left from earlier runs.
+  - **Pipeline** page (Home › 33). Script Studio shows the live bar and loads the new brief or draft by itself when the job finishes. The projects list shows a compact bar.
+  - **Write again** (`retry-script`) in Script writing, with an optional instruction.
+  - Finished progress rows are deleted after 30 days.
+- **Stations still move on by themselves** as before (the orchestrator does that). The line still stops at your approvals; nothing skips them.
+- **Tests:**
+  - Python: 6 new integration tests (queued → running → done, stopped, waiting, stalled, time left, state board, Write again, retention);
+  - Vitest: 3 new;
+  - Playwright: Pipeline in routes × states, axe, sidebar and mobile drawer, plus a test on the real API.
+- Free-tier check: introduces no paid dependency ✔
+
 ## Resource consumption
 
 | Resource | Used |
