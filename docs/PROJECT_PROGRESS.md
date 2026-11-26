@@ -990,6 +990,11 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
   - Playwright: Pipeline in routes × states, axe, sidebar and mobile drawer, plus a test on the real API.
 - Free-tier check: introduces no paid dependency ✔
 
+**Security check (2026-11-18 → 2026-11-26): `picomatch` advisory GHSA-fc5q-39xc-vjpf.**
+- On 2026-11-18 `pnpm audit --audit-level high` started failing on every branch, `main` included. The advisory covered `picomatch` ≤ 4.0.7, a dev-only dependency of vite, vitest and typescript-eslint, with no fixed release.
+- The owner approved a narrow exception ("allow this one", 2026-11-26). Before it was added, the audit was run again: it now reports no known vulnerabilities, with `picomatch` still at 4.0.7, so the advisory was withdrawn or corrected upstream. **No exception was added.** The audit stays strict.
+- Visual baselines were refreshed by CI for the Pipeline menu entry (`[update-snapshots]`).
+
 ## Resource consumption
 
 | Resource | Used |
