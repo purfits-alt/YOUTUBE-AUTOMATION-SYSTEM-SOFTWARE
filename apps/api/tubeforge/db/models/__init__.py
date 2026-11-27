@@ -794,6 +794,37 @@ class AgentRun(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class Storyboard(Base):
+    """A cut of the locked script into scenes (Phase 8 B); a new version on every redo or owner edit."""
+
+    __tablename__ = "storyboards"
+    id: Mapped[uuid.UUID] = _id()
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("video_projects.id"))
+    channel_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    version: Mapped[int] = mapped_column(Integer)
+    script_version_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("script_versions.id"))
+    author_type: Mapped[str] = mapped_column(Text, default="AGENT")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
+class Scene(Base):
+    __tablename__ = "scenes"
+    id: Mapped[uuid.UUID] = _id()
+    storyboard_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("storyboards.id"))
+    position: Mapped[int] = mapped_column(Integer)
+    narration: Mapped[str] = mapped_column(Text)
+    visual_instruction: Mapped[str] = mapped_column(Text)
+    on_screen_text: Mapped[str | None] = mapped_column(Text)
+    duration_s: Mapped[Decimal] = mapped_column(Numeric(6, 2))
+    style: Mapped[str | None] = mapped_column(Text)
+    is_hook: Mapped[bool] = mapped_column(Boolean, default=False)
+    pattern_interrupt: Mapped[bool] = mapped_column(Boolean, default=False)
+    treatment: Mapped[str | None] = mapped_column(Text)
+    template_id: Mapped[str | None] = mapped_column(Text)
+    template_params: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    visual_asset_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("media_assets.id"))
+
+
 class ChannelArt(Base):
     """A logo, banner or watermark variant for a channel, and whether the owner picked it (Phase 8)."""
 
@@ -860,9 +891,11 @@ __all__ = [
     "RenderJob",
     "Role",
     "RolePermission",
+    "Scene",
     "SecurityEvent",
     "Session",
     "StockPurchase",
+    "Storyboard",
     "SystemSettings",
     "UploadJob",
     "UsageLimit",

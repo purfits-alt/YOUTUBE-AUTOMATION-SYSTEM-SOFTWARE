@@ -350,11 +350,19 @@ CREATE INDEX ON fact_check_claims (subject_type, subject_id, verdict);
 ## 5. Storyboard, media assets, rights, stock, voice
 
 ```sql
-CREATE TABLE storyboards (id uuid PK, project_id uuid NOT NULL REFERENCES video_projects, channel_id uuid NOT NULL, version int NOT NULL, created_at, UNIQUE (project_id, version));
+CREATE TABLE storyboards (id uuid PK, project_id uuid NOT NULL REFERENCES video_projects, channel_id uuid NOT NULL, version int NOT NULL,
+  script_version_id uuid NULL REFERENCES script_versions,  -- the locked script it was cut from (Phase 8 B)
+  author_type text NOT NULL DEFAULT 'AGENT' CHECK (author_type IN ('AGENT','OWNER')),
+  created_at, UNIQUE (project_id, version));
 CREATE TABLE scenes (
   id uuid PRIMARY KEY, storyboard_id uuid NOT NULL REFERENCES storyboards, position int NOT NULL,
   narration text NOT NULL, visual_instruction text NOT NULL, on_screen_text text NULL,
   duration_s numeric(6,2) NOT NULL, style text NULL,
+  is_hook boolean NOT NULL DEFAULT false,              -- scene 1: the hook (Phase 8 B)
+  pattern_interrupt boolean NOT NULL DEFAULT false,    -- a re-hook: the visual changes here
+  treatment text NULL CHECK (treatment IN ('TEMPLATE','CHART','KINETIC_TEXT','OWNER_MEDIA','STOCK_SUGGESTION')),  -- A13 visual plan
+  template_id text NULL, template_params jsonb NULL,
+  visual_asset_id uuid NULL REFERENCES media_assets,   -- the scene's picture (rendered keyframe or the owner's media)
   UNIQUE (storyboard_id, position)
 );
 
