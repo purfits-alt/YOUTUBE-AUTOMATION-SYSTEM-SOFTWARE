@@ -10,6 +10,7 @@ import { api, call, type StrategyOut } from "../../lib/api/client";
 import { inputCls, problemText } from "../channels/common";
 import { asProblem, LoadingSkeleton, PageTitle } from "../PageView";
 import { getPage } from "../registry";
+import { ChannelArtPanel } from "../channels/ChannelArt";
 import { ScoreFooter } from "./common";
 
 interface Idea {
@@ -371,6 +372,15 @@ export function BrandingPage() {
               <p className="mt-1 text-xs text-muted">{b.brand.banner_brief}</p>
             </Card>
           </div>
+          {s.channel_id ? (
+            <ChannelArtPanel channelId={s.channel_id} />
+          ) : (
+            <Card title={t("channelArt.title")}>
+              <p className="text-sm text-muted" data-testid="channel-art-later">
+                {t("channelArt.noBlueprint")}
+              </p>
+            </Card>
+          )}
           <Card title={t("brandingPage.description")}>
             <label htmlFor="bp-description" className="sr-only">
               {t("brandingPage.description")}

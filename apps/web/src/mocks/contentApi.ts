@@ -100,6 +100,55 @@ const longScript = {
 };
 
 type JobProgressOut = components["schemas"]["JobProgressOut"];
+type ChannelArtOut = components["schemas"]["ChannelArtOut"];
+type ArtOut = components["schemas"]["ArtOut"];
+type AssetOut = components["schemas"]["AssetOut"];
+
+/** A small drawn picture for the demo and unit tests (the real art is a PNG from the worker). */
+function svg(w: number, h: number, bg: string, text: string, size: number): string {
+  const body =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${String(w)}" height="${String(h)}">` +
+    `<rect width="100%" height="100%" fill="${bg}"/>` +
+    `<text x="50%" y="50%" fill="#F8FAFC" font-family="sans-serif" font-weight="700" font-size="${String(size)}" text-anchor="middle" dominant-baseline="middle">${text}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(body)}`;
+}
+
+const STYLES = {
+  LOGO: ["Monogram ring", "Gradient", "Badge"],
+  BANNER: ["Bold centre", "Gradient left", "Band"],
+};
+
+function art(role: "LOGO" | "BANNER" | "WATERMARK", variant: number, batch: number): ArtOut {
+  const [w, h] = role === "LOGO" ? [800, 800] : role === "BANNER" ? [2560, 1440] : [150, 150];
+  const bg = ["#0F172A", "#14532D", "#1E3A8A"][(variant - 1) % 3] ?? "#0F172A";
+  return {
+    id: `art-${role.toLowerCase()}-${String(batch)}-${String(variant)}`,
+    role,
+    batch,
+    variant,
+    style: role === "WATERMARK" ? "Your logo" : (STYLES[role][variant - 1] ?? ""),
+    chosen: role === "WATERMARK",
+    asset_id: `asset-${role.toLowerCase()}-${String(batch)}-${String(variant)}`,
+    width: w,
+    height: h,
+    size_bytes: 48000,
+    text_contrast: 17.85,
+    licence: "Drawn by TubeForge from your blueprint; font Source Sans Pro (SIL OFL 1.1)",
+    download_url: svg(w, h, bg, role === "BANNER" ? "Calm Science" : "CS", role === "BANNER" ? 220 : 300),
+    created_at: NOW,
+  };
+}
+
+function withPicks(a: ChannelArtOut): ChannelArtOut {
+  const all = [...a.logos, ...a.banners];
+  return {
+    ...a,
+    chosen_logo: a.logos.find((x) => x.chosen) ?? a.chosen_logo,
+    chosen_banner: a.banners.find((x) => x.chosen) ?? a.chosen_banner,
+    logos: all.filter((x) => x.role === "LOGO"),
+    banners: all.filter((x) => x.role === "BANNER"),
+  };
+}
 type PipelineOut = components["schemas"]["PipelineOut"];
 type BoardItem = components["schemas"]["BoardItemOut"];
 
@@ -232,6 +281,9 @@ export function pipelineOut(channelId?: string | null): PipelineOut {
 }
 
 interface ContentState {
+  art: ChannelArtOut;
+  artRequests: { tagline?: string | null }[];
+  watermarkUploads: { type: string; confirmed: boolean }[];
   researching: ProjectOut;
   jobs: JobProgressOut[];
   ideas: IdeaOut[];
@@ -360,6 +412,24 @@ function initial(): ContentState {
         format: "LONG",
       }),
     ],
+    art: {
+      channel_id: CHANNEL,
+      channel_name: "Calm Science",
+      blueprint: {
+        strategy_id: "st-1",
+        status: "APPROVED",
+        palette: ["#0F172A", "#F8FAFC", "#22C55E", "#38BDF8"],
+        default_tagline: "Calm science, explained in plain words",
+      },
+      logos: [],
+      banners: [],
+      chosen_logo: null,
+      chosen_banner: null,
+      watermark: null,
+      job: null,
+    },
+    artRequests: [],
+    watermarkUploads: [],
     project,
     researching,
     jobs,
@@ -576,6 +646,57 @@ export const contentHandlers: HttpHandler[] = [
   http.get("/api/v1/projects/:id", ({ params }) =>
     HttpResponse.json(params.id === content.researching.id ? content.researching : content.project),
   ),
+  http.get("/api/v1/channels/:id/channel-art", () => HttpResponse.json(content.art)),
+  http.post("/api/v1/channels/:id/channel-art/generate", async ({ request }) => {
+    const body = (await request.json()) as { tagline?: string | null };
+    content.artRequests.push(body);
+    const batch = (content.art.logos[0]?.batch ?? 0) + 1;
+    content.art = withPicks({
+      ...content.art,
+      logos: [1, 2, 3].map((v) => art("LOGO", v, batch)),
+      banners: [1, 2, 3].map((v) => art("BANNER", v, batch)),
+    });
+    return HttpResponse.json({ job_id: 7 }, { status: 202 });
+  }),
+  http.post("/api/v1/channels/:id/channel-art/:artId/choose", ({ params }) => {
+    const pick = [...content.art.logos, ...content.art.banners].find((a) => a.id === params.artId);
+    if (!pick) return problem(404, "NOT_FOUND", "No such logo or banner for this channel.");
+    const mark = (list: ArtOut[]) =>
+      list.map((a) => (a.role === pick.role ? { ...a, chosen: a.id === pick.id } : a));
+    content.art = withPicks({
+      ...content.art,
+      logos: mark(content.art.logos),
+      banners: mark(content.art.banners),
+    });
+    return HttpResponse.json(content.art);
+  }),
+  http.post("/api/v1/channels/:id/watermark", ({ request }) => {
+    const confirmed = new URL(request.url).searchParams.get("confirm_owned") === "true";
+    if (!confirmed)
+      return problem(422, "CONFIRM_OWNERSHIP", "Only your own brand logo can become the watermark.");
+    content.watermarkUploads.push({ type: request.headers.get("Content-Type") ?? "", confirmed });
+    content.art = { ...content.art, watermark: art("WATERMARK", 1, 1) };
+    return HttpResponse.json({ job_id: 8 }, { status: 202 });
+  }),
+  http.get("/api/v1/assets", () => {
+    const items: AssetOut[] = [...content.art.logos, ...content.art.banners].map((a) => ({
+      id: a.asset_id,
+      channel_id: CHANNEL,
+      project_id: null,
+      kind: "IMAGE",
+      origin: "PROCEDURAL",
+      mime_type: "image/png",
+      size_bytes: a.size_bytes,
+      width: a.width,
+      height: a.height,
+      created_at: NOW,
+      rights_basis: "SYSTEM_GENERATED",
+      licence: a.licence,
+      commercial_use_allowed: true,
+      download_url: a.download_url,
+    }));
+    return HttpResponse.json({ items, next_cursor: null });
+  }),
   http.get("/api/v1/pipeline", ({ request }) =>
     HttpResponse.json(pipelineOut(new URL(request.url).searchParams.get("channel_id"))),
   ),

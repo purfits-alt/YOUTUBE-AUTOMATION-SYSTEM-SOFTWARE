@@ -581,6 +581,16 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 | **Error state** | — |
 | **Success state** | Accepted suggestions linked to new ideas/tasks. |
 
+**Phase 8 step A — Channel art (owner request 2026-11-15).** When the blueprint belongs to a channel, the Branding Studio has a **Channel art** card:
+- an optional banner tagline (default: a line from the positioning) and **Draw logo and banner** / **Draw new choices**;
+- the live job bar;
+- 3 logos (800 × 800), each with a circle preview, and 3 banners (2560 × 1440), each with dashed desktop and phone boxes;
+- per file: **Pick this one** (`aria-pressed`), **Download PNG** and, where the browser allows, **Copy image**;
+- **Video watermark · 150 × 150**: your logo file (PNG, JPEG or WebP ≤ 5 MB), the checkbox "This is my own brand logo" (required), then **Make watermark**;
+- the YouTube Studio steps.
+
+The onboarding **setup kit** (step 2) shows the picked logo, banner and watermark with Download/Copy, and links to the Branding Studio. Both read the same picks. Before a blueprint is approved for a channel, the card says so instead.
+
 ## 25. Asset Library
 
 | Item | Specification |
@@ -600,6 +610,8 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 | **Loading state** | Grid skeleton. |
 | **Error state** | BUDGET_EXCEEDED / provider disabled → link to Cost & Usage. |
 | **Success state** | Rights OK badge. |
+
+**Phase 8 step A (real API):** the library lists every file of the channel picked in the top bar (`GET /assets`), each with its kind, origin, size, licence and a rights badge (commercial use OK / not for commercial use / no rights record). Only files with a rights record have Download. Upload, the rights form, manual stock import and stock search arrive in step D.
 
 ## 26. Cost & Usage Manager
 

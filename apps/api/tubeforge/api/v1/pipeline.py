@@ -183,6 +183,8 @@ class PipelineOut(BaseModel):
 def _link(row: JobProgress) -> str | None:
     if row.project_id is not None:
         return f"/projects/{row.project_id}/script"
+    if row.kind.startswith("media."):  # channel art: the setup kit shows the chosen files
+        return f"/channels/{row.entity_id}/onboarding"
     return {
         "channel": f"/channels/{row.entity_id}/ideas",
         "niche_report": "/discovery",

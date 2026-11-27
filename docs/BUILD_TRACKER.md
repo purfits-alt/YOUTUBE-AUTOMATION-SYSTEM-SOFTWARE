@@ -23,7 +23,7 @@ Each phase lists its steps and **your part** for that module.
 
 | | |
 |---|---|
-| **Current module** | **Phase 8: storyboards, visuals, voice, channel art and stock.** Phase 7 approved by you on 2026-11-27. |
+| **Current module** | **Phase 8 step A done** (channel art, watermark, asset library). Next: step B (storyboard and visuals). Your part now: draw and pick your channel art; upload your SEMRS logo for the watermark. |
 | Your channel | **Open Node AI**, handle **@OpenNodeAIHQ**, https://www.youtube.com/@OpenNodeAIHQ (created 2026-11-15; name, description and handle set from the setup kit) |
 | Created in TubeForge | yes, from the approved blueprint, as a test channel (private uploads only) |
 | Connected | ✅ 2026-11-15: Google sign-in done; private test upload visible (private) in YouTube Studio |
@@ -128,14 +128,14 @@ Each phase lists its steps and **your part** for that module.
 | Step | Status |
 |---|---|
 | Storyboard, visual plan, 16 procedural templates, renderer | ⬜ |
-| Asset library, rights forms, manual licensed import | ⬜ |
+| Asset library, rights forms, manual licensed import | 🟡 library with rights records and downloads ✅ (step A); rights form and manual import in step D |
 | Pexels/Pixabay free adapters (off by default) | ⬜ |
 | Paid stock | ⛔ interface only, disabled (paid) |
 | Voice: recorder, Kokoro and Piper TTS with licence registry | ⬜ |
 | Own-voice clone with live consent (owner's voice only) | ⬜ |
 | Image-provider spike (only free, commercial-OK; otherwise off) | ⬜ |
-| **Channel art:** logo 800×800 and banner 2560×1440 from the blueprint, in Branding Studio and the setup kit; Download/Copy; you upload | ⬜ |
-| **Video watermark with your SEMRS brand:** 150×150 PNG from your SEMRS logo file (yours, with a rights record), shown next to the channel art; Download; you set it in YouTube Studio › Customization › Branding › Video watermark | ⬜ (owner request, 2026-11-15) |
+| **Channel art:** logo 800×800 and banner 2560×1440 from the blueprint, in Branding Studio and the setup kit; Download/Copy; you upload | ✅ step A (2026-11-27) · your part: draw, pick, upload in YouTube Studio ⬜ |
+| **Video watermark with your SEMRS brand:** 150×150 PNG from your SEMRS logo file (yours, with a rights record), shown next to the channel art; Download; you set it in YouTube Studio › Customization › Branding › Video watermark | ✅ step A (2026-11-27) · your part: upload your SEMRS logo file ⬜ |
 | Your part (when Phase 8 starts): record voice samples and consent; listen to Urdu voices; optional Pexels/Pixabay keys; **give your SEMRS logo file** (PNG/SVG) for the watermark | ⬜ |
 
 ## Phase 9 — Editing & rendering ⬜

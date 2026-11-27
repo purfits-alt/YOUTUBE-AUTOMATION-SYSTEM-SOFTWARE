@@ -206,6 +206,53 @@ def blueprint(candidate_id: str, owner_notes: str = "") -> str:
     return status
 
 
+def _art_failed(db: Session, channel_id: str, title: str, message: str) -> str:
+    progress.finish("FAILED", message)
+    notify_owners(
+        db,
+        event_type="media.channel_art_failed",
+        severity="WARNING",
+        title=title,
+        body=message[:300],
+        dedup_key=f"channel-art:{channel_id}:{message[:40]}",
+        link=f"/channels/{channel_id}/onboarding",
+    )
+    db.commit()
+    return "FAILED"
+
+
+def channel_art(channel_id: str, tagline: str | None = None) -> str:
+    """media.channel_art: 3 logos and 3 banners from the channel's blueprint (Phase 8, owner request)."""
+    from tubeforge_media.channel_art import ArtError, generate_channel_art
+
+    data_dir = get_settings().resolved_data_dir
+    with _tracked("media.channel_art", channel_id=channel_id), _deps() as (db, *_):
+        try:
+            rows = generate_channel_art(db, data_dir, uuid.UUID(channel_id), tagline=tagline)
+        except ArtError as exc:
+            db.rollback()
+            return _art_failed(db, channel_id, "Channel art could not be made", str(exc))
+        db.commit()
+    log.info("media.channel_art", channel_id=channel_id, files=len(rows))
+    return f"{len(rows)} files"
+
+
+def watermark(channel_id: str, source_asset_id: str) -> str:
+    """media.watermark: the 150 × 150 video watermark from the owner's uploaded brand logo."""
+    from tubeforge_media.channel_art import ArtError, make_watermark
+
+    data_dir = get_settings().resolved_data_dir
+    with _tracked("media.watermark", channel_id=channel_id), _deps() as (db, *_):
+        try:
+            make_watermark(db, data_dir, uuid.UUID(channel_id), uuid.UUID(source_asset_id))
+        except ArtError as exc:
+            db.rollback()
+            return _art_failed(db, channel_id, "The video watermark could not be made", str(exc))
+        db.commit()
+    log.info("media.watermark", channel_id=channel_id)
+    return "watermark ready"
+
+
 def keywords(channel_id: str, seeds: list[str]) -> int:
     """research.keywords: A05 keyword suggestions for one channel."""
     from tubeforge_agents.discovery import run_keywords

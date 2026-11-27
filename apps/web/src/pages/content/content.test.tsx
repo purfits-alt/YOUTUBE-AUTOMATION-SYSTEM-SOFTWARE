@@ -226,3 +226,46 @@ describe("Pipeline (ADR-0031)", () => {
     expect(await screen.findByText(/The script is being written again/)).toBeInTheDocument();
   });
 });
+
+describe("Channel art (Phase 8 step A)", () => {
+  it("draws logos and banners, picks one of each, and makes the watermark from the owner's logo", async () => {
+    renderAt("/strategies/st-9");
+    const panel = await screen.findByTestId("channel-art");
+    fireEvent.change(await within(panel).findByLabelText("Banner tagline (optional)"), {
+      target: { value: "Science, calmly" },
+    });
+    fireEvent.click(within(panel).getByRole("button", { name: "Draw logo and banner" }));
+    const logo2 = await within(panel).findByTestId("logo-2");
+    await waitFor(() => expect(content.artRequests).toEqual([{ tagline: "Science, calmly" }]));
+    expect(within(panel).getByTestId("banner-1")).toHaveTextContent("Bold centre");
+    expect(within(panel).getAllByRole("link", { name: "Download PNG" }).length).toBe(6);
+
+    fireEvent.click(within(logo2).getByRole("button", { name: "Pick this one" }));
+    await waitFor(() =>
+      expect(within(logo2).getByRole("button", { name: "Picked" })).toHaveAttribute("aria-pressed", "true"),
+    );
+    expect(content.art.chosen_logo?.variant).toBe(2);
+    fireEvent.click(
+      within(within(panel).getByTestId("banner-3")).getByRole("button", { name: "Pick this one" }),
+    );
+    await waitFor(() => expect(content.art.chosen_banner?.variant).toBe(3));
+
+    // The watermark needs the owner's file and the "it is mine" confirmation.
+    const mark = within(panel).getByTestId("watermark");
+    const make = within(mark).getByRole("button", { name: "Make watermark" });
+    expect(make).toBeDisabled();
+    const file = new File([new Uint8Array([137, 80, 78, 71])], "semrs.png", { type: "image/png" });
+    fireEvent.change(within(mark).getByLabelText("Your logo file"), { target: { files: [file] } });
+    expect(make).toBeDisabled();
+    fireEvent.click(within(mark).getByLabelText("This is my own brand logo"));
+    fireEvent.click(make);
+    await waitFor(() => expect(content.watermarkUploads).toEqual([{ type: "image/png", confirmed: true }]));
+    expect(await within(mark).findByAltText("Your video watermark")).toBeInTheDocument();
+  });
+
+  it("Asset Library is empty until files are made", async () => {
+    content.art = { ...content.art, logos: [], banners: [] };
+    renderAt("/assets");
+    expect(await screen.findByText(/The library is empty/)).toBeInTheDocument();
+  });
+});

@@ -282,6 +282,7 @@ export const PAGES: readonly PageDef[] = [
     path: "/assets",
     group: "library",
     api: "/assets",
+    real: true,
     columns: ["preview", "kind", "origin", "channel", "rightsStatus", "licence", "size", "created"],
     actions: ["upload", "setRights", "importStock", "delete"],
     safety: false,

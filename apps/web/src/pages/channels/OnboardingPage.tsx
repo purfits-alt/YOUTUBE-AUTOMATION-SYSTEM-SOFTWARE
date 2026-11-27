@@ -19,6 +19,7 @@ import {
 } from "../../lib/api/client";
 import { asProblem, LoadingSkeleton, PageTitle } from "../PageView";
 import { getPage } from "../registry";
+import { ChosenArt } from "./ChannelArt";
 import { inputCls, problemText, StateBadge, TokenBadge } from "./common";
 
 /** Official help pages per step (checked 2026-11-09; see PROJECT_PROGRESS Phase 4). */
@@ -586,6 +587,7 @@ function YouTubeSetupKit({ channelId }: { channelId: string }) {
           testId="kit-banner"
         />
       )}
+      <ChosenArt channelId={channelId} />
       {k.palette.length > 0 && (
         <div>
           <p className="text-xs font-medium text-muted">{t("setupKit.colours")}</p>

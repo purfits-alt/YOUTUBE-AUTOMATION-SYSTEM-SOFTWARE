@@ -391,6 +391,19 @@ CREATE TABLE asset_rights (                           -- 1:1 with media_assets; 
   CHECK (NOT (editorial_only AND commercial_use_allowed))
 );
 
+CREATE TABLE channel_art (                            -- owner request 2026-11-15 (Phase 8): logo, banner, watermark
+  id uuid PRIMARY KEY, channel_id uuid NOT NULL REFERENCES channels,
+  role text NOT NULL CHECK (role IN ('LOGO','BANNER','WATERMARK')),
+  batch int NOT NULL,                                 -- generation 1, 2, …; the newest batch of a role is shown
+  variant int NOT NULL,
+  asset_id uuid NOT NULL REFERENCES media_assets,     -- origin PROCEDURAL (logo, banner) or derived from the owner's logo (watermark)
+  strategy_id uuid NULL REFERENCES channel_strategies, -- the blueprint it was drawn from
+  chosen boolean NOT NULL DEFAULT false,              -- the owner's pick; shown in the Branding Studio and the setup kit
+  created_at
+);
+CREATE UNIQUE INDEX ON channel_art (channel_id, role) WHERE chosen;
+CREATE INDEX ON channel_art (channel_id, role, batch);
+
 CREATE TABLE stock_purchases (                        -- ADR-0020, paid providers only
   id uuid PRIMARY KEY, channel_id uuid NULL REFERENCES channels,
   provider_code text NOT NULL, provider_asset_id text NOT NULL,

@@ -48,6 +48,7 @@ describe("page registry", () => {
       "ideas",
       "calendar",
       "script",
+      "assets",
       "usage",
       "notifications",
       "agents",

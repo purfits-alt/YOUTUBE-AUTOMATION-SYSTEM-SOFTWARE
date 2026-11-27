@@ -232,7 +232,7 @@ def test_schema_v1_tables_constraints_and_seeds(migrated: str) -> None:
         settings_rows = conn.execute(text("SELECT count(*) FROM system_settings")).scalar_one()
     engine.dispose()
     assert {"users", "sessions", "audit_log", "channels", "upload_jobs", "provider_registry"} <= tables
-    assert len(tables - {"alembic_version"}) == 81  # + job_progress (ADR-0031)
+    assert len(tables - {"alembic_version"}) == 82  # + job_progress (ADR-0031), channel_art (Phase 8)
     assert roles["OWNER"] > roles["EDITOR"] > roles["REVIEWER"] > roles["VIEWER"] > 0
     assert settings_rows == 1
 

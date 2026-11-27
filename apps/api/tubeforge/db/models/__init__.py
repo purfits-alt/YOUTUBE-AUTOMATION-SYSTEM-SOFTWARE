@@ -347,7 +347,14 @@ class AssetRights(Base):
     commercial_use_allowed: Mapped[bool] = mapped_column(Boolean)
     editorial_only: Mapped[bool] = mapped_column(Boolean, default=False)
     attribution_required: Mapped[bool] = mapped_column(Boolean, default=False)
+    attribution_text: Mapped[str | None] = mapped_column(Text)
+    source_provider: Mapped[str | None] = mapped_column(Text)
+    source_asset_id: Mapped[str | None] = mapped_column(Text)
+    source_url: Mapped[str | None] = mapped_column(Text)
+    proof_asset_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("media_assets.id"))
     lineage: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    verified_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
 
@@ -787,6 +794,21 @@ class AgentRun(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class ChannelArt(Base):
+    """A logo, banner or watermark variant for a channel, and whether the owner picked it (Phase 8)."""
+
+    __tablename__ = "channel_art"
+    id: Mapped[uuid.UUID] = _id()
+    channel_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("channels.id"))
+    role: Mapped[str] = mapped_column(Text)
+    batch: Mapped[int] = mapped_column(Integer)
+    variant: Mapped[int] = mapped_column(Integer)
+    asset_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("media_assets.id"))
+    strategy_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("channel_strategies.id"))
+    chosen: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+
+
 class JobProgress(Base):
     """Live progress of one queued/running job, for the pipeline view (ADR-0031)."""
 
@@ -814,6 +836,7 @@ __all__ = [
     "AuditLog",
     "Base",
     "Channel",
+    "ChannelArt",
     "ChannelPublishingRules",
     "CostBudget",
     "DataDeletionTask",
