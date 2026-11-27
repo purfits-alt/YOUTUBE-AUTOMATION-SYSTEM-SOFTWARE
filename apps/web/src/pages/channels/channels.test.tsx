@@ -82,6 +82,13 @@ describe("Channel Onboarding (real API)", () => {
     expect(within(kit).getByTestId("kit-description")).toHaveTextContent("Calm, clear science explainers");
     expect(within(kit).getByTestId("kit-banner")).toHaveTextContent("1546 × 423");
     expect(within(kit).getAllByRole("button", { name: "Copy" }).length).toBeGreaterThanOrEqual(3);
+    // Phase 8: the drawn, picked channel art sits in the kit too (none picked yet here).
+    const art = await within(kit).findByTestId("kit-art");
+    expect(art).toHaveTextContent("No logo or banner picked yet.");
+    expect(within(art).getByRole("link", { name: /Draw or change your channel art/ })).toHaveAttribute(
+      "href",
+      "/strategies/st-1#channel-art",
+    );
   });
 
   it("runs the private test upload and shows progress until done", async () => {

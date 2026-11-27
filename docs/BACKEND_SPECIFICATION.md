@@ -291,7 +291,12 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 
 | Method | Path | Request → Response | Perm |
 |---|---|---|---|
-| GET | `/assets` | Page[AssetOut] (filter channel_id, project_id, kind, origin, rights_status: OK\|MISSING\|BLOCKED, q) | `asset.view` |
+| GET | `/channels/{id}/channel-art` | ChannelArtOut: newest batch of logos and banners, the picks, the watermark, the blueprint brand and the live job (Phase 8 A) | `asset.view` |
+| POST | `/channels/{id}/channel-art/generate` 🔁⚙ | `{tagline?}` → 202; heavy job `media.channel_art` draws 3 logos (800×800) + 3 banners (2560×1440) from the blueprint. 409 `NO_BLUEPRINT` | `asset.edit` |
+| POST | `/channels/{id}/channel-art/{art_id}/choose` | the owner's pick (one per role) → ChannelArtOut | `asset.edit` |
+| POST | `/channels/{id}/watermark?confirm_owned=true` 🔁⚙ | raw body: the owner's logo (PNG/JPEG/WebP ≤ 5 MB) → 202; heavy job `media.watermark` makes the 150×150 PNG. 422 `CONFIRM_OWNERSHIP`, 413 `TOO_LARGE`, 415 `UNSUPPORTED_TYPE` | `asset.edit` |
+| GET | `/assets/{id}/download` | the file as an attachment; 404 when it has no rights record or is deleted/quarantined (Phase 8 A) | `asset.view` |
+| GET | `/assets` | Page[AssetOut] (filter channel_id, project_id, kind, origin, rights_status: OK\|MISSING\|BLOCKED, q). Phase 8 A: `channel_id` filter, rights summary, `download_url` only with rights | `asset.view` |
 | POST | `/assets` (multipart) 🔁 | file + `{channel_id?, project_id?, kind, origin}` → AssetOut (rights MISSING until set) | `asset.edit` |
 | GET | `/assets/{id}` · `/assets/{id}/content` (Range support) · `/assets/{id}/preview` | metadata / bytes / thumbnail-sized preview | `asset.view` |
 | PUT | `/assets/{id}/rights` | RightsIn (licence, commercial flag, editorial_only, attribution, proof_asset_id) → validated against channel monetisation | `asset.edit` |

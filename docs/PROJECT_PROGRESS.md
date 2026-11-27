@@ -1043,6 +1043,35 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
   - *Owner part:* record voice samples and consent; optional free Pexels/Pixabay keys.
 - **Free-tier check:** introduces no paid dependency ✔. Kokoro is Apache-2.0, OpenVoice and Chatterbox are MIT, and Piper voices are checked per licence. Paid stock stays disabled, with budget 0.
 
+**Phase 8 step A done (2026-11-27): channel art, video watermark, asset store and library.**
+- **Assets:**
+  - The content-addressed file store (`<data>/media/blobs/sha256/…`) and `tubeforge.assets`: every file gets a `media_assets` row and an `asset_rights` row in the same transaction.
+  - `usable()` is the single check: a file without rights, or deleted or quarantined, is never served or rendered.
+- **Channel art** (`workers/tubeforge_media/channel_art.py`, heavy job `media.channel_art`): 3 logos (800×800) and 3 banners (2560×1440) drawn procedurally from the channel's blueprint (palette, contrast pair, name, tagline).
+  - **Font:** Source Sans Pro (SIL OFL 1.1, package `font-source-sans-pro`).
+  - **Logo:** all marks stay inside the circle YouTube shows.
+  - **Banner:** text stays inside the centre 1546×423.
+  - **Contrast:** text is always at least 4.5:1. Mid-tone palettes are deepened so the hue is kept.
+  - **Rights:** every file has `SYSTEM_GENERATED`, commercial use, and lineage (renderer, font and licence, blueprint, palette, measured contrast).
+  - **Picks:** one pick per role (`channel_art`, migration 0017).
+  - **Scripts:** names in scripts the font cannot draw (Urdu) are refused with a plain reason.
+- **Video watermark** (heavy job `media.watermark`): from the owner's own logo, uploaded as the raw body. You must confirm it is yours. PNG, JPEG or WebP, up to 5 MB; checked by its first bytes, then decoded safely with a pixel limit. The logo is trimmed and fitted on a transparent 150×150. Rights: `OWNER_CREATED`, verified by the owner.
+- **API:** channel-art get/generate/choose, watermark upload, asset download (attachment, rights required) and the asset list. Jobs show live on the Pipeline page.
+- **Web:**
+  - Branding Studio › **Channel art**: draw, circle preview, desktop and phone boxes, Pick, Download PNG, Copy image, watermark upload, YouTube Studio steps.
+  - Setup kit (onboarding step 2): the picked files.
+  - **Asset Library** (page 25) on the real API.
+- **New dependencies (free):** Pillow (HPND) and font-source-sans-pro (OFL-1.1).
+- **Plan change:** the 16 procedural scene templates move to step B (storyboard needs them). The rights form and manual licensed import move to step D (with stock).
+- **Tests:**
+  - Python: 28 drawing-rule tests (sizes, circle, safe area, contrast for 4 palettes, watermark, refusals) and 3 integration tests (generate → pick → download, no blueprint, watermark upload rules and output; an asset without rights is never served). The worker job was also run against a real database.
+  - Vitest: 2 new.
+  - Playwright: Asset Library, Branding, Onboarding, routes × states and axe pass.
+- Free-tier check: introduces no paid dependency ✔
+- **Owner part (now):**
+  1. Open the Branding Studio of each channel's blueprint, press **Draw logo and banner**, pick one of each, download them, and upload them in YouTube Studio › Customization › Branding.
+  2. Upload your **SEMRS logo** for the watermark.
+
 ## Resource consumption
 
 | Resource | Used |

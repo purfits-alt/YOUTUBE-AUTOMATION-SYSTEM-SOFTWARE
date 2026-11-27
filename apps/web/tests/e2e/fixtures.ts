@@ -159,6 +159,30 @@ export const SUCCESS_FIXTURES: Record<string, Record<string, unknown>> = {
     "/api/v1/projects/p-101/claims": content.claims,
     "/api/v1/projects/p-101/value-add": content.valueAdd,
   },
+  // One drawn logo with its rights record (Phase 8): the e2e database has no worker to draw it.
+  assets: {
+    "/api/v1/assets": {
+      items: [
+        {
+          id: "as-1",
+          channel_id: "ch-1",
+          project_id: null,
+          kind: "IMAGE",
+          origin: "PROCEDURAL",
+          mime_type: "image/png",
+          size_bytes: 48000,
+          width: 800,
+          height: 800,
+          created_at: NOW,
+          rights_basis: "SYSTEM_GENERATED",
+          licence: "Drawn by TubeForge from your blueprint; font Source Sans Pro (SIL OFL 1.1)",
+          commercial_use_allowed: true,
+          download_url: null,
+        },
+      ],
+      next_cursor: null,
+    },
+  },
   // A video being researched (live %) and one waiting for the owner (ADR-0031).
   pipeline: { "/api/v1/pipeline": pipelineOut() },
 };

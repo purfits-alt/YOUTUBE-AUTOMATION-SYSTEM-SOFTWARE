@@ -538,6 +538,18 @@ CREATE TABLE asset_rights (
 );
 CREATE TRIGGER asset_rights_updated_at BEFORE UPDATE ON asset_rights FOR EACH ROW EXECUTE FUNCTION tf_set_updated_at();
 
+CREATE TABLE channel_art (
+  id uuid PRIMARY KEY,
+  channel_id uuid NOT NULL,
+  role text NOT NULL CHECK (role IN ('LOGO','BANNER','WATERMARK')),
+  batch int NOT NULL,
+  variant int NOT NULL,
+  asset_id uuid NOT NULL,
+  strategy_id uuid NULL,
+  chosen boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE stock_purchases (
   id uuid PRIMARY KEY,
   channel_id uuid NULL,
@@ -1181,6 +1193,8 @@ CREATE INDEX ON video_projects (channel_id, state);
 CREATE INDEX ON fact_check_claims (subject_type, subject_id, verdict);
 CREATE INDEX ON media_assets (sha256);
 CREATE INDEX ON media_assets (project_id, kind);
+CREATE UNIQUE INDEX ON channel_art (channel_id, role) WHERE chosen;
+CREATE INDEX ON channel_art (channel_id, role, batch);
 CREATE UNIQUE INDEX ON narration_segments (scene_id) WHERE selected;
 CREATE UNIQUE INDEX ON thumbnails (project_id) WHERE selected;
 CREATE INDEX ON external_edit_sessions (project_id, state);
@@ -1238,6 +1252,9 @@ ALTER TABLE media_assets ADD FOREIGN KEY (channel_id) REFERENCES channels;
 ALTER TABLE media_assets ADD FOREIGN KEY (project_id) REFERENCES video_projects;
 ALTER TABLE asset_rights ADD FOREIGN KEY (asset_id) REFERENCES media_assets;
 ALTER TABLE asset_rights ADD FOREIGN KEY (proof_asset_id) REFERENCES media_assets;
+ALTER TABLE channel_art ADD FOREIGN KEY (channel_id) REFERENCES channels;
+ALTER TABLE channel_art ADD FOREIGN KEY (asset_id) REFERENCES media_assets;
+ALTER TABLE channel_art ADD FOREIGN KEY (strategy_id) REFERENCES channel_strategies;
 ALTER TABLE stock_purchases ADD FOREIGN KEY (channel_id) REFERENCES channels;
 ALTER TABLE stock_purchases ADD FOREIGN KEY (confirmed_by) REFERENCES users;
 ALTER TABLE stock_purchases ADD FOREIGN KEY (asset_id) REFERENCES media_assets;

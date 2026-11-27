@@ -35,6 +35,8 @@ TRACKED: dict[str, str] = {
     "content.ideas": "New ideas",
     "research.discover": "Niche discovery",
     "research.blueprint": "Channel blueprint",
+    "media.channel_art": "Channel art",
+    "media.watermark": "Video watermark",
 }
 
 #: Job argument → the entity the job works on.

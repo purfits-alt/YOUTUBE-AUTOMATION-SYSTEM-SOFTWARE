@@ -1,5 +1,6 @@
 import type { RouteObject } from "react-router";
 import { AgentsPage } from "../pages/agents/AgentsPage";
+import { AssetsPage } from "../pages/AssetsPage";
 import { ChannelsPage } from "../pages/channels/ChannelsPage";
 import { OnboardingPage } from "../pages/channels/OnboardingPage";
 import { NotFound } from "../pages/NotFound";
@@ -46,6 +47,7 @@ const REAL_PAGES: Record<string, () => React.JSX.Element> = {
   calendar: () => <CalendarPage />,
   script: () => <ScriptStudioPage />,
   pipeline: () => <PipelinePage />,
+  assets: () => <AssetsPage />,
 };
 
 export const routes: RouteObject[] = [
