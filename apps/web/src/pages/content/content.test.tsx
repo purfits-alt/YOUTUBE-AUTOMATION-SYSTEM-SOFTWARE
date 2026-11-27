@@ -349,7 +349,7 @@ describe("Storyboard and Visual Studio (Phase 8 step B)", () => {
     expect(hook).toHaveTextContent("Hook");
     expect(hook).toHaveTextContent("Your heart slows down at night.");
     expect(screen.getByTestId("scene-3")).toHaveTextContent("Pattern interrupt");
-    expect(screen.getByTestId("storyboard-summary")).toHaveTextContent("4 scenes");
+    expect(screen.getByTestId("project-header")).toHaveTextContent("4 scenes");
     const save = screen.getByRole("button", { name: "Save as a new version" });
     expect(save).toBeDisabled();
     const second = screen.getByTestId("scene-2");

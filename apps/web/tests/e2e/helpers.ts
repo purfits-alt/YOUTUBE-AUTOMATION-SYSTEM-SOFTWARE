@@ -25,14 +25,14 @@ const EMPTY_BODIES: Record<string, unknown> = {
   pipeline: { stations: [], projects: [], jobs: [], refresh_s: 20, built_phase: 8 },
   storyboard: {
     ...storyboardMock("p-101"),
-    project_state: "SCRIPT_REVIEW",
+    project_state: "STORYBOARDING",
     version: null,
     scenes: [],
     total_duration_s: 0,
   },
   visuals: {
     ...storyboardMock("p-101"),
-    project_state: "SCRIPT_REVIEW",
+    project_state: "STORYBOARDING",
     version: null,
     scenes: [],
     total_duration_s: 0,

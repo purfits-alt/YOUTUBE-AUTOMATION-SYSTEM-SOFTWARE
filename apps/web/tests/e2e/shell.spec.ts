@@ -65,7 +65,8 @@ test("Pipeline: the production line opens on the real API without errors", async
   await page.goto("/pipeline");
   await expect(page.getByRole("heading", { level: 1, name: "Pipeline" })).toBeVisible();
   await expect(page.getByTestId("station-research")).toBeVisible();
-  await expect(page.getByTestId("station-storyboard")).toContainText("Phase 8");
+  await expect(page.getByTestId("station-storyboard")).toContainText("TubeForge"); // built in Phase 8 B
+  await expect(page.getByTestId("station-voice")).toContainText("Phase 8");
   await expect(page.getByTestId("route-error")).toHaveCount(0);
   expect(problems).toEqual([]);
 });

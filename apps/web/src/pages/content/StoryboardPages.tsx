@@ -67,7 +67,7 @@ function Summary({ data, children }: { data: StoryboardOut; children?: React.Rea
     <section
       aria-label={t("storyboardPage.summary")}
       className="tf-card flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface p-4 text-sm"
-      data-testid="storyboard-summary"
+      data-testid="project-header"
     >
       <span className="font-semibold" dir="auto">
         {data.working_title}
