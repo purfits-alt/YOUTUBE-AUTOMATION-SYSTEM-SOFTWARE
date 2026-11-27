@@ -203,9 +203,17 @@ PROJECT = Machine(
             "STORYBOARDING",
             "approve_script",
             [OWNER],
-            ["script_locked", "no_contradicted_claims", "owner_value_add", "duration_fits_format"],
+            [
+                "script_locked",
+                "no_contradicted_claims",
+                "owner_value_add",
+                "owner_slots_filled",
+                "duration_fits_format",
+            ],
             gate="S",
         ),
+        # The owner can bring an approved script back to review (e.g. to fill [[OWNER: …]] slots).
+        E("STORYBOARDING", "SCRIPT_REVIEW", "reopen_script", [OWNER]),
         E("STORYBOARDING", "ASSET_GENERATION", "storyboard_done", [AGENT, ORCH, OWNER]),
         E("ASSET_GENERATION", "VOICEOVER", "assets_ready", [ORCH], ["scenes_have_rights_cleared_visuals"]),
         E("VOICEOVER", "ASSEMBLY", "narration_ready", [ORCH], ["narration_complete", "voice_consent_valid"]),

@@ -55,7 +55,7 @@ from tubeforge.research.net import FetchBlockedError
 from tubeforge.research.sources import SourceUnavailableError
 from tubeforge.research.wiki_articles import LANGUAGES, WikipediaArticles
 from tubeforge_agents.base import RunOutcome, run_agent
-from tubeforge_agents.content_agents import A08, A09, A10, A11
+from tubeforge_agents.content_agents import A08, A09, A10, A11, A11_PARTS
 from tubeforge_agents.discovery import (
     PipelineError,
     _outcome_error,
@@ -766,7 +766,10 @@ def run_script(
         )  # fmt: skip
         if out.data is None:
             raise _outcome_error(out)
-        return dict(out.data)
+        # Owner decision 2026-11-27: the owner's own words are optional. Empty [[OWNER: …]] places
+        # become suggestions beside the script, so the draft is complete and nothing like "OWNER: …"
+        # can be read aloud.
+        return scripts.lift_owner_slots(dict(out.data))
 
     asked = f"Owner's instruction for this draft: {instruction.strip()[:800]}" if instruction.strip() else ""
     if asked:
@@ -876,3 +879,96 @@ def fact_check_version(
     version.body = {**version.body, "_fact_check": "DONE" if docs else "NO_SOURCES"}
     db.commit()
     return len(rows)
+
+
+# --------------------------------------------------------------------------- owner-part options
+FIRST_PERSON = re.compile(r"\b(?:I|I'm|I've|I'd|I'll|me|my|mine|myself)\b", re.IGNORECASE)
+PART_KINDS = ("FILL_IN", "QUESTION", "NEUTRAL")
+PART_CONTEXT = 600
+
+
+def _slot_text(body: dict[str, Any], field: str) -> str:
+    name, _, index = field.partition(".")
+    if name == "sections":
+        return str(body.get("sections", [])[int(index)].get("text", ""))
+    value = body.get(name)
+    return str(value.get("text", "")) if isinstance(value, dict) else str(value or "")
+
+
+def check_part_option(kind: str, text: str) -> str | None:
+    """Why a suggestion breaks the rules (None = keep it). It must never pass off an experience as
+    the owner's: only the fill-in may say "I", and then every personal detail is a ___ blank."""
+    if kind not in PART_KINDS:
+        return "unknown kind"
+    if forbidden.scan(text):
+        return "makes a promise TubeForge cannot keep"
+    if kind == "FILL_IN" and "___" not in text:
+        return "a fill-in needs ___ blanks for the owner's real details"
+    if kind != "FILL_IN" and FIRST_PERSON.search(text):
+        return "speaks as the owner"
+    if kind == "QUESTION" and not text.rstrip().endswith("?"):
+        return "a question must end with ?"
+    return None
+
+
+def owner_part_options(
+    db: Session, gateway: Gateway, version_id: uuid.UUID, marker: str, *, now: datetime | None = None
+) -> list[dict[str, str]]:
+    """3 options for one [[OWNER: …]] place (owner request 2026-11-27); stored on the version as
+    ``_part_options[marker]`` (bookkeeping, not part of the script or its fingerprint)."""
+    version = db.get_one(ScriptVersion, version_id)
+    script = db.get_one(Script, version.script_id)
+    project = db.get_one(VideoProject, script.project_id)
+    slot = next((s for s in scripts.open_owner_slots(version.body) if s["marker"] == marker), None)
+    if slot is None:
+        raise PipelineError("FAILED", "That part is already filled or no longer in this version.")
+    text = _slot_text(version.body, slot["field"])
+    before, _, after = text.partition(marker)
+    channel = db.get_one(Channel, project.channel_id)
+    brief = db.scalar(
+        select(ResearchBrief)
+        .where(ResearchBrief.project_id == project.id, ResearchBrief.status == "APPROVED")
+        .order_by(ResearchBrief.version.desc())
+        .limit(1)
+    )
+    claims = [
+        {"id": str(c.get("id", ""))[:10], "text": str(c.get("text", ""))[:400]}
+        for c in (brief.content.get("claims", []) if brief else [])
+        if c.get("verdict") in (None, "SUPPORTED")
+    ][:20]
+    progress.report(20, "Writing 3 suggestions for your part")
+    outcome = run_agent(
+        db,
+        gateway,
+        A11_PARTS,
+        {
+            "language": channel.content_language if channel.content_language in LANGUAGES else "en",
+            "title": project.working_title,
+            "prompt": slot["prompt"][:300],
+            "before": before[-PART_CONTEXT:],
+            "after": after[:PART_CONTEXT],
+            "claims": claims,
+        },
+        channel_id=project.channel_id,
+        project_id=project.id,
+        idempotent=False,
+        now=now,
+    )
+    if outcome.data is None:
+        raise _outcome_error(outcome)
+    progress.report(85, "Checking the suggestions")
+    options: list[dict[str, str]] = []
+    for option in outcome.data.get("options", []):
+        kind, value = str(option.get("kind")), str(option.get("text", "")).strip()
+        if check_part_option(kind, value) is None and kind not in {o["kind"] for o in options}:
+            options.append({"kind": kind, "text": value})
+    if not options:
+        raise PipelineError(
+            "FAILED", "The suggestions did not follow the rules. Press Suggest 3 options again."
+        )
+    stored = dict(version.body.get("_part_options") or {})
+    ordered = sorted(options, key=lambda o: PART_KINDS.index(o["kind"]))
+    stored[marker] = ordered
+    version.body = {**version.body, "_part_options": stored}
+    db.flush()
+    return ordered

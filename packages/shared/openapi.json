@@ -3993,6 +3993,32 @@
         "title": "OverrideIn",
         "type": "object"
       },
+      "OwnerSlotOut": {
+        "properties": {
+          "field": {
+            "description": "hook, promise_delivery, sections.N, payoff or cta",
+            "title": "Field",
+            "type": "string"
+          },
+          "marker": {
+            "description": "The exact [[OWNER: \u2026]] text to replace.",
+            "title": "Marker",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "What TubeForge asks you to tell, in your own words.",
+            "title": "Prompt",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "marker",
+          "prompt"
+        ],
+        "title": "OwnerSlotOut",
+        "type": "object"
+      },
       "PackagingPromise": {
         "properties": {
           "promise_statement": {
@@ -4275,6 +4301,46 @@
           "next_cursor"
         ],
         "title": "Page[UploadJobOut]",
+        "type": "object"
+      },
+      "PartOptionOut": {
+        "properties": {
+          "kind": {
+            "description": "FILL_IN: your sentence with ___ blanks \u00b7 QUESTION: to viewers \u00b7 NEUTRAL: from the brief",
+            "enum": [
+              "FILL_IN",
+              "QUESTION",
+              "NEUTRAL"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "text"
+        ],
+        "title": "PartOptionOut",
+        "type": "object"
+      },
+      "PartOptionsIn": {
+        "properties": {
+          "marker": {
+            "maxLength": 320,
+            "minLength": 10,
+            "pattern": "^\\[\\[OWNER:",
+            "title": "Marker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "marker"
+        ],
+        "title": "PartOptionsIn",
         "type": "object"
       },
       "PasswordIn": {
@@ -7606,6 +7672,25 @@
           "locked": {
             "title": "Locked",
             "type": "boolean"
+          },
+          "owner_slots": {
+            "description": "[[OWNER: \u2026]] places still waiting for your own words.",
+            "items": {
+              "$ref": "#/components/schemas/OwnerSlotOut"
+            },
+            "title": "Owner Slots",
+            "type": "array"
+          },
+          "part_options": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/PartOptionOut"
+              },
+              "type": "array"
+            },
+            "description": "Suggestions per [[OWNER: \u2026]] marker (A11, on request).",
+            "title": "Part Options",
+            "type": "object"
           },
           "plain_text": {
             "title": "Plain Text",
@@ -21811,6 +21896,7 @@
                 "start",
                 "retry-research",
                 "retry-script",
+                "reopen-script",
                 "approve-research",
                 "request-research-changes",
                 "approve-script",
@@ -23013,6 +23099,179 @@
           }
         },
         "summary": "Get Version",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/script/versions/{number}/part-options": {
+      "post": {
+        "description": "Ask A11 for 3 suggestions for one [[OWNER: \u2026]] part of this version (owner request 2026-11-27):\na fill-in with ___ blanks for your real details, a question to viewers, a neutral line from the\nbrief. They appear on the version; you pick, edit and decide.",
+        "operationId": "part_options_api_v1_projects__project_id__script_versions__number__part_options_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "title": "Number",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartOptionsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/tubeforge__api__v1__projects__QueuedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR (field errors in errors[]) or a bad header"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "GUARD_FAILED / INVALID_TRANSITION / ACTOR_NOT_ALLOWED / EMERGENCY_STOP / NOT_AVAILABLE_YET / NOT_EDITABLE / NO_BRIEF / NO_SCRIPT / FACT_CHECK_PENDING / USE_IDEA_APPROVE"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "VERSION_CONFLICT: changed elsewhere"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "SCRIPT_INVALID / VALIDATION_ERROR / IDEMPOTENCY_MISMATCH"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_READY (master key or database missing)"
+          }
+        },
+        "summary": "Part Options",
         "tags": [
           "content"
         ]

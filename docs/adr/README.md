@@ -32,4 +32,5 @@
 | [ADR-0028](ADR-0028-product-site-on-semrs-subdomain.md) | Product site at tubeforge.semrs.com (web address and static hosting only) | Accepted |
 | [ADR-0029](ADR-0029-local-similarity-model2vec.md) | Local similarity: model2vec static embeddings (potion-multilingual-128M, MIT) with trigram fallback | Accepted |
 | [ADR-0030](ADR-0030-free-model-admission.md) | Free AI model admission rules (free, production, commercial-OK, data use, allowlisted host); Gemma 4 added; all free models in every chain | Accepted |
+| [ADR-0032](ADR-0032-owner-value-add-optional.md) | The owner's own value is optional; empty `[[OWNER: …]]` parts are lifted out of the spoken text (guard `owner_slots_filled`); 3 A11 suggestions per part, never written as the owner's experience; reopen an approved script | Accepted |
 | [ADR-0031](ADR-0031-live-pipeline-progress.md) | Live pipeline progress: `job_progress` table written by workers, `GET /pipeline` polled by the web; stations, % done, next station; Write again | Accepted |

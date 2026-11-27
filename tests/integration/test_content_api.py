@@ -3,6 +3,7 @@
 # ruff: noqa: E501  (table-style requests)
 from __future__ import annotations
 
+import json
 import uuid
 from collections.abc import Iterator
 from datetime import date, timedelta
@@ -314,24 +315,63 @@ def test_project_from_research_to_locked_script(
     row = db.get_one(ScriptVersion, uuid.UUID(v2["id"]))
     row.body = {**row.body, "_fact_check": "DONE"}
     db.commit()
-    no_value = client.post(f"{cmd}/approve-script", headers=idem(h))
-    assert no_value.status_code == 409 and "Add your own value" in no_value.json()["detail"]
+    # Your own value is optional (owner decision 2026-11-27): no "Add your own value" refusal.
+    checks = {c["code"]: c for c in client.get(f"/api/v1/projects/{pid}").json()["checks"]}
+    assert checks["owner_value_add"]["ok"]
     value = client.put(
         f"/api/v1/projects/{pid}/value-add",
         json={"own_experience": "I logged every purchase for thirty days in a notebook."},
         headers=h,
     ).json()
     assert value["score"] == "25.00" and value["filled_fields"] == ["own_experience"]
+
+    # Owner report 2026-11-27: [[OWNER: …]] places left empty reached the storyboard. Approval now
+    # waits until the owner's own words replace every one of them.
+    checks = {c["code"]: c for c in client.get(f"/api/v1/projects/{pid}").json()["checks"]}
+    assert (
+        not checks["owner_slots_filled"]["ok"] and "[[OWNER: …]]" in checks["owner_slots_filled"]["message"]
+    )
+    slots = client.get(f"/api/v1/projects/{pid}/script/versions/2").json()["owner_slots"]
+    assert slots and all(sl["marker"].startswith("[[OWNER:") and sl["prompt"] for sl in slots)
+    empty = client.post(f"{cmd}/approve-script", headers=idem(h))
+    assert empty.status_code == 409 and "still say [[OWNER: …]]" in empty.json()["detail"]
+    filled = json.loads(json.dumps(edited))
+    for sl in slots:
+        section = filled["sections"][int(sl["field"].split(".")[1])]
+        section["text"] = section["text"].replace(
+            sl["marker"], "I tracked every rupee in a notebook for a month."
+        )
+    v3 = client.post(
+        f"/api/v1/projects/{pid}/script/versions",
+        json={"body": filled, "based_on_version": 2},
+        headers=idem(h),
+    ).json()
+    assert v3["version"] == 3 and v3["owner_slots"] == []
+    row = db.get_one(ScriptVersion, uuid.UUID(v3["id"]))
+    row.body = {**row.body, "_fact_check": "DONE"}
+    db.commit()
     assert all(c["ok"] for c in client.get(f"/api/v1/projects/{pid}").json()["checks"])
     done = client.post(f"{cmd}/approve-script", headers=idem(h))
     assert done.status_code == 200, done.text
     assert done.json()["project"]["state"] == "STORYBOARDING"
-    assert done.json()["project"]["locked_script_version_id"] == v2["id"]
+    assert done.json()["project"]["locked_script_version_id"] == v3["id"]
+    assert done.json()["project"]["allowed_commands"] == ["reopen-script", "pause", "cancel"]
     db.refresh(row)
     db.refresh(v1)
     assert row.locked and not v1.locked
+
+    # An approved script can be reopened from the storyboard station to change it again.
+    reopened = client.post(f"{cmd}/reopen-script", headers=idem(h))
+    assert reopened.status_code == 200, reopened.text
+    assert reopened.json()["project"]["state"] == "SCRIPT_REVIEW"
+    assert reopened.json()["project"]["locked_script_version_id"] is None
+    again = client.post(f"{cmd}/approve-script", headers=idem(h))
+    assert again.status_code == 200 and again.json()["project"]["locked_script_version_id"] == v3["id"]
     events = [t["event"] for t in client.get(f"/api/v1/projects/{pid}/timeline-history").json()]
-    assert events == ["start_research", "research_done", "approve_research", "script_done", "approve_script"]
+    assert events == [
+        "start_research", "research_done", "approve_research", "script_done", "approve_script",
+        "reopen_script", "approve_script",
+    ]  # fmt: skip
     assert (
         client.post(
             f"/api/v1/projects/{pid}/script/regenerate",
@@ -423,3 +463,39 @@ def test_replicate_only_own_videos(api: tuple[TestClient, dict[str, str]], db: S
     args = env.sql("SELECT args FROM procrastinate_jobs WHERE task_name LIKE '%content.ideas'")[0][0]
     assert args["variation"]["title"] == "My 30-day student budget" and args["variation"]["kind"] == "PART_2"  # type: ignore[index]
     assert db.scalar(select(VideoProject.id).where(VideoProject.youtube_video_id == "abcDEF12345")) == own.id
+
+
+def test_part_options_are_queued_and_shown_on_the_version(
+    api: tuple[TestClient, dict[str, str]], db: Session, env: Env
+) -> None:
+    """Owner request 2026-11-27: ask for 3 suggestions for one [[OWNER: …]] part; they appear on the
+    version (the worker's A11 run is covered in test_content)."""
+    client, h = api
+    ch = channel(db)
+    pid = client.post(
+        "/api/v1/projects", json={"channel_id": str(ch.id), "working_title": "Where my student budget went"},
+        headers=idem(h),
+    ).json()["id"]  # fmt: skip
+    project = db.get_one(VideoProject, uuid.UUID(pid))
+    cmd = f"/api/v1/projects/{pid}/commands"
+    client.post(f"{cmd}/start", headers=idem(h))
+    _brief(db, project, contradicted=False)
+    client.post(f"{cmd}/approve-research", headers=idem(h))
+    v1 = _draft(db, project)
+    url = f"/api/v1/projects/{pid}/script/versions/1"
+    marker = client.get(url).json()["owner_slots"][0]["marker"]
+    r = client.post(f"{url}/part-options", json={"marker": marker}, headers=idem(h))
+    assert r.status_code == 202
+    (args,) = env.sql(
+        "SELECT args FROM procrastinate_jobs WHERE task_name LIKE '%content.part_options' ORDER BY id DESC LIMIT 1"
+    )[0]
+    assert args == {"version_id": str(v1.id), "marker": marker}
+    gone = client.post(f"{url}/part-options", json={"marker": "[[OWNER: not here]]"}, headers=idem(h))
+    assert (gone.status_code, gone.json()["code"]) == (409, "NOT_EDITABLE")
+
+    options = [{"kind": "FILL_IN", "text": "When I ___, I ___."}, {"kind": "QUESTION", "text": "And you?"}]
+    v1.body = {**v1.body, "_part_options": {marker: options, "[[OWNER: filled long ago]]": options}}
+    db.commit()
+    shown = client.get(url).json()
+    assert shown["part_options"] == {marker: options}  # only for parts still empty
+    assert "_part_options" not in shown["body"]

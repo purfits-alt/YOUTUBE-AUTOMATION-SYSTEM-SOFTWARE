@@ -85,7 +85,7 @@ describe("Script Studio (real API)", () => {
     const timing = await screen.findByTestId("timing");
     expect(timing).toHaveTextContent("12.4 s (aim 10–15 s)");
     expect(screen.getByTestId("findings")).toHaveTextContent("All craft checks pass.");
-    expect(screen.getAllByText(/Your story goes here/).length).toBeGreaterThan(0);
+    expect(await screen.findByTestId("owner-parts")).toHaveTextContent("Your parts (2) — optional");
 
     // A contradicted script fact can be accepted with a reason.
     fireEvent.click(screen.getByRole("button", { name: "Accept with a reason" }));
@@ -267,5 +267,76 @@ describe("Channel art (Phase 8 step A)", () => {
     content.art = { ...content.art, logos: [], banners: [] };
     renderAt("/assets");
     expect(await screen.findByText(/The library is empty/)).toBeInTheDocument();
+  });
+});
+
+describe("Your parts (owner decision 2026-11-27: optional, never read aloud)", () => {
+  it("puts the owner's words in place of [[OWNER: …]]", async () => {
+    renderAt("/projects/p-101/script");
+    const parts = await screen.findByTestId("owner-parts");
+    expect(parts).toHaveTextContent("the app you kept and why");
+    const put = within(parts).getByRole("button", { name: "Put my words in" });
+    expect(put).toBeDisabled();
+    fireEvent.change(within(parts).getAllByPlaceholderText("Your own words (optional)")[1] as HTMLElement, {
+      target: { value: "I kept the notebook app because it was the only one I opened daily." },
+    });
+    fireEvent.click(put);
+    expect(await screen.findByText(/Saved as version 2/)).toBeInTheDocument();
+    const saved = content.versions[1]?.body as { sections: { text: string }[] };
+    expect(JSON.stringify(saved)).not.toContain("[[OWNER:");
+    expect(saved.sections.map((x) => x.text)).toContain(
+      "I kept the notebook app because it was the only one I opened daily.",
+    );
+  });
+
+  it("suggests 3 options; a fill-in needs the owner's real details before it goes in", async () => {
+    renderAt("/projects/p-101/script");
+    const parts = await screen.findByTestId("owner-parts");
+    fireEvent.click(within(parts).getAllByRole("button", { name: "Suggest 3 options" })[1] as HTMLElement);
+    const options = await within(parts).findByTestId("part-options-1");
+    expect(options).toHaveTextContent("Your sentence");
+    expect(options).toHaveTextContent("Ask viewers");
+    expect(options).toHaveTextContent("General line");
+    const box = within(parts).getAllByPlaceholderText("Your own words (optional)")[1] as HTMLTextAreaElement;
+    fireEvent.click(within(options).getByLabelText(/I kept ___ because ___/));
+    expect(box.value).toBe("I kept ___ because ___.");
+    const put = within(parts).getByRole("button", { name: "Put my words in" });
+    expect(put).toBeDisabled();
+    expect(within(parts).getByTestId("blanks-left")).toHaveTextContent(
+      "TubeForge never invents your experience",
+    );
+    fireEvent.change(box, { target: { value: "I kept the notebook app because I opened it daily." } });
+    expect(put).toBeEnabled();
+    fireEvent.click(within(options).getByLabelText(/Which app would you keep/));
+    expect(box.value).toBe("Which app would you keep?");
+    fireEvent.click(put);
+    expect(await screen.findByText(/Saved as version 2/)).toBeInTheDocument();
+    expect(JSON.stringify(content.versions[1]?.body)).toContain("Which app would you keep?");
+  });
+
+  it("removes empty parts and keeps them as optional suggestions", async () => {
+    renderAt("/projects/p-101/script");
+    const parts = await screen.findByTestId("owner-parts");
+    fireEvent.click(within(parts).getByRole("button", { name: "Remove my empty parts" }));
+    expect(await screen.findByText(/Saved as version 2/)).toBeInTheDocument();
+    const saved = content.versions[1]?.body as { owner_slots: { prompt: string }[] };
+    expect(JSON.stringify(saved)).not.toContain("[[OWNER:");
+    expect(saved.owner_slots.map((x) => x.prompt)).toContain("the app you kept and why");
+    expect(await screen.findByTestId("owner-suggestions")).toHaveTextContent("the app you kept and why");
+    expect(screen.queryByTestId("owner-parts")).not.toBeInTheDocument();
+  });
+
+  it("tells the owner to reopen an approved script that still has empty parts", async () => {
+    content.project = {
+      ...content.project,
+      state: "STORYBOARDING",
+      allowed_commands: ["reopen-script", "pause", "cancel"],
+      checks: [],
+    };
+    renderAt("/projects/p-101/script");
+    expect(await screen.findByTestId("reopen-hint")).toHaveTextContent("2 empty [[OWNER: …]] part(s)");
+    expect(
+      within(screen.getByTestId("project-header")).getByRole("button", { name: "Reopen the script" }),
+    ).toBeInTheDocument();
   });
 });

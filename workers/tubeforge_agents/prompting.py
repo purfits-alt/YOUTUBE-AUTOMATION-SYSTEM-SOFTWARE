@@ -79,7 +79,9 @@ def output_schema(agent_code: str) -> dict[str, Any]:
     return {"oneOf": [schema, REFUSAL]}
 
 
-def render_system(agent_code: str, agent_name: str, version: str, context: dict[str, Any]) -> str:
+def render_system(
+    agent_code: str, agent_name: str, version: str, context: dict[str, Any], *, prompt_name: str | None = None
+) -> str:
     variables = {
         "agent_code": agent_code,
         "agent_name": agent_name,
@@ -93,7 +95,7 @@ def render_system(agent_code: str, agent_name: str, version: str, context: dict[
     return (
         ENV.from_string(PREAMBLE).render(variables)
         + "\n"
-        + ENV.from_string(prompt_source(agent_code, version)).render(variables)
+        + ENV.from_string(prompt_source(prompt_name or agent_code, version)).render(variables)
         + "\n"
         + schema_block(agent_code)
     )

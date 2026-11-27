@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "required": ["options"],
+  "additionalProperties": false,
+  "properties": {
+    "options": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["kind", "text"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {"enum": ["FILL_IN", "QUESTION", "NEUTRAL"]},
+          "text": {"type": "string", "minLength": 5, "maxLength": 300}
+        }
+      }
+    }
+  }
+}

@@ -1496,6 +1496,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/script/versions/{number}/part-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Part Options
+         * @description Ask A11 for 3 suggestions for one [[OWNER: …]] part of this version (owner request 2026-11-27):
+         *     a fill-in with ___ blanks for your real details, a question to viewers, a neutral line from the
+         *     brief. They appear on the version; you pick, edit and decide.
+         */
+        post: operations["part_options_api_v1_projects__project_id__script_versions__number__part_options_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/timeline-history": {
         parameters: {
             query?: never;
@@ -3534,6 +3556,24 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** OwnerSlotOut */
+        OwnerSlotOut: {
+            /**
+             * Field
+             * @description hook, promise_delivery, sections.N, payoff or cta
+             */
+            field: string;
+            /**
+             * Marker
+             * @description The exact [[OWNER: …]] text to replace.
+             */
+            marker: string;
+            /**
+             * Prompt
+             * @description What TubeForge asks you to tell, in your own words.
+             */
+            prompt: string;
+        };
         /** PackagingPromise */
         PackagingPromise: {
             /** Promise Statement */
@@ -3605,6 +3645,22 @@ export interface components {
             items: components["schemas"]["UploadJobOut"][];
             /** Next Cursor */
             next_cursor: string | null;
+        };
+        /** PartOptionOut */
+        PartOptionOut: {
+            /**
+             * Kind
+             * @description FILL_IN: your sentence with ___ blanks · QUESTION: to viewers · NEUTRAL: from the brief
+             * @enum {string}
+             */
+            kind: "FILL_IN" | "QUESTION" | "NEUTRAL";
+            /** Text */
+            text: string;
+        };
+        /** PartOptionsIn */
+        PartOptionsIn: {
+            /** Marker */
+            marker: string;
         };
         /** PasswordIn */
         PasswordIn: {
@@ -4869,6 +4925,18 @@ export interface components {
             id: string;
             /** Locked */
             locked: boolean;
+            /**
+             * Owner Slots
+             * @description [[OWNER: …]] places still waiting for your own words.
+             */
+            owner_slots?: components["schemas"]["OwnerSlotOut"][];
+            /**
+             * Part Options
+             * @description Suggestions per [[OWNER: …]] marker (A11, on request).
+             */
+            part_options?: {
+                [key: string]: components["schemas"]["PartOptionOut"][];
+            };
             /** Plain Text */
             plain_text: string;
             /** Version */
@@ -13799,7 +13867,7 @@ export interface operations {
             header?: never;
             path: {
                 project_id: string;
-                cmd: "start" | "retry-research" | "retry-script" | "approve-research" | "request-research-changes" | "approve-script" | "request-script-changes" | "approve-cut" | "request-cut-changes" | "retry" | "pause" | "resume" | "cancel" | "choose-fix-path";
+                cmd: "start" | "retry-research" | "retry-script" | "reopen-script" | "approve-research" | "request-research-changes" | "approve-script" | "request-script-changes" | "approve-cut" | "request-cut-changes" | "retry" | "pause" | "resume" | "cancel" | "choose-fix-path";
             };
             cookie?: never;
         };
@@ -14558,6 +14626,113 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description NOT_READY (master key or database missing) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    part_options_api_v1_projects__project_id__script_versions__number__part_options_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PartOptionsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["tubeforge__api__v1__projects__QueuedOut"];
+                };
+            };
+            /** @description VALIDATION_ERROR (field errors in errors[]) or a bad header */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description GUARD_FAILED / INVALID_TRANSITION / ACTOR_NOT_ALLOWED / EMERGENCY_STOP / NOT_AVAILABLE_YET / NOT_EDITABLE / NO_BRIEF / NO_SCRIPT / FACT_CHECK_PENDING / USE_IDEA_APPROVE */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description VERSION_CONFLICT: changed elsewhere */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description SCRIPT_INVALID / VALIDATION_ERROR / IDEMPOTENCY_MISMATCH */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description NOT_READY (master key or database missing) */

@@ -1311,7 +1311,8 @@
       "resume": "Resume",
       "cancel": "Cancel project",
       "retry-research": "Research again",
-      "retry-script": "Write again"
+      "retry-script": "Write again",
+      "reopen-script": "Reopen the script"
     },
     "done": {
       "start": "Research started.",
@@ -1324,7 +1325,8 @@
       "resume": "Resumed.",
       "cancel": "Project cancelled.",
       "retry-research": "Research is running again. The brief appears here in a minute or two.",
-      "retry-script": "The script is being written again. The new draft appears here in a minute or two."
+      "retry-script": "The script is being written again. The new draft appears here in a minute or two.",
+      "reopen-script": "The script is back in review. Change it, then approve it again."
     },
     "overrideTitle": "Accept this claim anyway",
     "overrideReason": "Why is it fine? (at least 20 characters)",
@@ -1346,11 +1348,11 @@
     "promiseText": "How the intro keeps the packaging promise",
     "payoff": "Payoff",
     "cta": "Call to action (soft)",
-    "ownerSlot": "Your story goes here: replace the [[OWNER: …]] slot with your own words.",
+    "ownerSlot": "This part still says [[OWNER: …]]. Write your own words in “Your parts” above, or remove it.",
     "saveVersion": "Save as new version",
     "saved": "Saved as version {v}. Its facts are being checked.",
-    "valueAdd": "Your own value",
-    "valueHint": "What you add that an AI cannot. At least one field is needed before the script can be approved.",
+    "valueAdd": "Your own value (optional)",
+    "valueHint": "What you add that an AI cannot. Optional: the script can be approved without it, but your own experience is what makes a video original and personal.",
     "valueScore": "Value-add score: {score} / 100",
     "valueSaved": "Saved.",
     "saveValue": "Save",
@@ -1394,7 +1396,34 @@
     "extraWords": "Extra search words (optional, comma separated)",
     "extraWordsHint": "e.g. Code Llama, Visual Studio Code, autocomplete",
     "scriptNote": "Instruction for the new draft (optional)",
-    "scriptNoteHint": "For example: a shorter hook, simpler words"
+    "scriptNoteHint": "For example: a shorter hook, simpler words",
+    "parts": {
+      "title": "Your parts ({n}) — optional",
+      "hint": "The script left these places for your own experience. Write your words in any of them, or leave them empty: empty places are taken out and kept below as suggestions. Either way, the voice-over never reads a prompt aloud.",
+      "placeholder": "Your own words (optional)",
+      "put": "Put my words in",
+      "remove": "Remove my empty parts",
+      "saved": "Saved as version {v}. Its facts are being checked.",
+      "suggestTitle": "Optional: your own experience would make these parts more personal",
+      "reopen": "This approved script still has {n} empty [[OWNER: …]] part(s). Press “Reopen the script” to fill or remove them before the storyboard.",
+      "field": {
+        "hook": "Hook",
+        "promise_delivery": "Promise",
+        "payoff": "Payoff",
+        "cta": "Call to action"
+      },
+      "suggest": "Suggest 3 options",
+      "writing": "Writing suggestions…",
+      "suggestHint": "Free AI suggestions; you pick, edit and decide.",
+      "pick": "Pick one to put it in the box above, then edit it:",
+      "blanks": "Replace every ___ with your real details before putting your words in. TubeForge never invents your experience.",
+      "slow": "The suggestions are taking long. Check the Pipeline page or try again.",
+      "kind": {
+        "FILL_IN": "Your sentence",
+        "QUESTION": "Ask viewers",
+        "NEUTRAL": "General line"
+      }
+    }
   },
   "routeError": {
     "title": "Something went wrong on this page",

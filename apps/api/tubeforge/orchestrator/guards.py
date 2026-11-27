@@ -233,9 +233,20 @@ def _no_contradicted(ctx: GuardContext) -> str | None:
 
 @guard("owner_value_add", "value_add_fields")
 def _value_add(ctx: GuardContext) -> str | None:
-    need = int(ctx.option("min_value_add_fields", 1))
+    need = int(ctx.option("min_value_add_fields", 0))  # optional unless the owner sets a minimum (2026-11-27)
     have = int(_p(ctx, "value_add_fields", 0))
     return None if have >= need else f"Add your own value: {have} of {need} owner fields filled."
+
+
+@guard("owner_slots_filled", "open_owner_slots")
+def _owner_slots(ctx: GuardContext) -> str | None:
+    n = int(_p(ctx, "open_owner_slots", 1))
+    if n == 0:
+        return None
+    return (
+        f"{n} place(s) still say [[OWNER: …]], which the voice-over would read aloud. Write your own "
+        "words there, or press “Remove my empty parts” (your own words are optional)."
+    )
 
 
 @guard("duration_fits_format", "estimated_duration_s")

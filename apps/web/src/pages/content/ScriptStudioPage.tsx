@@ -34,6 +34,7 @@ type Command =
   | "start"
   | "retry-research"
   | "retry-script"
+  | "reopen-script"
   | "approve-research"
   | "request-research-changes"
   | "approve-script"
@@ -408,6 +409,199 @@ function Editor({
   );
 }
 
+type OwnerSlot = NonNullable<VersionOut["owner_slots"]>[number];
+const openSlots = (v: VersionOut): OwnerSlot[] => v.owner_slots ?? [];
+
+/** Put the owner's words into the [[OWNER: …]] places; empty boxes take the place out and keep its
+ * prompt as an optional suggestion (owner decision 2026-11-27: your own words are optional). */
+export function fillOwnerSlots(body: ScriptBody, slots: OwnerSlot[], words: string[]): ScriptBody {
+  const out = JSON.parse(JSON.stringify(body)) as ScriptBody;
+  const suggestions = [...(out.owner_slots ?? [])];
+  const tidy = (s: string) =>
+    s
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/ +([.,;:!?])/g, "$1")
+      .trim();
+  const last = Math.max(0, (out.sections ?? []).length - 1);
+  slots.forEach((slot, i) => {
+    const text = (words[i] ?? "").trim();
+    const replace = (s: string) => tidy(s.replace(slot.marker, text));
+    const [field, index] = slot.field.split(".");
+    if (field === "sections" && out.sections) {
+      const n = Number(index);
+      const section = out.sections[n];
+      if (section) out.sections[n] = { ...section, text: replace(section.text) };
+    } else if (field === "hook" && out.hook) out.hook = { ...out.hook, text: replace(out.hook.text ?? "") };
+    else if (field === "promise_delivery" && out.promise_delivery)
+      out.promise_delivery = { ...out.promise_delivery, text: replace(out.promise_delivery.text ?? "") };
+    else if (field === "payoff") out.payoff = replace(out.payoff ?? "");
+    else if (field === "cta") out.cta = replace(out.cta ?? "");
+    if (!text && !suggestions.some((s) => s.prompt === slot.prompt))
+      suggestions.push({ section_index: field === "sections" ? Number(index) : last, prompt: slot.prompt });
+  });
+  out.owner_slots = suggestions.slice(0, 10);
+  return out;
+}
+
+/** The [[OWNER: …]] places of this version: write your words, or remove them (both optional). */
+function OwnerParts({
+  projectId,
+  version,
+  onSaved,
+}: {
+  projectId: string;
+  version: VersionOut;
+  onSaved: (n: number) => void;
+}) {
+  const toast = useToast();
+  const qc = useQueryClient();
+  const slots = openSlots(version);
+  const [words, setWords] = useState<string[]>(() => slots.map(() => ""));
+  const count = slots.length;
+  useEffect(() => setWords(Array.from({ length: count }, () => "")), [version.id, count]);
+  const options = version.part_options ?? {};
+  // Markers whose suggestions are being written: poll the version until they arrive (max ~2 min).
+  const [waiting, setWaiting] = useState<string[]>([]);
+  const pending = waiting.filter((m) => !options[m]);
+  useEffect(() => {
+    if (pending.length === 0) return;
+    let tries = 0;
+    const timer = window.setInterval(() => {
+      tries += 1;
+      void qc.invalidateQueries({ queryKey: ["version", projectId, version.version] });
+      if (tries > 60) {
+        window.clearInterval(timer);
+        setWaiting([]);
+        toast(t("scriptPage.parts.slow"), "danger");
+      }
+    }, 2000);
+    return () => window.clearInterval(timer);
+  }, [pending.length, qc, projectId, version.version, toast]);
+  const suggest = async (marker: string) => {
+    try {
+      await call(() =>
+        api.POST("/api/v1/projects/{project_id}/script/versions/{number}/part-options", {
+          params: { path: { project_id: projectId, number: version.version } },
+          headers: { "Idempotency-Key": idempotencyKey() },
+          body: { marker },
+        }),
+      );
+      setWaiting((w) => [...w, marker]);
+      void qc.invalidateQueries({ queryKey: ["version", projectId, version.version] });
+    } catch (e) {
+      toast(problemText(e), "danger");
+    }
+  };
+  const blanksLeft = words.some((w) => w.includes("___"));
+  const save = async (useWords: boolean) => {
+    const body = fillOwnerSlots(version.body as ScriptBody, slots, useWords ? words : []);
+    try {
+      const out = await call(() =>
+        api.POST("/api/v1/projects/{project_id}/script/versions", {
+          params: { path: { project_id: projectId } },
+          headers: { "Idempotency-Key": idempotencyKey() },
+          body: { body: body as Record<string, unknown>, based_on_version: version.version },
+        }),
+      );
+      toast(t("scriptPage.parts.saved", { v: out.version }));
+      onSaved(out.version);
+    } catch (e) {
+      toast(problemText(e), "danger");
+    }
+  };
+  const sections = (version.body as ScriptBody).sections ?? [];
+  const place = (s: OwnerSlot) => {
+    const [field, index] = s.field.split(".");
+    return field === "sections"
+      ? `${String(Number(index) + 1)}. ${sections[Number(index)]?.heading ?? ""}`
+      : t(`scriptPage.parts.field.${field ?? "cta"}`);
+  };
+  return (
+    <div className="space-y-3 rounded-lg border border-warn-text bg-warn-soft p-3" data-testid="owner-parts">
+      <p className="text-sm font-semibold">{t("scriptPage.parts.title", { n: slots.length })}</p>
+      <p className="text-xs">{t("scriptPage.parts.hint")}</p>
+      {slots.map((s, i) => (
+        <div key={`${s.field}-${s.marker}`}>
+          <label htmlFor={`part-${String(i)}`} className="block text-sm font-medium">
+            {place(s)}: {s.prompt}
+          </label>
+          <textarea
+            id={`part-${String(i)}`}
+            rows={2}
+            className={inputCls}
+            value={words[i] ?? ""}
+            placeholder={t("scriptPage.parts.placeholder")}
+            onChange={(e) => setWords((w) => w.map((x, j) => (j === i ? e.target.value : x)))}
+          />
+          {options[s.marker] ? (
+            <fieldset className="mt-2" data-testid={`part-options-${String(i)}`}>
+              <legend className="text-xs font-medium">{t("scriptPage.parts.pick")}</legend>
+              <ul className="mt-1 space-y-1">
+                {(options[s.marker] ?? []).map((o) => (
+                  <li key={o.kind}>
+                    <label className="flex items-start gap-2 rounded-md bg-surface px-2 py-1.5 text-sm">
+                      <input
+                        type="radio"
+                        name={`part-option-${String(i)}`}
+                        checked={words[i] === o.text}
+                        onChange={() => setWords((w) => w.map((x, j) => (j === i ? o.text : x)))}
+                      />
+                      <span>
+                        <Badge tone="info">{t(`scriptPage.parts.kind.${o.kind}`)}</Badge> {o.text}
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </fieldset>
+          ) : (
+            <span className="mt-1 flex flex-wrap items-center gap-2">
+              <Button disabled={pending.includes(s.marker)} onClick={() => void suggest(s.marker)}>
+                {pending.includes(s.marker) ? t("scriptPage.parts.writing") : t("scriptPage.parts.suggest")}
+              </Button>
+              <span className="text-xs text-muted">{t("scriptPage.parts.suggestHint")}</span>
+            </span>
+          )}
+        </div>
+      ))}
+      {blanksLeft && (
+        <p className="text-xs font-medium text-warn-text" data-testid="blanks-left">
+          {t("scriptPage.parts.blanks")}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="primary"
+          disabled={!words.some((w) => w.trim()) || blanksLeft}
+          onClick={() => void save(true)}
+        >
+          {t("scriptPage.parts.put")}
+        </Button>
+        <Button onClick={() => void save(false)}>{t("scriptPage.parts.remove")}</Button>
+      </div>
+    </div>
+  );
+}
+
+/** Optional suggestions where your own experience would make the video more personal. */
+function Suggestions({ version }: { version: VersionOut }) {
+  const body = version.body as ScriptBody;
+  const list = body.owner_slots ?? [];
+  if (list.length === 0 || openSlots(version).length > 0) return null;
+  return (
+    <div className="rounded-lg bg-surface-2 p-3 text-sm" data-testid="owner-suggestions">
+      <p className="font-medium">{t("scriptPage.parts.suggestTitle")}</p>
+      <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs">
+        {list.map((s) => (
+          <li key={`${String(s.section_index)}-${s.prompt}`}>
+            {`${String(s.section_index + 1)}. ${body.sections?.[s.section_index]?.heading ?? ""}`}: {s.prompt}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function ValueAdd({ projectId }: { projectId: string }) {
   const toast = useToast();
   const qc = useQueryClient();
@@ -756,6 +950,27 @@ export function ScriptStudioPage() {
                       {t("scriptPage.allChecksPass")}
                     </p>
                   )}
+                  {p.state === "STORYBOARDING" && openSlots(version.data).length > 0 && (
+                    <p
+                      className="rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn-text"
+                      data-testid="reopen-hint"
+                    >
+                      {t("scriptPage.parts.reopen", { n: openSlots(version.data).length })}
+                    </p>
+                  )}
+                  {(p.state === "SCRIPT_REVIEW" || p.state === "SCRIPTING") &&
+                    shown === latest &&
+                    openSlots(version.data).length > 0 && (
+                      <OwnerParts
+                        projectId={id}
+                        version={version.data}
+                        onSaved={(n) => {
+                          setSelected(n);
+                          refresh();
+                        }}
+                      />
+                    )}
+                  <Suggestions version={version.data} />
                   {(p.state === "SCRIPT_REVIEW" || p.state === "SCRIPTING") && shown === latest ? (
                     <Editor
                       projectId={id}
