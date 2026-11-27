@@ -69,7 +69,7 @@ DEFAULT_DURATION_S = {"LONG": 480, "SHORT": 45}
 EDITABLE_STATES = {"IDEA", "RESEARCHING", "RESEARCH_REVIEW", "SCRIPTING", "SCRIPT_REVIEW"}
 SCRIPT_EDIT_STATES = {"SCRIPTING", "SCRIPT_REVIEW"}
 Command = Literal[
-    "start", "retry-research", "retry-script", "approve-research", "request-research-changes", "approve-script", "request-script-changes",
+    "start", "retry-research", "retry-script", "reopen-script", "approve-research", "request-research-changes", "approve-script", "request-script-changes",
     "approve-cut", "request-cut-changes", "retry", "pause", "resume", "cancel", "choose-fix-path",
 ]  # fmt: skip
 LATER = {"approve-cut", "request-cut-changes", "choose-fix-path"}
@@ -80,6 +80,7 @@ COMMANDS_BY_STATE: dict[str, list[str]] = {
     "RESEARCH_REVIEW": ["approve-research", "request-research-changes", "pause", "cancel"],
     "SCRIPTING": ["retry-script", "pause", "cancel"],
     "SCRIPT_REVIEW": ["approve-script", "request-script-changes", "pause", "cancel"],
+    "STORYBOARDING": ["reopen-script", "pause", "cancel"],
     "PAUSED": ["resume", "cancel"],
     "FAILED": ["retry", "cancel"],
 }
@@ -225,11 +226,34 @@ class VersionSummaryOut(BaseModel):
     created_at: datetime
 
 
+class OwnerSlotOut(BaseModel):
+    field: str = Field(description="hook, promise_delivery, sections.N, payoff or cta")
+    marker: str = Field(description="The exact [[OWNER: …]] text to replace.")
+    prompt: str = Field(description="What TubeForge asks you to tell, in your own words.")
+
+
+class PartOptionOut(BaseModel):
+    kind: Literal["FILL_IN", "QUESTION", "NEUTRAL"] = Field(
+        description="FILL_IN: your sentence with ___ blanks · QUESTION: to viewers · NEUTRAL: from the brief"
+    )
+    text: str
+
+
+class PartOptionsIn(BaseModel):
+    marker: Annotated[str, Field(min_length=10, max_length=320, pattern=r"^\[\[OWNER:")]
+
+
 class VersionOut(VersionSummaryOut):
     body: dict[str, Any]
     plain_text: str
     findings: list[FindingOut]
     hook_s: float
+    owner_slots: list[OwnerSlotOut] = Field(
+        default_factory=list, description="[[OWNER: …]] places still waiting for your own words."
+    )
+    part_options: dict[str, list[PartOptionOut]] = Field(
+        default_factory=dict, description="Suggestions per [[OWNER: …]] marker (A11, on request)."
+    )
 
 
 class ScriptVersionIn(BaseModel):
@@ -336,6 +360,7 @@ def _script_facts(db: Session, project: VideoProject, version: ScriptVersion) ->
         "contradicted_claims": _contradicted(db, version.id),
         "value_add_fields": len(_value_fields(db, project.id)),
         "estimated_duration_s": version.est_duration_s,
+        "open_owner_slots": len(scripts.open_owner_slots(version.body)),
     }
 
 
@@ -435,6 +460,12 @@ def _version_out(db: Session, project: VideoProject, v: ScriptVersion) -> Versio
             for f in _findings(project, body, db)
         ],
         hook_s=craft.seconds(craft.words(hook)),
+        owner_slots=[OwnerSlotOut(**slot) for slot in scripts.open_owner_slots(body)],
+        part_options={
+            marker: [PartOptionOut(**o) for o in options]
+            for marker, options in (v.body.get("_part_options") or {}).items()
+            if marker in {slot["marker"] for slot in scripts.open_owner_slots(body)}
+        },
     )
 
 
@@ -638,6 +669,8 @@ def project_command(
             )
         event = "approve_script"
         payload.update(_script_facts(db, project, version))
+    elif cmd == "reopen-script":
+        event = "reopen_script"
     elif cmd == "request-script-changes":
         event, instruction = "request_changes", (body.note or "")
     else:
@@ -660,6 +693,8 @@ def project_command(
     if version is not None:
         version.locked = True
         project.locked_script_version_id = version.id
+    if cmd == "reopen-script":
+        project.locked_script_version_id = None  # back to review: the next approval locks a version again
     db.flush()
     db.refresh(project)
     jobs: list[int] = []
@@ -905,6 +940,42 @@ def save_version(project_id: uuid.UUID, body: ScriptVersionIn, request: Request,
     _audit(request, db, p, "script.version_saved", project, version=version.version)
     out = _version_out(db, project, version)
     idem.store(201, out.model_dump(mode="json"))
+    db.commit()
+    return out
+
+
+@router.post(
+    "/projects/{project_id}/script/versions/{number}/part-options",
+    response_model=QueuedOut,
+    status_code=202,
+    responses=WRITE,
+)
+def part_options(
+    project_id: uuid.UUID, number: int, body: PartOptionsIn, request: Request, db: Db, p: Edit
+) -> Any:
+    """Ask A11 for 3 suggestions for one [[OWNER: …]] part of this version (owner request 2026-11-27):
+    a fill-in with ___ blanks for your real details, a question to viewers, a neutral line from the
+    brief. They appear on the version; you pick, edit and decide."""
+    idem = Idempotency(db, request, p.user.id, {"number": number, **body.model_dump()})
+    if (replayed := idem.replay()) is not None:
+        return replayed
+    project = _project(db, project_id)
+    if project.state not in SCRIPT_EDIT_STATES:
+        raise ProblemError(
+            409, "NOT_EDITABLE", "Not now", "Suggestions are for a script in writing or in review."
+        )
+    version = _version(db, project_id, number)
+    if body.marker not in {s["marker"] for s in scripts.open_owner_slots(version.body)}:
+        raise ProblemError(409, "NOT_EDITABLE", "Already filled", "That part is not empty in this version.")
+    job = defer_in_transaction(
+        db,
+        "content.part_options",
+        queue="agents",
+        args={"version_id": str(version.id), "marker": body.marker},
+    )
+    _audit(request, db, p, "script.part_options_requested", project, version=number)
+    out = QueuedOut(job_id=job)
+    idem.store(202, out.model_dump(mode="json"))
     db.commit()
     return out
 

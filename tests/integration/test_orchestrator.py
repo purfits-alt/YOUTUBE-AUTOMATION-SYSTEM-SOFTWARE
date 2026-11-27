@@ -424,6 +424,7 @@ GOOD: dict[str, Fix] = {
     "script_locked": _pay(script_version_locked=True),
     "no_contradicted_claims": _pay(contradicted_claims=0),
     "owner_value_add": _pay(value_add_fields=2),
+    "owner_slots_filled": _pay(open_owner_slots=0),
     "duration_fits_format": _pay(estimated_duration_s=420),
     "scenes_have_rights_cleared_visuals": _pay(scenes_without_visual=0),
     "narration_complete": _pay(scenes_without_narration=0),
@@ -495,7 +496,9 @@ BAD: dict[str, Fix] = {
     "script_and_fact_check_done": _pay(script_done=False),
     "script_locked": _pay(script_version_locked=False),
     "no_contradicted_claims": _pay(contradicted_claims=2),
-    "owner_value_add": _pay(value_add_fields=0),
+    # Optional by default (owner decision 2026-11-27); refused only when the owner sets a minimum.
+    "owner_value_add": lambda c: (_setting(min_value_add_fields=1)(c), _pay(value_add_fields=0)(c)),
+    "owner_slots_filled": _pay(open_owner_slots=2),
     "duration_fits_format": lambda c: (
         c.payload.update(estimated_duration_s=400),
         setattr(c.entity, "format", "SHORT"),

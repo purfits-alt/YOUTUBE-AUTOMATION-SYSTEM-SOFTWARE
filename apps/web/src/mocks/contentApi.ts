@@ -518,6 +518,31 @@ function initial(): ContentState {
 }
 
 /** The list form of a script version (no body, text or findings). */
+/** Mirror of tubeforge.content.scripts.open_owner_slots: [[OWNER: …]] places still empty. */
+export function openOwnerSlots(body: Record<string, unknown>) {
+  const b = body as {
+    hook?: { text?: string };
+    promise_delivery?: { text?: string };
+    sections?: { text?: string }[];
+    payoff?: string;
+    cta?: string;
+  };
+  const fields: [string, string][] = [
+    ["hook", b.hook?.text ?? ""],
+    ["promise_delivery", b.promise_delivery?.text ?? ""],
+    ...(b.sections ?? []).map((s, i): [string, string] => [`sections.${String(i)}`, s.text ?? ""]),
+    ["payoff", b.payoff ?? ""],
+    ["cta", b.cta ?? ""],
+  ];
+  return fields.flatMap(([field, text]) =>
+    [...text.matchAll(/\[\[OWNER:[^\]]*\]\]/g)].map((m) => ({
+      field,
+      marker: m[0],
+      prompt: m[0].slice("[[OWNER:".length, -2).trim(),
+    })),
+  );
+}
+
 export function versionSummary(v: VersionOut): VersionSummaryOut {
   return {
     id: v.id,
@@ -748,9 +773,38 @@ export const contentHandlers: HttpHandler[] = [
   http.get("/api/v1/projects/:id/script/versions", () =>
     HttpResponse.json([...content.versions].sort((a, b) => b.version - a.version).map(versionSummary)),
   ),
-  http.get("/api/v1/projects/:id/script/versions/:n", ({ params }) =>
-    HttpResponse.json(content.versions.find((v) => v.version === Number(params.n))),
-  ),
+  http.get("/api/v1/projects/:id/script/versions/:n", ({ params }) => {
+    const v = content.versions.find((x) => x.version === Number(params.n));
+    if (!v) return HttpResponse.json(v);
+    const { _part_options: stored, ...body } = v.body as Record<string, unknown> & {
+      _part_options?: Record<string, { kind: string; text: string }[]>;
+    };
+    const open = openOwnerSlots(body);
+    const part_options = Object.fromEntries(
+      Object.entries(stored ?? {}).filter(([m]) => open.some((o) => o.marker === m)),
+    );
+    return HttpResponse.json({ ...v, body, owner_slots: open, part_options });
+  }),
+  // Suggestions for one owner part: written at once here (the worker's A11 run in the real app).
+  http.post("/api/v1/projects/:id/script/versions/:n/part-options", async ({ params, request }) => {
+    const { marker } = (await request.json()) as { marker: string };
+    const v = content.versions.find((x) => x.version === Number(params.n));
+    if (!v || !openOwnerSlots(v.body).some((o) => o.marker === marker))
+      return problem(409, "NOT_EDITABLE", "That part is not empty in this version.");
+    const body = v.body as Record<string, unknown> & { _part_options?: Record<string, unknown> };
+    v.body = {
+      ...body,
+      _part_options: {
+        ...(body._part_options ?? {}),
+        [marker]: [
+          { kind: "FILL_IN", text: "I kept ___ because ___." },
+          { kind: "QUESTION", text: "Which app would you keep?" },
+          { kind: "NEUTRAL", text: "The app you keep is usually the one you open every day." },
+        ],
+      },
+    };
+    return HttpResponse.json({ job_id: 9, transition_id: null, status: "QUEUED" }, { status: 202 });
+  }),
   http.post("/api/v1/projects/:id/script/versions", async ({ request }) => {
     const { body, based_on_version } = (await request.json()) as {
       body: Record<string, unknown>;
@@ -769,7 +823,7 @@ export const contentHandlers: HttpHandler[] = [
       body,
     };
     content.versions = [...content.versions, created];
-    return HttpResponse.json(created, { status: 201 });
+    return HttpResponse.json({ ...created, owner_slots: openOwnerSlots(body) }, { status: 201 });
   }),
   http.get("/api/v1/projects/:id/script/diff", ({ request }) => {
     const q = new URL(request.url).searchParams;

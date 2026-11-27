@@ -241,8 +241,54 @@ class ScriptwritingAgent(AgentTask):
         )
 
 
+# --------------------------------------------------------------------- A11 · owner-part options
+class OwnerPartInput(BaseModel):
+    language: Language = "en"
+    title: str = Field(max_length=200)
+    prompt: str = Field(max_length=300)  # what the [[OWNER: …]] place asks for
+    before: str = Field(default="", max_length=1500)  # the script text just before the place
+    after: str = Field(default="", max_length=1500)  # and just after it
+    claims: list[BriefClaim] = Field(default_factory=list, max_length=20)
+
+
+class OwnerPartAgent(AgentTask):
+    """A11's second job (owner request 2026-11-27): 3 options for one owner part — a fill-in with
+    blanks for the owner's real details, a question to viewers, a neutral line from the brief. It never
+    writes an experience as the owner's own; the pipeline checks that again in code."""
+
+    code: ClassVar[str] = "A11_SCRIPTWRITING"
+    prompt_name: ClassVar[str | None] = "A11_OWNER_PARTS"
+    prompt_version: ClassVar[str | None] = "v1.0"
+    task_type: ClassVar[str] = "script_draft"
+    temperature: ClassVar[float] = 0.7
+    max_output_tokens: ClassVar[int] = 1200
+    input_model: ClassVar[type[BaseModel]] = OwnerPartInput
+
+    def context(self, data: BaseModel, channel: Channel | None) -> dict[str, Any]:
+        assert isinstance(data, OwnerPartInput)
+        return {"channel_name": channel.name if channel else "", "language": data.language, "format": "LONG"}
+
+    def user_message(self, data: BaseModel) -> str:
+        assert isinstance(data, OwnerPartInput)
+        return render_user(
+            "Video title: {{ title | untrusted('title') }}\n"
+            "The owner part asks for: {{ prompt | untrusted('owner_part_prompt') }}\n"
+            "Script text just before the place: {{ before | untrusted('text_before') }}\n"
+            "Script text just after the place: {{ after | untrusted('text_after') }}\n"
+            "Brief claims (the only facts you may use): {{ claims | untrusted('brief_claims') }}",
+            {
+                "title": data.title,
+                "prompt": data.prompt,
+                "before": data.before or "(start of the part)",
+                "after": data.after or "(end of the part)",
+                "claims": json.dumps([c.model_dump() for c in data.claims], ensure_ascii=False),
+            },
+        )
+
+
 A08 = IdeaGenerationAgent()
 A09 = ResearchAgent()
 A10 = FactCheckingAgent()
 A11 = ScriptwritingAgent()
+A11_PARTS = OwnerPartAgent()
 CONTENT_AGENTS: dict[str, AgentTask] = {a.code: a for a in (A08, A09, A10, A11)}

@@ -69,6 +69,10 @@ class AgentTask(ABC):
     temperature: ClassVar[float] = 0.2
     max_output_tokens: ClassVar[int] = 1024
     input_model: ClassVar[type[BaseModel]]
+    #: A second job of the same agent (its settings, chain and daily limits) with its own prompt and
+    #: schema in ``prompts/<prompt_name>/<prompt_version>.md`` (e.g. A11's owner-part suggestions).
+    prompt_name: ClassVar[str | None] = None
+    prompt_version: ClassVar[str | None] = None
 
     @abstractmethod
     def user_message(self, data: BaseModel) -> str:
@@ -136,7 +140,9 @@ def run_agent(
     cfg = db.get_one(AgentConfiguration, task.code)
     parsed = task.input_model.model_validate(data)
     clean = parsed.model_dump(mode="json")
-    digest = input_hash(task.code, clean, cfg.prompt_version)
+    prompt_key = task.prompt_name or task.code
+    version = task.prompt_version or cfg.prompt_version
+    digest = input_hash(prompt_key, clean, version)
     if idempotent:
         done = db.scalar(
             select(AgentRun)
@@ -202,7 +208,9 @@ def run_agent(
     db.commit()
 
     channel = db.get(Channel, channel_id) if channel_id else None
-    system = render_system(task.code, cfg.name, cfg.prompt_version, task.context(parsed, channel))
+    system = render_system(
+        task.code, cfg.name, version, task.context(parsed, channel), prompt_name=prompt_key
+    )
     started = time.monotonic()
     try:
         result = gateway.text(
@@ -210,11 +218,11 @@ def run_agent(
             task=task.task_type,
             messages=[Message("user", task.user_message(parsed))],
             system=system,
-            schema=output_schema(task.code),
+            schema=output_schema(prompt_key),
             channel_id=channel_id,
             agent_run_id=run.id,
             agent_code=task.code,
-            prompt_version=cfg.prompt_version,
+            prompt_version=version,
             max_output_tokens=task.max_output_tokens,
             temperature=task.temperature,
             chain=cfg.provider_chain or None,

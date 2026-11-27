@@ -31,6 +31,7 @@ from tubeforge.db.models import (
     Notification,
     OwnerValueAdd,
     ResearchBrief,
+    Script,
     ScriptVersion,
     TrendItem,
     VideoIdea,
@@ -537,3 +538,60 @@ def test_research_searches_the_subjects_of_the_idea_and_a09_v11_does_not_refuse_
     assert (
         "(A09_RESEARCH v1.1)" in system and "A missing link between parts is not a reason to refuse" in system
     )
+
+
+def test_three_suggestions_for_an_owner_part_never_speak_as_the_owner(
+    db: Session, env: Env, gw: Gateway, model: ScriptedModel
+) -> None:
+    """Owner request 2026-11-27: 3 AI options per owner part to pick from. A11 must not invent the
+    owner's experience: only the fill-in may say "I", and then with ___ blanks."""
+    project = approved_project(db, env)
+    script = Script(id=uuid7(), project_id=project.id, channel_id=project.channel_id)
+    db.add(script)
+    db.flush()
+    body = fx.long_script()
+    marker = "[[OWNER: your biggest surprise in your own log]]"
+    assert marker in json.dumps(body)
+    version = ScriptVersion(
+        id=uuid7(), script_id=script.id, version=1, author_type="AGENT", author_id="A11_SCRIPTWRITING",
+        body=body, plain_text="x", word_count=1, est_duration_s=1, content_sha256="0" * 64,
+    )  # fmt: skip
+    db.add(version)
+    db.commit()
+
+    def reply(_req: TextRequest, _ids: list[str]) -> dict[str, Any]:
+        return {"options": [
+            {"kind": "FILL_IN", "text": "When I looked back at my log after ___ days, the surprise was ___."},
+            {"kind": "QUESTION", "text": "Did my notebook trick work for you too?"},  # speaks as the owner
+            {"kind": "NEUTRAL", "text": "Small, repeated costs are often the ones a spending log reveals."},
+        ]}  # fmt: skip
+
+    model.replies["A11_SCRIPTWRITING"] = reply
+    options = pipe.owner_part_options(db, gw, version.id, marker, now=NOW)
+    db.commit()
+    assert [o["kind"] for o in options] == ["FILL_IN", "NEUTRAL"]  # the first-person question is dropped
+    db.refresh(version)
+    assert version.body["_part_options"][marker] == options
+    system, user = model.systems("A11_SCRIPTWRITING")[0], model.users("A11_SCRIPTWRITING")[0]
+    assert "(A11_SCRIPTWRITING v1.0)" in system and "You do not know the owner's life" in system
+    assert 'id="owner_part_prompt">your biggest surprise in your own log</untrusted_source>' in user
+    with pytest.raises(PipelineError, match="already filled"):
+        pipe.owner_part_options(db, gw, version.id, "[[OWNER: not in this script]]", now=NOW)
+
+
+@pytest.mark.parametrize(
+    ("kind", "text", "ok"),
+    [
+        ("FILL_IN", "After I stopped eating at ___, I slept ___.", True),
+        ("FILL_IN", "After I stopped eating at 7 pm, I slept better.", False),  # no blanks: invented
+        ("QUESTION", "What time do you usually finish dinner?", True),
+        ("QUESTION", "What time do you usually finish dinner.", False),
+        ("QUESTION", "Have you tried my routine?", False),
+        ("NEUTRAL", "Many people notice digestion takes a few hours.", True),
+        ("NEUTRAL", "I noticed digestion takes a few hours.", False),
+        ("NEUTRAL", "This trick is guaranteed to fix your sleep.", False),
+        ("STORY", "Anything.", False),
+    ],
+)
+def test_part_option_rules(kind: str, text: str, ok: bool) -> None:
+    assert (pipe.check_part_option(kind, text) is None) is ok

@@ -293,6 +293,7 @@ def _content_failed(db: Session, kind: str, subject_id: str, link: str, exc: Any
         "ideas": "New ideas could not be generated",
         "research": "The research brief could not be made",
         "script": "The script draft could not be made",
+        "parts": "Suggestions for your part could not be made",
     }
     notify_owners(
         db,
@@ -386,6 +387,21 @@ def content_fact_check(version_id: str) -> str:
             return _content_failed(db, "script", version_id, "/projects", exc)
     log.info("content.fact_check", version_id=version_id, claims=found)
     return f"{found} claims"
+
+
+def content_part_options(version_id: str, marker: str) -> str:
+    """content.part_options: A11's 3 suggestions for one [[OWNER: …]] part (owner request 2026-11-27)."""
+    from tubeforge_agents.content import owner_part_options
+    from tubeforge_agents.discovery import PipelineError
+
+    with _tracked("content.part_options", version_id=version_id), _research() as (db, gateway, _fetcher):
+        try:
+            options = owner_part_options(db, gateway, uuid.UUID(version_id), marker)
+        except PipelineError as exc:
+            return _content_failed(db, "parts", version_id, "/projects", exc)
+        db.commit()
+    log.info("content.part_options", version_id=version_id, options=len(options))
+    return f"{len(options)} options"
 
 
 def upload(upload_job_id: str) -> str:

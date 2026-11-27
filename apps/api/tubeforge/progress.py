@@ -32,6 +32,7 @@ TRACKED: dict[str, str] = {
     "content.research": "Research",
     "content.script": "Script writing",
     "content.fact_check": "Fact check",
+    "content.part_options": "Suggestions for your part",
     "content.ideas": "New ideas",
     "research.discover": "Niche discovery",
     "research.blueprint": "Channel blueprint",

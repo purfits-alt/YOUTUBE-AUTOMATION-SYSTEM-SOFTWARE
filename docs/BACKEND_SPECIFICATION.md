@@ -253,6 +253,12 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 | POST | `/projects/{id}/script/versions` 🔁 | ScriptVersionIn (owner edit → new version) | `content.edit` |
 | POST | `/projects/{id}/script/regenerate` 🔁⚙ | `{section?, instruction}` | `content.edit` |
 
+*Owner parts (ADR-0032):*
+- `VersionOut.owner_slots` lists the empty `[[OWNER: …]]` places (`field`, `marker`, `prompt`).
+- `VersionOut.part_options` gives A11's suggestions per marker.
+- `POST /projects/{id}/script/versions/{n}/part-options {marker}` 🔁⚙ queues `content.part_options` (202). 409 `NOT_EDITABLE` when the part is not empty or the script is not editable.
+- The guard `owner_slots_filled` blocks `approve-script` while a raw marker remains. `owner_value_add` is optional by default.
+
 *Pipeline (owner request 2026-11-18, ADR-0031, `api/v1/pipeline.py`):*
 - `GET /pipeline?channel_id=` (content.view) returns `PipelineOut`:
   - `channels`: one `ChannelCardOut` per channel (`state`, `private_only`, `videos`, `working`, `queued`, `your_turn`, `attention`, `next_phase`, `published`, `paused`), always over every channel; `channel_id` echoes the filter, and the stations, projects and jobs below are for that channel (owner request 2026-11-27);
@@ -269,6 +275,7 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 - **Commands.**
   - `start` (the orchestrator moves IDEA → RESEARCHING) queues `content.research`.
   - `retry-research {note?}` (RESEARCHING only, no state change) queues research again. The note is up to 5 comma-separated extra search words, used first. It is for when the brief could not be made: too few sources, or A09 refused.
+  - `reopen-script` (STORYBOARDING only; owner) brings an approved script back to SCRIPT_REVIEW and clears the lock (ADR-0032).
   - `retry-script {note?}` (SCRIPTING only, no state change; owner request 2026-11-18) queues the script again, with the note as the owner's instruction for the draft. It is for when the draft could not be made or the job stopped.
   - `approve-research` reads the latest SUBMITTED brief's claims for the guard (a contradicted claim needs a claim override). The brief becomes APPROVED and `content.script` is queued.
   - `request-research-changes` rejects the brief and re-queues research.

@@ -92,7 +92,8 @@ stateDiagram-v2
     RESEARCH_REVIEW --> SCRIPTING : OWNER approves
     SCRIPTING --> SCRIPT_REVIEW : AGENT scriptwriting + AGENT fact_check done
     SCRIPT_REVIEW --> SCRIPTING : OWNER requests changes
-    SCRIPT_REVIEW --> STORYBOARDING : OWNER approves [S] (value-add fields checked)
+    SCRIPT_REVIEW --> STORYBOARDING : OWNER approves [S] (no empty [[OWNER]] parts; value-add optional, ADR-0032)
+    STORYBOARDING --> SCRIPT_REVIEW : OWNER reopens the script (ADR-0032)
     STORYBOARDING --> ASSET_GENERATION : AGENT storyboard done (OWNER review optional)
     ASSET_GENERATION --> VOICEOVER : all scenes have rights-cleared visuals
     VOICEOVER --> ASSEMBLY : narration complete (owner rec / owner clone / TTS)
@@ -131,7 +132,8 @@ Universal: any non-terminal state → `PAUSED` | `CANCELLED` | `FAILED`.
 | Transition | Guard (all must hold) | Responsible |
 |---|---|---|
 | RESEARCH_REVIEW → SCRIPTING | Research brief valid. Every claim has ≥ 1 source. No `contradicted` claim without owner override. | OWNER |
-| SCRIPT_REVIEW → STORYBOARDING | Script version locked. Fact-check: 0 `contradicted` (or override). **Owner value-add** record exists (≥ 1 field filled; configurable minimum). Estimated duration fits the format (SHORT ≤ 180 s). | OWNER [S] |
+| SCRIPT_REVIEW → STORYBOARDING | Script version locked. Fact-check: 0 `contradicted` (or override). **Owner value-add** fields: optional by default (`min_value_add_fields` = 0; the owner may set a minimum, ADR-0032). **No empty `[[OWNER: …]]` part** left in the spoken text (`owner_slots_filled`, ADR-0032). Estimated duration fits the format (SHORT ≤ 180 s). | OWNER [S] |
+| STORYBOARDING → SCRIPT_REVIEW | Owner reopens the approved script (`reopen-script`); the lock is cleared and the next approval locks a version again (ADR-0032). | OWNER |
 | ASSET_GENERATION → VOICEOVER | Every scene has ≥ 1 visual asset with a valid **rights record**. No asset with an editorial-only or non-commercial licence on a monetised channel. Stock purchases (if any) confirmed individually by the owner within budget. | ORCH |
 | VOICEOVER → ASSEMBLY | Every scene has narration audio. If `voice_source = owner_clone`, a valid consent record exists for the voice profile. TTS voices have commercial-OK licences. | ORCH |
 | ROUGH_CUT_REVIEW → RENDERING | Owner approved the specific timeline version hash. | OWNER |

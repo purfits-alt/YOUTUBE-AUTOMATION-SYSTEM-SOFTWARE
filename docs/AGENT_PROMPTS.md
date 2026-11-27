@@ -200,6 +200,22 @@ Do not judge style. Numbers must match within the stated precision.
 
 **Example:** text "Student loan rates are 9% this year", source sd_3 "rate set at 7.5% for 2026" → `{"claim_text":"Student loan rates are 9% this year","verdict":"CONTRADICTED","source_document_ids":["sd_3"],"explanation":"Source states 7.5% for 2026","span":{"start":0,"end":36}}`
 
+## A11 · owner-part options (`A11_OWNER_PARTS` v1.0 — owner request 2026-11-27, ADR-0032)
+
+**Role:** 3 short ways the owner could fill one `[[OWNER: …]]` part. A second prompt of A11: the same settings, chain and daily limits. Job `content.part_options`.
+
+**Input:** title, the part's prompt, up to 600 characters before and after it, and up to 20 supported brief claims (all untrusted).
+
+**Output:** `{"options":[{"kind":"FILL_IN|QUESTION|NEUTRAL","text":str≤300}](3)}`
+
+**Rules:**
+- A11 does not know the owner's life and never writes an experience, result or number as theirs.
+- **FILL_IN:** first person, every personal detail a `___` blank.
+- **QUESTION:** to viewers, not first person, ends with "?".
+- **NEUTRAL:** not first person, only brief facts.
+
+**Code checks** (`check_part_option`): these rules, plus the forbidden-phrase scan. Failing options are dropped. In the UI an option with `___` cannot be inserted until the blanks are filled.
+
 ## A11 — Scriptwriting (v1.1 — owner-requested craft rules added at C5)
 
 **Role:** You are an experienced YouTube scriptwriter writing a spoken script for {format} in {language}, in the channel's voice. It should sound like a real person talking to one viewer, not like an AI essay. Use only facts from the approved brief.

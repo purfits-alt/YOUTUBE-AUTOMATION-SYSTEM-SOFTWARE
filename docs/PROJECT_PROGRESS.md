@@ -1043,6 +1043,27 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
   - *Owner part:* record voice samples and consent; optional free Pexels/Pixabay keys.
 - **Free-tier check:** introduces no paid dependency ✔. Kokoro is Apache-2.0, OpenVoice and Chatterbox are MIT, and Piper voices are checked per licence. Paid stock stays disabled, with budget 0.
 
+**Owner report and decisions (2026-11-27): script finalisation before step B (ADR-0032).**
+- **Report:** the approved PurfitsWellnessHub script ("How Late Meals Impact Deep Sleep and Recovery") reached the Storyboard inbox with two `[[OWNER: Share your experience …]]` prompts still in its text. Approval checked the "Your own value" fields, not the prompts in the script. The voice-over would have read them aloud.
+- **Owner decisions:** your own value is **optional** (TubeForge never needs it). It stays available, with **3 Gemini suggestions** per part to pick from, plus the free-text box.
+- **Done:**
+  - **Approval:** a new guard, `owner_slots_filled`, refuses a script with a raw `[[OWNER: …]]`.
+  - **Drafts:** empty places are lifted out of the spoken text after each A11 draft and kept as optional suggestions (`scripts.lift_owner_slots`).
+  - **Value-add:** the "Your own value" minimum defaults to 0.
+  - **Reopen:** `reopen-script` (STORYBOARDING → SCRIPT_REVIEW).
+  - **Script Studio › Your parts (optional):** your words or a pick; **Put my words in** / **Remove my empty parts**; the suggestions list; the reopen notice.
+  - **A11 owner-part options** (`A11_OWNER_PARTS` v1.0, job `content.part_options`): Your sentence with `___` blanks / Ask viewers / General line from the brief. A11 never writes an experience as yours; code drops options that do, and blanks must be filled before inserting.
+  - **Framework:** an agent task may carry its own prompt and schema while using the agent's settings and limits (`prompt_name`, `prompt_version`).
+- **Tests:**
+  - Python: lifting (your script's sentences), approval refusal → fill → approve → reopen → approve, options pipeline (a first-person option dropped, untrusted wrapping), 9 rule cases, the part-options endpoint.
+  - Vitest: fill, remove, suggest and pick, blanks, reopen notice.
+- **Owner's part:**
+  1. Update.
+  2. Open the shared project (now in Storyboard) and press **Reopen the script**.
+  3. In **Your parts**, write your words, pick a suggestion (filling any `___`), or press **Remove my empty parts**.
+  4. Approve again.
+- Free-tier check: introduces no paid dependency ✔
+
 **Phase 8 step A done (2026-11-27): channel art, video watermark, asset store and library.**
 - **Assets:**
   - The content-addressed file store (`<data>/media/blobs/sha256/…`) and `tubeforge.assets`: every file gets a `media_assets` row and an `asset_rights` row in the same transaction.

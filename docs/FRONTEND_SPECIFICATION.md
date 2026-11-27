@@ -311,6 +311,13 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 
 **Implemented in Phase 7 step D:**
 - **Header:** state stepper; live gate checks (`ProjectOut.checks`); command buttons from `allowed_commands`.
+- **Your parts (optional, ADR-0032):** one box per empty `[[OWNER: …]]` place.
+  - Each place has the prompt, a free-text box, and **Suggest 3 options**, then a pick list (Your sentence / Ask viewers / General line).
+  - A pick fills the box and can be edited. **Put my words in** stays disabled while a `___` blank remains.
+  - **Put my words in** and **Remove my empty parts** each save a new version.
+  - **Suggestions** list the lifted prompts.
+  - In STORYBOARDING, a version with empty parts shows a notice and **Reopen the script**.
+  - "Your own value" is marked optional.
 - **Research:** the research brief with open questions; claims for the brief and the shown version, with verdict badges and source links. Contradicted and unsupported claims can be accepted with a reason.
 - **Script:**
   - a hook timer (10–15 s long form, ≤ 3 s Shorts) and a timeline with re-hook markers;

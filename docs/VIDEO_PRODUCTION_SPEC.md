@@ -55,7 +55,8 @@ An agent draft with ERROR findings gets one repair call. For owner edits the fin
 **Owner value-add score (0–100)** (`content/value_add.py`): it measures what the owner adds that AI cannot.
 - Points: own experience 25, own opinion 20, own data 20, own examples 15 (each text counts from 30 characters); own footage 12, own photos 8.
 - Voice is scored in the originality score, not here.
-- The SCRIPT_REVIEW → STORYBOARDING guard needs at least `min_value_add_fields` filled fields (default 1).
+- The SCRIPT_REVIEW → STORYBOARDING guard needs at least `min_value_add_fields` filled fields (default 0: optional, owner decision 2026-11-27, ADR-0032).
+- Empty `[[OWNER: …]]` places are lifted out of the spoken text after every A11 draft and kept as optional suggestions; a script with a raw `[[OWNER: …]]` cannot be approved (`owner_slots_filled`). The owner can ask A11 for 3 suggestions per part (fill-in with `___` blanks, a question to viewers, a neutral line from the brief), never written as the owner's own experience.
 
 ## 2. Render profiles (defaults; per project in `render_profile`)
 
