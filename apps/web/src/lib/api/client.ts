@@ -166,3 +166,7 @@ export type VersionOut = Schemas["VersionOut"];
 export type VersionSummaryOut = Schemas["VersionSummaryOut"];
 export type ValueAddOut = Schemas["ValueAddOut"];
 export type ValueAddIn = Schemas["ValueAddIn"];
+// Phase 8 step B
+export type StoryboardOut = Schemas["StoryboardOut"];
+export type SceneOut = Schemas["SceneOut"];
+export type TemplateOut = Schemas["TemplateOut"];

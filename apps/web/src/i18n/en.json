@@ -1587,5 +1587,97 @@
       "RENDER": "Render",
       "EXTERNAL_EDIT": "External editor"
     }
+  },
+  "storyboardPage": {
+    "summary": "Storyboard summary",
+    "version": "Version {n} · {who}",
+    "author": {
+      "AGENT": "made by TubeForge",
+      "OWNER": "your changes"
+    },
+    "scenes": "{n} scenes",
+    "duration": "{s} s of {target} s",
+    "hook": "Hook",
+    "interrupt": "Pattern interrupt",
+    "seconds": "{s} s",
+    "scene": "Scene {n}",
+    "narration": "Narration (your locked script)",
+    "visual": "What the viewer sees",
+    "onScreen": "Text on screen (up to 120 characters)",
+    "style": "Style",
+    "styles": {
+      "kinetic_text": "Moving text",
+      "motion_graphics": "Motion graphics",
+      "chart": "Chart",
+      "photo": "Photo",
+      "owner_footage": "Your own footage",
+      "screen_recording": "Screen recording"
+    },
+    "save": "Save as a new version",
+    "saved": "Saved as a new storyboard version.",
+    "hint": "Each scene speaks your locked script word for word. Change what each scene shows; to change the words, reopen the script from Script Studio while the project is at the storyboard.",
+    "locked": "The storyboard can be changed until video assembly starts.",
+    "afterScript": "The storyboard is made after you approve the script.",
+    "working": {
+      "storyboard": "TubeForge is cutting your script into scenes…",
+      "visuals": "TubeForge is drawing a picture for each scene…"
+    },
+    "retry": {
+      "storyboard": "Make the storyboard again",
+      "visuals": "Make the visuals again"
+    },
+    "done": {
+      "retry-storyboard": "The storyboard is being made again.",
+      "retry-visuals": "The visuals are being made again."
+    },
+    "toVisuals": "Open the Visual Studio",
+    "toScript": "Open the script"
+  },
+  "visualsPage": {
+    "hint": "Every picture is drawn by TubeForge from your brand colours and has a rights record, so it can go into the video. Numbers on charts come only from your approved research.",
+    "ready": "{n} of {total} scenes have a picture",
+    "alt": "Picture for scene {n}",
+    "noPicture": "No picture yet",
+    "none": "No template yet",
+    "note": "TubeForge changed the suggestion: {note}.",
+    "claims": "Numbers from research claims {ids}",
+    "stock": "Search ideas for your own photos later (nothing is bought): {terms}",
+    "rights": "Rights record ✓",
+    "change": "Change the picture",
+    "changeLabel": "Change the picture of scene {n}",
+    "template": "Template",
+    "later": "{label} (needs your own media — arrives later)",
+    "onePerLine": "One per line.",
+    "commaNumbers": "Numbers separated by commas.",
+    "draw": "Draw it",
+    "queued": "Scene {n} is being drawn again.",
+    "toStoryboard": "Open the storyboard",
+    "treatment": {
+      "TEMPLATE": "template",
+      "CHART": "chart",
+      "KINETIC_TEXT": "moving text",
+      "OWNER_MEDIA": "your media",
+      "STOCK_SUGGESTION": "stock idea"
+    },
+    "field": {
+      "text": "Text",
+      "title": "Title",
+      "subtitle": "Subtitle",
+      "items": "Points",
+      "quote": "Sentence",
+      "attribution": "Source",
+      "labels": "Labels",
+      "values": "Values",
+      "unit": "Unit",
+      "value": "Number",
+      "label": "Label",
+      "steps": "Steps",
+      "left_title": "Left title",
+      "left_items": "Left points",
+      "right_title": "Right title",
+      "right_items": "Right points",
+      "part": "Part",
+      "total": "Of"
+    }
   }
 }

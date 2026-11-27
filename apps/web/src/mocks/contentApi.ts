@@ -173,9 +173,12 @@ const STATIONS: StationRow[] = [
   ["analytics", "Analytics", "TUBEFORGE", 13, ["PUBLISHED", "ANALYZING", "ARCHIVED"]],
 ];
 
+/** Stations TubeForge can work today (per station since Phase 8 step B). */
+const BUILT = new Set(["research", "research_review", "script", "script_review", "storyboard", "visuals"]);
+
 function station(i: number, count = 0) {
   const [key, label, who, phase] = STATIONS[i] ?? FIRST;
-  return { key, label, who, phase, ready: phase <= 7, count };
+  return { key, label, who, phase, ready: BUILT.has(key), count };
 }
 
 /** GET /pipeline from the mock projects (the real rules live in the API, ADR-0031). */
@@ -188,20 +191,19 @@ export function pipelineOut(channelId?: string | null): PipelineOut {
       STATIONS.findIndex(([, , , , states]) => states.includes(p.state)),
     );
     counts[index] = (counts[index] ?? 0) + 1;
-    const [, , who, phase] = STATIONS[index] ?? FIRST;
+    const [key, , who] = STATIONS[index] ?? FIRST;
     const progress = p.progress ?? null;
-    const activity: PipelineOut["projects"][number]["activity"] =
-      phase > 7
-        ? "NOT_BUILT"
-        : who === "OWNER"
-          ? "YOUR_TURN"
-          : progress?.status === "RUNNING"
-            ? "WORKING"
-            : progress?.status === "FAILED"
-              ? "STOPPED"
-              : progress
-                ? "QUEUED"
-                : "STALLED";
+    const activity: PipelineOut["projects"][number]["activity"] = !BUILT.has(key)
+      ? "NOT_BUILT"
+      : who === "OWNER"
+        ? "YOUR_TURN"
+        : progress?.status === "RUNNING"
+          ? "WORKING"
+          : progress?.status === "FAILED"
+            ? "STOPPED"
+            : progress
+              ? "QUEUED"
+              : "STALLED";
     return {
       id: p.id,
       title: p.working_title,
@@ -276,11 +278,71 @@ export function pipelineOut(channelId?: string | null): PipelineOut {
     projects,
     jobs: content.jobs,
     refresh_s: busy ? 3 : 20,
-    built_phase: 7,
+    built_phase: 8,
+  };
+}
+
+type StoryboardOut = components["schemas"]["StoryboardOut"];
+type SceneOut = components["schemas"]["SceneOut"];
+type TemplateOut = components["schemas"]["TemplateOut"];
+
+const str = (maxLength: number) => ({ type: "string", maxLength });
+const lines = { type: "array", items: { type: "string" } };
+/** A few registry templates (mirror of tubeforge_media.templates.REGISTRY). */
+const TEMPLATES: TemplateOut[] = [
+  { id: "kinetic_title", label: "Big title", treatment: "KINETIC_TEXT", use_for: "a short statement or the hook line", needs_media: false, fields: { text: str(80) } },
+  { id: "lower_third", label: "Name strip", treatment: "TEMPLATE", use_for: "naming a term, person or place under the narration", needs_media: false, fields: { title: str(60), subtitle: str(80) } },
+  { id: "bullet_reveal", label: "Bullet points", treatment: "TEMPLATE", use_for: "2–5 short points, tips or reasons", needs_media: false, fields: { title: str(60), items: lines } },
+  { id: "bar_chart", label: "Bar chart", treatment: "CHART", use_for: "comparing 2–6 numbers stated in the brief", needs_media: false, fields: { title: str(60), labels: lines, values: { type: "array", items: { type: "number" } }, unit: str(8) } },
+  { id: "number_counter", label: "Big number", treatment: "CHART", use_for: "one striking number from the brief", needs_media: false, fields: { value: str(14), label: str(60) } },
+  { id: "ken_burns_photo", label: "Photo pan", treatment: "OWNER_MEDIA", use_for: "your own or licensed photo", needs_media: true, fields: { note: str(200) } },
+]; // prettier-ignore
+
+/** A small drawn-looking picture for the demo (the real one is a PNG keyframe from the worker). */
+function picture(text: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90"><rect width="160" height="90" fill="#1B1F3B"/><text x="80" y="50" fill="#F5F3EE" font-size="9" text-anchor="middle" font-family="sans-serif">${text}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+function scene(position: number, narration: string, template: string, params: Record<string, unknown>, extra: Partial<SceneOut> = {}): SceneOut {
+  const t = TEMPLATES.find((x) => x.id === template);
+  return {
+    id: `sc-${String(position)}`, position, narration, visual_instruction: "Key words on screen.", on_screen_text: null,
+    duration_s: Math.round((narration.split(/\s+/).length * 60 * 10) / 150) / 10, style: "kinetic_text",
+    is_hook: position === 1, pattern_interrupt: false, treatment: t?.treatment ?? null, template_id: template,
+    template_label: t?.label ?? null, template_params: params, note: null, chart_claim_ids: [], stock_search_terms: [],
+    visual_url: picture(String(params.text ?? params.title ?? params.value ?? template)), ...extra,
+  };
+} // prettier-ignore
+
+export function storyboardMock(projectId: string): StoryboardOut {
+  const scenes = [
+    scene(1, "Your heart slows down at night. A late dinner can change that. Here is how much.", "number_counter", { value: "40–50", label: "beats per minute asleep" }, { visual_instruction: "Big number, slow heartbeat line", on_screen_text: "40–50 bpm", chart_claim_ids: ["c1"] }),
+    scene(2, "Deep sleep is when the body recovers. It mostly happens early in the night.", "lower_third", { title: "Deep sleep", subtitle: "the body's repair time" }, { note: "a chart number is not in the cited brief claims" }),
+    scene(3, "Here's where it got weird. Digestion keeps the body busy for hours.", "bullet_reveal", { title: "After a late meal", items: ["Higher heart rate", "Less deep sleep"] }, { pattern_interrupt: true, stock_search_terms: ["dinner table at night"] }),
+    scene(4, "Try an earlier dinner for a week and see how you feel.", "kinetic_title", { text: "Try an earlier dinner" }),
+  ]; // prettier-ignore
+  return {
+    project_id: projectId,
+    project_state: "ASSET_GENERATION",
+    working_title: "How late meals affect deep sleep",
+    format: "LONG",
+    target_duration_s: 480,
+    version: 1,
+    author_type: "AGENT",
+    script_version_id: "v-1",
+    created_at: NOW,
+    total_duration_s: Math.round(scenes.reduce((a, s) => a + s.duration_s, 0) * 10) / 10,
+    editable: true,
+    scenes,
+    templates: TEMPLATES,
+    job: null,
   };
 }
 
 interface ContentState {
+  storyboard: StoryboardOut;
+  sceneRequests: { scene: string; template_id: string; params: Record<string, unknown> }[];
   art: ChannelArtOut;
   artRequests: { tagline?: string | null }[];
   watermarkUploads: { type: string; confirmed: boolean }[];
@@ -298,6 +360,7 @@ interface ContentState {
 }
 
 function initial(): ContentState {
+  const storyboard = storyboardMock(PROJECT);
   const project: ProjectOut = {
     id: PROJECT,
     channel_id: CHANNEL,
@@ -412,6 +475,8 @@ function initial(): ContentState {
         format: "LONG",
       }),
     ],
+    storyboard,
+    sceneRequests: [],
     art: {
       channel_id: CHANNEL,
       channel_name: "Calm Science",
@@ -726,6 +791,11 @@ export const contentHandlers: HttpHandler[] = [
     HttpResponse.json(pipelineOut(new URL(request.url).searchParams.get("channel_id"))),
   ),
   http.post("/api/v1/projects/:id/commands/:cmd", ({ params }) => {
+    if (params.cmd === "retry-storyboard" || params.cmd === "retry-visuals")
+      return HttpResponse.json(
+        { project: content.project, transition_id: null, job_ids: [78] },
+        { status: 202 },
+      );
     if (params.cmd === "approve-script" && content.project.checks?.some((c) => !c.ok))
       return problem(409, "GUARD_FAILED", "Add your own value: 0 of 1 owner fields filled.");
     if (params.cmd === "approve-script") {
@@ -738,6 +808,49 @@ export const contentHandlers: HttpHandler[] = [
       content.versions = content.versions.map((v, i) => (i === 0 ? { ...v, locked: true } : v));
     }
     return HttpResponse.json({ project: content.project, transition_id: 2, job_ids: [] });
+  }),
+  http.get("/api/v1/projects/:id/storyboard", ({ params }) =>
+    HttpResponse.json({ ...content.storyboard, project_id: String(params.id) }),
+  ),
+  http.put("/api/v1/projects/:id/storyboard", async ({ request }) => {
+    const body = (await request.json()) as {
+      based_on_version: number;
+      scenes: { id: string; visual_instruction: string; on_screen_text: string | null; style: string }[];
+    };
+    if (body.based_on_version !== content.storyboard.version)
+      return problem(412, "VERSION_CONFLICT", "Reload the latest storyboard first.");
+    if (body.scenes.some((e) => /guarantee/i.test(e.on_screen_text ?? "")))
+      return problem(422, "SCENE_INVALID", "On-screen text makes a promise TubeForge cannot keep.");
+    const edits = new Map(body.scenes.map((e) => [e.id, e]));
+    content.storyboard = {
+      ...content.storyboard,
+      version: (content.storyboard.version ?? 0) + 1,
+      author_type: "OWNER",
+      scenes: content.storyboard.scenes.map((s) => ({ ...s, ...(edits.get(s.id) ?? {}) })),
+    };
+    return HttpResponse.json(content.storyboard);
+  }),
+  http.put("/api/v1/projects/:id/scenes/:sceneId/visual", async ({ params, request }) => {
+    const body = (await request.json()) as { template_id: string; params: Record<string, unknown> };
+    if (TEMPLATES.find((x) => x.id === body.template_id)?.needs_media)
+      return problem(422, "SCENE_INVALID", "This template needs your own photo or clip.");
+    content.sceneRequests.push({ scene: String(params.sceneId), ...body });
+    const label = TEMPLATES.find((x) => x.id === body.template_id)?.label ?? null;
+    content.storyboard = {
+      ...content.storyboard,
+      scenes: content.storyboard.scenes.map((s) =>
+        s.id === params.sceneId
+          ? {
+              ...s,
+              template_id: body.template_id,
+              template_label: label,
+              template_params: body.params,
+              note: "chosen by you",
+            }
+          : s,
+      ),
+    };
+    return HttpResponse.json({ job_id: 77, transition_id: null, status: "QUEUED" }, { status: 202 });
   }),
   http.get("/api/v1/projects/:id/research", () => HttpResponse.json(content.briefs)),
   http.get("/api/v1/projects/:id/claims", () => HttpResponse.json(content.claims)),

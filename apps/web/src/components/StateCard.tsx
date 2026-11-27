@@ -10,8 +10,9 @@ export function StateCard({
   onAction,
 }: {
   message: string;
-  actionLabel: string;
-  onAction: () => void;
+  /** Leave out when there is nothing for the owner to press (e.g. a job is working). */
+  actionLabel?: string | undefined;
+  onAction?: (() => void) | undefined;
 }) {
   return (
     <div
@@ -21,9 +22,11 @@ export function StateCard({
       <Lottie name="empty-box" className="mx-auto size-28" />
       <p className="mx-auto mt-2 max-w-prose">{message}</p>
       <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-        <Button variant="primary" onClick={onAction}>
-          {actionLabel}
-        </Button>
+        {actionLabel && onAction && (
+          <Button variant="primary" onClick={onAction}>
+            {actionLabel}
+          </Button>
+        )}
         <Link to="/settings" className="text-sm text-accent underline">
           {t("states.emptyHelp")}
         </Link>

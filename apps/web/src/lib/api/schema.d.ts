@@ -1420,6 +1420,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/scenes/{scene_id}/visual": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Scene Visual
+         * @description The owner picks another template (or text) for one scene; a job draws the new picture.
+         */
+        put: operations["change_scene_visual_api_v1_projects__project_id__scenes__scene_id__visual_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/script/diff": {
         parameters: {
             query?: never;
@@ -1512,6 +1532,27 @@ export interface paths {
          *     brief. They appear on the version; you pick, edit and decide.
          */
         post: operations["part_options_api_v1_projects__project_id__script_versions__number__part_options_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/storyboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Storyboard */
+        get: operations["get_storyboard_api_v1_projects__project_id__storyboard_get"];
+        /**
+         * Save Storyboard
+         * @description The owner's scene changes become a new storyboard version; pictures stay with their scenes.
+         */
+        put: operations["save_storyboard_api_v1_projects__project_id__storyboard_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3673,7 +3714,7 @@ export interface components {
         PipelineOut: {
             /**
              * Built Phase
-             * @default 7
+             * @default 8
              */
             built_phase: number;
             /**
@@ -4244,6 +4285,93 @@ export interface components {
              */
             channel_id: string;
         };
+        /** SceneEditIn */
+        SceneEditIn: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** On Screen Text */
+            on_screen_text?: string | null;
+            /**
+             * Style
+             * @default kinetic_text
+             * @enum {string}
+             */
+            style: "kinetic_text" | "motion_graphics" | "chart" | "photo" | "owner_footage" | "screen_recording";
+            /** Visual Instruction */
+            visual_instruction: string;
+        };
+        /** SceneOut */
+        SceneOut: {
+            /** Chart Claim Ids */
+            chart_claim_ids: string[];
+            /**
+             * Duration S
+             * @description Measured from the words at the speaking rate.
+             */
+            duration_s: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Hook */
+            is_hook: boolean;
+            /**
+             * Narration
+             * @description The locked script's words for this scene (not editable here).
+             */
+            narration: string;
+            /**
+             * Note
+             * @description Why TubeForge changed the visual agent's choice, if it did.
+             */
+            note: string | null;
+            /** On Screen Text */
+            on_screen_text: string | null;
+            /** Pattern Interrupt */
+            pattern_interrupt: boolean;
+            /** Position */
+            position: number;
+            /**
+             * Stock Search Terms
+             * @description Ideas for your own search later; nothing is bought.
+             */
+            stock_search_terms: string[];
+            /** Style */
+            style: string | null;
+            /** Template Id */
+            template_id: string | null;
+            /** Template Label */
+            template_label: string | null;
+            /**
+             * Template Params
+             * @description The template's fields (TubeForge's notes removed).
+             */
+            template_params: {
+                [key: string]: unknown;
+            };
+            /** Treatment */
+            treatment: string | null;
+            /** Visual Instruction */
+            visual_instruction: string;
+            /**
+             * Visual Url
+             * @description The scene's drawn picture (it has a rights record).
+             */
+            visual_url: string | null;
+        };
+        /** SceneVisualIn */
+        SceneVisualIn: {
+            /** Params */
+            params: {
+                [key: string]: unknown;
+            };
+            /** Template Id */
+            template_id: string;
+        };
         /** ScriptVersionIn */
         ScriptVersionIn: {
             /** Based On Version */
@@ -4581,6 +4709,49 @@ export interface components {
              */
             status: "TODO" | "DONE" | "SKIPPED";
         };
+        /** StoryboardIn */
+        StoryboardIn: {
+            /** Based On Version */
+            based_on_version: number;
+            /** Scenes */
+            scenes: components["schemas"]["SceneEditIn"][];
+        };
+        /** StoryboardOut */
+        StoryboardOut: {
+            /** Author Type */
+            author_type: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Editable */
+            editable: boolean;
+            /** Format */
+            format: string;
+            job: components["schemas"]["JobProgressOut"] | null;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Project State */
+            project_state: string;
+            /** Scenes */
+            scenes: components["schemas"]["SceneOut"][];
+            /** Script Version Id */
+            script_version_id: string | null;
+            /** Target Duration S */
+            target_duration_s: number;
+            /** Templates */
+            templates: components["schemas"]["TemplateOut"][];
+            /** Total Duration S */
+            total_duration_s: number;
+            /**
+             * Version
+             * @description None until the first storyboard is made.
+             */
+            version: number | null;
+            /** Working Title */
+            working_title: string;
+        };
         /** StrategyIn */
         StrategyIn: {
             /**
@@ -4641,6 +4812,23 @@ export interface components {
             critical_unread: number;
             /** Unread */
             unread: number;
+        };
+        /** TemplateOut */
+        TemplateOut: {
+            /** Fields */
+            fields: {
+                [key: string]: unknown;
+            };
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Needs Media */
+            needs_media: boolean;
+            /** Treatment */
+            treatment: string;
+            /** Use For */
+            use_for: string;
         };
         /** TestFetchOut */
         TestFetchOut: {
@@ -13867,7 +14055,7 @@ export interface operations {
             header?: never;
             path: {
                 project_id: string;
-                cmd: "start" | "retry-research" | "retry-script" | "reopen-script" | "approve-research" | "request-research-changes" | "approve-script" | "request-script-changes" | "approve-cut" | "request-cut-changes" | "retry" | "pause" | "resume" | "cancel" | "choose-fix-path";
+                cmd: "start" | "retry-research" | "retry-script" | "retry-storyboard" | "retry-visuals" | "reopen-script" | "approve-research" | "request-research-changes" | "approve-script" | "request-script-changes" | "approve-cut" | "request-cut-changes" | "retry" | "pause" | "resume" | "cancel" | "choose-fix-path";
             };
             cookie?: never;
         };
@@ -14137,6 +14325,113 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description NOT_READY (master key or database missing) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    change_scene_visual_api_v1_projects__project_id__scenes__scene_id__visual_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SceneVisualIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["tubeforge__api__v1__projects__QueuedOut"];
+                };
+            };
+            /** @description VALIDATION_ERROR (field errors in errors[]) or a bad header */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_EDITABLE / NO_STORYBOARD */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description VERSION_CONFLICT: changed elsewhere */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description SCENE_INVALID / VALIDATION_ERROR / IDEMPOTENCY_MISMATCH */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             /** @description NOT_READY (master key or database missing) */
@@ -14726,6 +15021,203 @@ export interface operations {
                 };
             };
             /** @description SCRIPT_INVALID / VALIDATION_ERROR / IDEMPOTENCY_MISMATCH */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_READY (master key or database missing) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_storyboard_api_v1_projects__project_id__storyboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoryboardOut"];
+                };
+            };
+            /** @description VALIDATION_ERROR (field errors in errors[]) or a bad header */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description State conflict (e.g. IDEMPOTENCY_IN_PROGRESS) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description NOT_READY (master key or database missing) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    save_storyboard_api_v1_projects__project_id__storyboard_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoryboardIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoryboardOut"];
+                };
+            };
+            /** @description VALIDATION_ERROR (field errors in errors[]) or a bad header */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description NOT_EDITABLE / NO_STORYBOARD */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description VERSION_CONFLICT: changed elsewhere */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description SCENE_INVALID / VALIDATION_ERROR / IDEMPOTENCY_MISMATCH */
             422: {
                 headers: {
                     [name: string]: unknown;

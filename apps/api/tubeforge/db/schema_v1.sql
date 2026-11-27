@@ -479,6 +479,8 @@ CREATE TABLE storyboards (
   project_id uuid NOT NULL,
   channel_id uuid NOT NULL,
   version int NOT NULL,
+  script_version_id uuid NULL,
+  author_type text NOT NULL DEFAULT 'AGENT' CHECK (author_type IN ('AGENT','OWNER')),
   created_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (project_id, version)
 );
@@ -492,6 +494,12 @@ CREATE TABLE scenes (
   on_screen_text text NULL,
   duration_s numeric(6,2) NOT NULL,
   style text NULL,
+  is_hook boolean NOT NULL DEFAULT false,
+  pattern_interrupt boolean NOT NULL DEFAULT false,
+  treatment text NULL CHECK (treatment IN ('TEMPLATE','CHART','KINETIC_TEXT','OWNER_MEDIA','STOCK_SUGGESTION')),
+  template_id text NULL,
+  template_params jsonb NULL,
+  visual_asset_id uuid NULL,
   UNIQUE (storyboard_id, position)
 );
 
@@ -990,7 +998,7 @@ CREATE TABLE job_meta (
 CREATE TABLE job_progress (
   id uuid PRIMARY KEY,
   kind text NOT NULL,
-  entity_type text NOT NULL CHECK (entity_type IN ('video_project','channel','niche_report','niche_candidate','script_version')),
+  entity_type text NOT NULL CHECK (entity_type IN ('video_project','channel','niche_report','niche_candidate','script_version','scene')),
   entity_id uuid NOT NULL,
   project_id uuid NULL,
   status text NOT NULL CHECK (status IN ('QUEUED','RUNNING','DONE','FAILED','WAITING')),
@@ -1247,7 +1255,9 @@ ALTER TABLE scripts ADD FOREIGN KEY (project_id) REFERENCES video_projects;
 ALTER TABLE script_versions ADD FOREIGN KEY (script_id) REFERENCES scripts;
 ALTER TABLE fact_check_claims ADD FOREIGN KEY (project_id) REFERENCES video_projects;
 ALTER TABLE storyboards ADD FOREIGN KEY (project_id) REFERENCES video_projects;
+ALTER TABLE storyboards ADD FOREIGN KEY (script_version_id) REFERENCES script_versions;
 ALTER TABLE scenes ADD FOREIGN KEY (storyboard_id) REFERENCES storyboards;
+ALTER TABLE scenes ADD FOREIGN KEY (visual_asset_id) REFERENCES media_assets;
 ALTER TABLE media_assets ADD FOREIGN KEY (channel_id) REFERENCES channels;
 ALTER TABLE media_assets ADD FOREIGN KEY (project_id) REFERENCES video_projects;
 ALTER TABLE asset_rights ADD FOREIGN KEY (asset_id) REFERENCES media_assets;

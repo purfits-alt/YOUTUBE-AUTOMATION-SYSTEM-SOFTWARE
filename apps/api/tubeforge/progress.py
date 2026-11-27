@@ -25,7 +25,7 @@ from sqlalchemy import Engine, delete, select, update
 from sqlalchemy.orm import Session
 
 from tubeforge.db.ids import uuid7
-from tubeforge.db.models import JobProgress, Script, ScriptVersion
+from tubeforge.db.models import JobProgress, Scene, Script, ScriptVersion, Storyboard
 
 #: Jobs shown in the pipeline, with the owner-facing label of each.
 TRACKED: dict[str, str] = {
@@ -33,6 +33,9 @@ TRACKED: dict[str, str] = {
     "content.script": "Script writing",
     "content.fact_check": "Fact check",
     "content.part_options": "Suggestions for your part",
+    "content.storyboard": "Storyboard",
+    "content.visuals": "Scene visuals",
+    "media.scene_visual": "Redrawing a scene",
     "content.ideas": "New ideas",
     "research.discover": "Niche discovery",
     "research.blueprint": "Channel blueprint",
@@ -42,6 +45,7 @@ TRACKED: dict[str, str] = {
 
 #: Job argument → the entity the job works on.
 ENTITY_ARGS: tuple[tuple[str, str], ...] = (
+    ("scene_id", "scene"),
     ("project_id", "video_project"),
     ("version_id", "script_version"),
     ("report_id", "niche_report"),
@@ -68,6 +72,12 @@ def entity_of(args: Mapping[str, Any]) -> tuple[str, uuid.UUID] | None:
 def _project_for(db: Session, entity_type: str, entity_id: uuid.UUID) -> uuid.UUID | None:
     if entity_type == "video_project":
         return entity_id
+    if entity_type == "scene":
+        return db.scalar(
+            select(Storyboard.project_id)
+            .join(Scene, Scene.storyboard_id == Storyboard.id)
+            .where(Scene.id == entity_id)
+        )
     if entity_type == "script_version":
         return db.scalar(
             select(Script.project_id)

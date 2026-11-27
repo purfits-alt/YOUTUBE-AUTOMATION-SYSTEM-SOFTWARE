@@ -10,6 +10,7 @@ import uuid
 from collections.abc import Callable, Iterator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -17,17 +18,21 @@ import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from tubeforge_agents import content as pipe
+from tubeforge_agents import storyboard as sb
 from tubeforge_agents.discovery import PipelineError
 
 from tests.integration.conftest import Env
 from tests.unit import content_fixtures as fx
 from tests.unit.test_research_fetcher import resolver
+from tubeforge.assets import blob_path
 from tubeforge.audit import Actor
-from tubeforge.content import similarity
+from tubeforge.content import scripts, similarity
 from tubeforge.db.ids import uuid7
 from tubeforge.db.models import (
+    AssetRights,
     Channel,
     FactCheckClaim,
+    MediaAsset,
     Notification,
     OwnerValueAdd,
     ResearchBrief,
@@ -595,3 +600,129 @@ def test_three_suggestions_for_an_owner_part_never_speak_as_the_owner(
 )
 def test_part_option_rules(kind: str, text: str, ok: bool) -> None:
     assert (pipe.check_part_option(kind, text) is None) is ok
+
+
+# ------------------------------------------------------------------------- storyboard + visuals
+def storyboard_project(db: Session, env: Env) -> VideoProject:
+    """A project whose script the owner approved (locked) and that waits at the storyboard."""
+    project = approved_project(db, env)
+    script = Script(id=uuid7(), project_id=project.id, channel_id=project.channel_id)
+    db.add(script)
+    db.flush()
+    body = scripts.lift_owner_slots(fx.long_script())
+    info = scripts.summary(body, 150)
+    version = ScriptVersion(
+        id=uuid7(), script_id=script.id, version=1, author_type="AGENT", author_id="A11_SCRIPTWRITING",
+        body=body, plain_text=info["plain_text"], word_count=info["word_count"],
+        est_duration_s=info["est_duration_s"], content_sha256=info["content_sha256"], locked=True,
+    )  # fmt: skip
+    db.add(version)
+    db.flush()
+    db.add(ResearchBrief(id=uuid7(), project_id=project.id, channel_id=project.channel_id, version=1,
+                         status="APPROVED", content={"claims": [
+        {"id": "c1", "text": "Students spend about 9,000 rupees a month on small purchases.", "verdict": "SUPPORTED"},
+        {"id": "c2", "text": "Food delivery is 40 % of it.", "verdict": "CONTRADICTED"},
+    ]}))  # fmt: skip
+    project.state, project.locked_script_version_id = "STORYBOARDING", version.id
+    db.commit()
+    return project
+
+
+def test_locked_script_to_scenes_with_rights_cleared_visuals(
+    db: Session, env: Env, gw: Gateway, model: ScriptedModel, tmp_path: Path
+) -> None:
+    """Phase 8 step B: A12 groups the script's own sentences into scenes; A13 picks templates that
+    code checks; every scene gets a drawn keyframe with a rights record; then the voice station."""
+    project = storyboard_project(db, env)
+    sents = sb.sentences(db.get_one(ScriptVersion, project.locked_script_version_id).body)
+    assert len(sents) == 10  # hook 3 + 5 sections + payoff + CTA
+    answers: list[dict[str, Any]] = [
+        {"scenes": [{"first": "s0", "last": "s3", "visual_instruction": "x", "style": "kinetic_text"}]},  # gap
+        {"scenes": [
+            {"first": "s0", "last": "s3", "visual_instruction": "Bold title", "style": "kinetic_text",
+             "on_screen_text": "9,000 rupees gone"},
+            {"first": "s4", "last": "s5", "visual_instruction": "Chart of the leaks", "style": "chart",
+             "pattern_interrupt": True},
+            {"first": "s6", "last": "s6", "visual_instruction": "Steps", "style": "motion_graphics"},
+            {"first": "s7", "last": "s9", "visual_instruction": "Calm close", "style": "kinetic_text",
+             "on_screen_text": "Guaranteed to make you rich"},
+        ]},
+    ]  # fmt: skip
+    model.replies["A12_STORYBOARD"] = lambda _r, _ids: answers.pop(0)
+    result = sb.run_storyboard(db, gw, project.id, now=NOW)
+    a12 = model.users("A12_STORYBOARD")
+    assert len(a12) == 2 and "previous answer was refused" in a12[1] and "are in no scene" in a12[1]
+    assert a12[0].count("<untrusted_source") == a12[0].count("</untrusted_source>")
+    assert "(A12_STORYBOARD v1.1)" in model.systems("A12_STORYBOARD")[0]
+    assert result.cut_by == "REPAIRED"
+    scenes = sb.scenes_of(db, result.storyboard.id)
+    # Scene 1 is exactly the hook; narration is the script word for word; durations come from words.
+    assert [s.position for s in scenes] == [1, 2, 3, 4, 5]
+    assert scenes[0].is_hook and scenes[0].narration == " ".join(s.text for s in sents[:3])
+    assert " ".join(s.narration for s in scenes) == " ".join(s.text for s in sents)
+    assert abs(float(sum(s.duration_s for s in scenes)) - 480) <= 48
+    assert scenes[2].pattern_interrupt and not scenes[1].pattern_interrupt
+    assert scenes[0].on_screen_text == "9,000 rupees gone" and scenes[4].on_screen_text is None  # forbidden
+    assert result.storyboard.script_version_id == project.locked_script_version_id
+    db.refresh(project)
+    assert project.state == "ASSET_GENERATION"
+    (job_args,) = env.sql("SELECT args FROM procrastinate_jobs WHERE task_name LIKE '%content.visuals'")[0]
+    assert job_args == {"project_id": str(project.id)}
+    with pytest.raises(PipelineError, match="not STORYBOARDING"):
+        sb.run_storyboard(db, gw, project.id, now=NOW)
+
+    def a13(_req: TextRequest, _ids: list[str]) -> dict[str, Any]:
+        return {"scenes": [
+            {"scene_id": "scene1", "template_id": "number_counter",
+             "params": {"value": "9,000", "label": "rupees a month"}, "chart_claim_ids": ["c1"]},
+            {"scene_id": "scene2", "template_id": "bar_chart", "chart_claim_ids": ["c2"],  # contradicted
+             "params": {"title": "Leaks", "labels": ["Food", "Other"], "values": [40, 60]}},
+            {"scene_id": "scene3", "template_id": "ken_burns_photo", "params": {}},
+            {"scene_id": "scene4", "template_id": "bullet_reveal",
+             "params": {"title": "The fix", "items": ["Track it", "Cap it"]},
+             "stock_search_terms": ["notebook on desk"]},
+            {"scene_id": "scene5", "template_id": "subscribe_reminder_soft",
+             "params": {"text": "If this helped, subscribing helps the channel."}},
+        ]}  # fmt: skip
+
+    model.replies["A13_VISUAL_CREATIVE"] = a13
+    visuals = sb.run_visuals(db, gw, tmp_path, project.id, now=NOW)
+    a13_user = model.users("A13_VISUAL_CREATIVE")[0]
+    assert "Food delivery is 40 %" not in a13_user  # contradicted claims are not offered
+    assert '"id": "ken_burns_photo"' not in a13_user  # only templates TubeForge can draw
+    ids = [s.template_id for s in visuals.scenes]
+    # The chart cites a contradicted claim and the photo needs media → text templates; the pattern
+    # interrupt (scene 3) then differs from scene 2.
+    assert ids == [
+        "number_counter",
+        "quote_card",
+        "kinetic_title",
+        "bullet_reveal",
+        "subscribe_reminder_soft",
+    ]
+    assert visuals.changed == 2
+    assert visuals.scenes[3].template_params["_stock_search_terms"] == ["notebook on desk"]
+    assert "chart number" in visuals.scenes[1].template_params["_why"]
+    for s in visuals.scenes:
+        asset = db.get_one(MediaAsset, s.visual_asset_id)
+        rights = db.get_one(AssetRights, asset.id)
+        assert asset.origin == "PROCEDURAL" and asset.project_id == project.id and asset.kind == "IMAGE"
+        assert (asset.width, asset.height) == (1920, 1080)
+        assert rights.rights_basis == "SYSTEM_GENERATED" and rights.commercial_use_allowed
+        assert rights.lineage["template_id"] == s.template_id
+        assert blob_path(tmp_path, asset.sha256, asset.mime_type).exists()
+    db.refresh(project)
+    assert project.state == "VOICEOVER"
+    assert "Storyboard and scene visuals ready" in set(db.scalars(select(Notification.title)))
+
+    # The owner picks another picture for scene 2 (``media.scene_visual``): drawn with a new rights record.
+    before = visuals.scenes[1].visual_asset_id
+    redrawn = sb.redraw_scene(db, tmp_path, visuals.scenes[1].id, "split_compare", {
+        "left_title": "Before", "left_items": ["Late snacks"], "right_title": "After", "right_items": ["Tracked"],
+    })  # fmt: skip
+    db.commit()
+    assert redrawn.template_id == "split_compare" and redrawn.visual_asset_id != before
+    assert redrawn.template_params["_why"] == "chosen by you"
+    assert db.get_one(AssetRights, redrawn.visual_asset_id).rights_basis == "SYSTEM_GENERATED"
+    with pytest.raises(sb.SceneEditError, match="needs your own photo"):
+        sb.redraw_scene(db, tmp_path, redrawn.id, "owner_cam_frame", {})

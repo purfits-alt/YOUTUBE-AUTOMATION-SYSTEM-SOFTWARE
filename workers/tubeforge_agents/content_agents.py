@@ -286,9 +286,135 @@ class OwnerPartAgent(AgentTask):
         )
 
 
+# ------------------------------------------------------------------------------------------ A12
+SceneStyle = Literal["kinetic_text", "motion_graphics", "chart", "photo", "owner_footage", "screen_recording"]
+STYLES: tuple[str, ...] = (
+    "kinetic_text",
+    "motion_graphics",
+    "chart",
+    "photo",
+    "owner_footage",
+    "screen_recording",
+)
+
+
+class SentenceIn(BaseModel):
+    id: str = Field(max_length=8)
+    text: str = Field(min_length=1, max_length=1500)
+    hook: bool = False
+
+
+class StoryboardInput(BaseModel):
+    language: Language = "en"
+    format: Format
+    title: str = Field(max_length=200)
+    sentences: list[SentenceIn] = Field(min_length=1, max_length=800)
+    re_hooks: list[str] = Field(default_factory=list, max_length=20)
+    fix_notes: str = Field(default="", max_length=2000)
+
+
+class StoryboardAgent(AgentTask):
+    """A12 v1.1: groups the locked script's numbered sentences into scenes. It never writes narration:
+    the pipeline joins the sentences itself, so every word spoken is the approved script's."""
+
+    code: ClassVar[str] = "A12_STORYBOARD"
+    task_type: ClassVar[str] = "script_draft"
+    temperature: ClassVar[float] = 0.4
+    max_output_tokens: ClassVar[int] = 8000
+    input_model: ClassVar[type[BaseModel]] = StoryboardInput
+
+    def context(self, data: BaseModel, channel: Channel | None) -> dict[str, Any]:
+        assert isinstance(data, StoryboardInput)
+        return {
+            "channel_name": channel.name if channel else "",
+            "language": data.language,
+            "format": "long-form" if data.format == "LONG" else "Short",
+            "hook_rule": "10–15 seconds" if data.format == "LONG" else "1–3 seconds",
+        }
+
+    def user_message(self, data: BaseModel) -> str:
+        assert isinstance(data, StoryboardInput)
+        lines = "\n".join(f"{s.id}{' HOOK' if s.hook else ''}: {s.text}" for s in data.sentences)
+        fixes = (
+            f"\nYour previous answer was refused: {data.fix_notes}\nAnswer again and fix it."
+            if data.fix_notes
+            else ""
+        )
+        return render_user(
+            "Video title: {{ title | untrusted('title') }}\n"
+            "Available styles: {{ styles }}\n"
+            "Script sentences (id, HOOK mark, text):\n{{ lines | untrusted('script_sentences') }}\n"
+            "Re-hook lines (start a pattern-interrupt scene there): "
+            "{{ rehooks | untrusted('re_hooks') }}{{ fixes }}",
+            {
+                "title": data.title,
+                "styles": ", ".join(STYLES),
+                "lines": lines,
+                "rehooks": json.dumps(data.re_hooks, ensure_ascii=False),
+                "fixes": fixes,
+            },
+        )
+
+
+# ------------------------------------------------------------------------------------------ A13
+class SceneIn(BaseModel):
+    scene_id: str = Field(max_length=40)
+    narration: str = Field(max_length=1500)
+    on_screen_text: str | None = Field(default=None, max_length=120)
+    visual_instruction: str = Field(default="", max_length=1000)
+    style: str = Field(default="kinetic_text", max_length=40)
+    is_hook: bool = False
+    pattern_interrupt: bool = False
+
+
+class VisualInput(BaseModel):
+    language: Language = "en"
+    format: Format
+    scenes: list[SceneIn] = Field(min_length=1, max_length=80)
+    claims: list[BriefClaim] = Field(default_factory=list, max_length=40)
+    templates: list[dict[str, Any]] = Field(min_length=1, max_length=20)
+    recent_sequences: list[list[str]] = Field(default_factory=list, max_length=5)
+
+
+class VisualCreativeAgent(AgentTask):
+    """A13 v1.0: one registry template + parameters per scene. Code validates every parameter, checks
+    chart numbers against the cited claims, and rebalances variety (``tubeforge_agents.storyboard``)."""
+
+    code: ClassVar[str] = "A13_VISUAL_CREATIVE"
+    task_type: ClassVar[str] = "classify"
+    temperature: ClassVar[float] = 0.5
+    max_output_tokens: ClassVar[int] = 8000
+    input_model: ClassVar[type[BaseModel]] = VisualInput
+
+    def context(self, data: BaseModel, channel: Channel | None) -> dict[str, Any]:
+        assert isinstance(data, VisualInput)
+        return {
+            "channel_name": channel.name if channel else "",
+            "language": data.language,
+            "format": "long-form" if data.format == "LONG" else "Short",
+        }
+
+    def user_message(self, data: BaseModel) -> str:
+        assert isinstance(data, VisualInput)
+        return render_user(
+            "Template registry (id, when to use it, parameter fields): {{ templates }}\n"
+            "Scenes: {{ scenes | untrusted('scenes') }}\n"
+            "Brief claims (the only numbers you may chart): {{ claims | untrusted('brief_claims') }}\n"
+            "Template order of the channel's recent videos (do not repeat it): {{ recent }}",
+            {
+                "templates": json.dumps(data.templates, ensure_ascii=False),
+                "scenes": json.dumps([s.model_dump() for s in data.scenes], ensure_ascii=False),
+                "claims": json.dumps([c.model_dump() for c in data.claims], ensure_ascii=False),
+                "recent": json.dumps(data.recent_sequences),
+            },
+        )
+
+
 A08 = IdeaGenerationAgent()
 A09 = ResearchAgent()
 A10 = FactCheckingAgent()
 A11 = ScriptwritingAgent()
 A11_PARTS = OwnerPartAgent()
-CONTENT_AGENTS: dict[str, AgentTask] = {a.code: a for a in (A08, A09, A10, A11)}
+A12 = StoryboardAgent()
+A13 = VisualCreativeAgent()
+CONTENT_AGENTS: dict[str, AgentTask] = {a.code: a for a in (A08, A09, A10, A11, A12, A13)}

@@ -290,9 +290,12 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
   - Saving queues `content.fact_check`; the version shows `fact_check: PENDING` until it is DONE.
   - The `_fact_check` bookkeeping key is not part of the script or its fingerprint.
 - **Regenerate.** `POST /projects/{id}/script/regenerate` (from SCRIPT_REVIEW only) moves the project back to SCRIPTING and queues a draft. That draft sees the current script and the instruction (and the section, if given).
-| GET | `/projects/{id}/storyboard` | latest StoryboardOut | `content.view` |
-| PUT | `/projects/{id}/storyboard` | StoryboardIn (new version, If-Match) | `content.edit` |
-| POST | `/projects/{id}/storyboard/scenes/{scene_id}/regenerate` ⚙ | `{instruction}` | `content.edit` |
+| GET | `/projects/{id}/storyboard` | latest StoryboardOut (scenes with pictures, template registry, the running storyboard/visuals job) | `content.view` |
+| PUT | `/projects/{id}/storyboard` | StoryboardIn `{based_on_version, scenes:[{id, visual_instruction, on_screen_text, style}]}` → new version (412 if stale; narration is not editable) | `content.edit` |
+| PUT | `/projects/{id}/scenes/{scene_id}/visual` ⚙ | `{template_id, params}` → 202, queues `media.scene_visual` (422 `SCENE_INVALID` for media templates, bad fields or forbidden text) | `content.edit` |
+| POST | `/projects/{id}/commands/retry-storyboard` · `retry-visuals` ⚙ | make the storyboard (STORYBOARDING) or the visuals (ASSET_GENERATION) again | `content.edit` |
+
+**Phase 8 step B (built 2026-11-27).** Approving the script queues `content.storyboard` (A12, agents queue); `storyboard_done` moves the project to ASSET_GENERATION and queues `content.visuals` (A13 + keyframes, heavy queue); `assets_ready` (guard `scenes_have_rights_cleared_visuals`) moves it to VOICEOVER. Every keyframe is a PROCEDURAL `media_assets` row with a SYSTEM_GENERATED `asset_rights` row (lineage: renderer, font, template, scene, palette, cited claims). The owner may change the storyboard and pictures in STORYBOARDING, ASSET_GENERATION and VOICEOVER (409 `NOT_EDITABLE` later). The per-scene regenerate endpoint was replaced by the scene-visual endpoint plus a whole-storyboard redo.
 
 ### 4.8 Assets, rights, stock, visuals
 

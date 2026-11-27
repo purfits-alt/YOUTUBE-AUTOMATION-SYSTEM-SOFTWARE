@@ -352,10 +352,16 @@ def test_project_from_research_to_locked_script(
     db.commit()
     assert all(c["ok"] for c in client.get(f"/api/v1/projects/{pid}").json()["checks"])
     done = client.post(f"{cmd}/approve-script", headers=idem(h))
-    assert done.status_code == 200, done.text
+    assert done.status_code == 202, done.text  # the storyboard job is queued (Phase 8 B)
+    assert len(done.json()["job_ids"]) == 1
     assert done.json()["project"]["state"] == "STORYBOARDING"
     assert done.json()["project"]["locked_script_version_id"] == v3["id"]
-    assert done.json()["project"]["allowed_commands"] == ["reopen-script", "pause", "cancel"]
+    assert done.json()["project"]["allowed_commands"] == [
+        "retry-storyboard",
+        "reopen-script",
+        "pause",
+        "cancel",
+    ]
     db.refresh(row)
     db.refresh(v1)
     assert row.locked and not v1.locked
@@ -366,7 +372,7 @@ def test_project_from_research_to_locked_script(
     assert reopened.json()["project"]["state"] == "SCRIPT_REVIEW"
     assert reopened.json()["project"]["locked_script_version_id"] is None
     again = client.post(f"{cmd}/approve-script", headers=idem(h))
-    assert again.status_code == 200 and again.json()["project"]["locked_script_version_id"] == v3["id"]
+    assert again.status_code == 202 and again.json()["project"]["locked_script_version_id"] == v3["id"]
     events = [t["event"] for t in client.get(f"/api/v1/projects/{pid}/timeline-history").json()]
     assert events == [
         "start_research", "research_done", "approve_research", "script_done", "approve_script",

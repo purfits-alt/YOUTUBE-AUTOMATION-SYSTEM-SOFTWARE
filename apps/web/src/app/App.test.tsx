@@ -48,7 +48,7 @@ describe("app shell", () => {
   });
 
   it("shows the project header on project pages", async () => {
-    renderAt("/projects/p-101/storyboard");
+    renderAt("/projects/p-101/studio"); // a page still on mock data (Phase 9)
     const header = await screen.findByTestId("project-header");
     expect(header).toHaveTextContent("Why octopuses dream");
     expect(within(header).getByText("SCRIPTING").closest("li")).toHaveAttribute("aria-current", "step");
