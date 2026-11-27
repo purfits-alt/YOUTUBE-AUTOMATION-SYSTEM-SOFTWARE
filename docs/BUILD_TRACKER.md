@@ -121,6 +121,7 @@ Each phase lists its steps and **your part** for that module.
 | Owner request (2026-11-16): channels onboarded outside discovery go through the same ideas, calendar, Script Studio and Trending pages (blueprint can be attached to them) | ✅ |
 | Owner request (2026-11-18): **Pipeline** page: state board (per station: inbox from the previous station, in progress, complete, forwarded to the next), live % and stage of every job, what comes next, stopped or stalled jobs shown with the reason; live bar in Script Studio; **Write again** for the script (ADR-0031) | ✅ |
 | Fix (owner report 2026-11-27): research searches the subjects of the title, angle and promise; A09 v1.1 writes a brief with open questions instead of refusing over a missing link | ✅ |
+| Owner request (2026-11-27): Pipeline page per channel: channel picker (synced with the top bar) and a top row with every channel's state card | ✅ |
 | Your part, now: run the Phase 7 demo (`PROJECT_PROGRESS.md`, Phase 7 report, item 11) and rate 10 scripts for "sounds human" (≥ 4/5), then reply "approved" | ✅ "APPROVED", 2026-11-27 |
 
 ## Phase 8 — Storyboards, visuals, voice & stock 🟡 (started 2026-11-27)

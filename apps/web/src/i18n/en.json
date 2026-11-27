@@ -1464,8 +1464,22 @@
       "complete": "Complete",
       "forwarded": "Forwarded",
       "to": "to {name}",
-      "more": "+ {n} more"
+      "more": "+ {n} more",
+      "titleFor": "State board — {name}"
     },
-    "videos": "Videos on the line"
+    "videos": "Videos on the line",
+    "channels": {
+      "title": "Channels",
+      "picker": "Channel",
+      "showing": "The board and videos below are for {name}.",
+      "videos": "{n} videos on the line",
+      "private": "private uploads only",
+      "working": "working",
+      "queued": "waiting",
+      "yourTurn": "your turn",
+      "attention": "need attention",
+      "nextPhase": "next phase",
+      "published": "published"
+    }
   }
 }

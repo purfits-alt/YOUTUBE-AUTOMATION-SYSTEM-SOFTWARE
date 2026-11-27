@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { App, makeQueryClient } from "../../app/App";
 import { routes } from "../../app/routes";
 import { content } from "../../mocks/contentApi";
+import { resetTestApi, testChannel } from "../../mocks/testApi";
 
 function renderAt(path: string) {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
@@ -172,6 +173,34 @@ describe("Pipeline (ADR-0031)", () => {
     expect(waiting).toHaveAttribute("data-activity", "YOUR_TURN");
     expect(within(waiting).getByTestId("next")).toHaveTextContent("Storyboard — arrives in Phase 8");
     expect(screen.getByTestId("pipeline-jobs")).toHaveTextContent("New ideas");
+  });
+
+  it("has a card per channel with its state, and the page follows the picked channel", async () => {
+    resetTestApi({ channels: [testChannel(), testChannel({ id: "ch-2", name: "Urdu Kahaniyan" })] });
+    renderAt("/pipeline");
+    const cards = await screen.findByTestId("channel-cards");
+    const calm = within(cards).getByTestId("channel-card-ch-1");
+    expect(calm).toHaveAttribute("aria-pressed", "true");
+    expect(calm).toHaveTextContent("Calm Science");
+    expect(calm).toHaveTextContent("Active");
+    expect(calm).toHaveTextContent("2 videos on the line");
+    expect(calm).toHaveTextContent("1working");
+    expect(calm).toHaveTextContent("1your turn");
+    const urdu = within(cards).getByTestId("channel-card-ch-2");
+    expect(urdu).toHaveTextContent("Setting up");
+    expect(urdu).toHaveTextContent("0 videos on the line");
+    expect(screen.getByRole("heading", { name: "State board — Calm Science" })).toBeInTheDocument();
+    expect(screen.getByTestId("pipeline-projects").children).toHaveLength(2);
+
+    // Picking the other channel (here or in the top bar) switches the whole page.
+    fireEvent.change(screen.getByLabelText("Channel", { selector: "#pipeline-channel" }), {
+      target: { value: "ch-2" },
+    });
+    expect(await screen.findByRole("heading", { name: "State board — Urdu Kahaniyan" })).toBeInTheDocument();
+    expect(await screen.findByText(/No videos are in production yet/)).toBeInTheDocument();
+    expect(screen.queryByTestId("pipeline-projects")).not.toBeInTheDocument();
+    fireEvent.click(within(screen.getByTestId("channel-cards")).getByTestId("channel-card-ch-1"));
+    expect(await screen.findByRole("heading", { name: "State board — Calm Science" })).toBeInTheDocument();
   });
 
   it("shows the live bar in Script Studio and on the projects list", async () => {

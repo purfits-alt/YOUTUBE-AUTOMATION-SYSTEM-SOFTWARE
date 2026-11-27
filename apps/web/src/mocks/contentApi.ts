@@ -130,9 +130,10 @@ function station(i: number, count = 0) {
 }
 
 /** GET /pipeline from the mock projects (the real rules live in the API, ADR-0031). */
-export function pipelineOut(): PipelineOut {
+export function pipelineOut(channelId?: string | null): PipelineOut {
   const counts = STATIONS.map(() => 0);
-  const projects = [content.project, content.researching].map((p) => {
+  const all = [content.project, content.researching].filter((p) => !channelId || p.channel_id === channelId);
+  const projects = all.map((p) => {
     const index = Math.max(
       0,
       STATIONS.findIndex(([, , , , states]) => states.includes(p.state)),
@@ -156,7 +157,7 @@ export function pipelineOut(): PipelineOut {
       id: p.id,
       title: p.working_title,
       channel_id: p.channel_id,
-      channel_name: "Open Node AI",
+      channel_name: "Calm Science",
       format: p.format,
       state: p.state,
       station: STATIONS[index]?.[0] ?? "research",
@@ -199,7 +200,29 @@ export function pipelineOut(): PipelineOut {
     boards.slice(0, at).forEach((b) => (b.complete += 1));
     boards[at - 1]?.forwarded.push(entry);
   });
+  // A card per channel, counted over every channel's videos (the API does the same).
+  const everyone = channelId ? pipelineOut(null).projects : projects;
+  const card = (id: string, name: string, state: string) => {
+    const mine = everyone.filter((p) => p.channel_id === id);
+    const n = (a: string) => mine.filter((p) => p.activity === a).length;
+    return {
+      id,
+      name,
+      state,
+      private_only: true,
+      videos: mine.length,
+      working: n("WORKING"),
+      queued: n("QUEUED"),
+      your_turn: n("YOUR_TURN"),
+      attention: n("STALLED") + n("STOPPED") + n("WAITING") + n("BLOCKED"),
+      next_phase: n("NOT_BUILT"),
+      published: n("DONE"),
+      paused: n("PAUSED"),
+    };
+  };
   return {
+    channels: [card(CHANNEL, "Calm Science", "ACTIVE"), card("ch-2", "Urdu Kahaniyan", "ONBOARDING")],
+    channel_id: channelId ?? null,
     stations: STATIONS.map((_, i) => ({ ...station(i, counts[i]), board: boards[i] ?? null })),
     projects,
     jobs: content.jobs,
@@ -553,7 +576,9 @@ export const contentHandlers: HttpHandler[] = [
   http.get("/api/v1/projects/:id", ({ params }) =>
     HttpResponse.json(params.id === content.researching.id ? content.researching : content.project),
   ),
-  http.get("/api/v1/pipeline", () => HttpResponse.json(pipelineOut())),
+  http.get("/api/v1/pipeline", ({ request }) =>
+    HttpResponse.json(pipelineOut(new URL(request.url).searchParams.get("channel_id"))),
+  ),
   http.post("/api/v1/projects/:id/commands/:cmd", ({ params }) => {
     if (params.cmd === "approve-script" && content.project.checks?.some((c) => !c.ok))
       return problem(409, "GUARD_FAILED", "Add your own value: 0 of 1 owner fields filled.");

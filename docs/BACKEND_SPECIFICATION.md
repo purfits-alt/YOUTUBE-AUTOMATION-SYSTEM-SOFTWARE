@@ -255,6 +255,7 @@ Legend: **Perm** = permission code (OAUTH_SECURITY §3) · 🔁 = `Idempotency-K
 
 *Pipeline (owner request 2026-11-18, ADR-0031, `api/v1/pipeline.py`):*
 - `GET /pipeline?channel_id=` (content.view) returns `PipelineOut`:
+  - `channels`: one `ChannelCardOut` per channel (`state`, `private_only`, `videos`, `working`, `queued`, `your_turn`, `attention`, `next_phase`, `published`, `paused`), always over every channel; `channel_id` echoes the filter, and the stations, projects and jobs below are for that channel (owner request 2026-11-27);
   - `stations`: the 15 stations (`key`, `label`, `who` TUBEFORGE|OWNER, `phase`, `ready`, `count`) with a `board` per station: `received_from`, `forwards_to`, `inbox`, `in_progress` (items with `pct`), `attention`, `complete`, `forwarded`.
   - `projects`: each active non-test project with its `station`, `activity` (QUEUED, WORKING, STALLED, STOPPED, WAITING, YOUR_TURN, NOT_BUILT, PAUSED, BLOCKED, DONE), live `progress`, `next` station and `steps`.
   - `jobs`: recent jobs not tied to a project (ideas, discovery, blueprint);

@@ -8,10 +8,12 @@ import { t } from "../i18n";
 import { api, call } from "../lib/api/client";
 import type { components } from "../lib/api/schema";
 import { useSelectedChannel } from "../lib/channel";
+import { inputCls, StateBadge } from "./channels/common";
 import { asProblem, LoadingSkeleton, PageTitle } from "./PageView";
 import { getPage } from "./registry";
 
 type PipelineOut = components["schemas"]["PipelineOut"];
+type ChannelCard = components["schemas"]["ChannelCardOut"];
 type Item = PipelineOut["projects"][number];
 type Station = PipelineOut["stations"][number];
 
@@ -79,10 +81,12 @@ function Box({
 
 /** State board (owner request 2026-11-18): one card per station with its inbox (and where it came
  * from), work in progress, completed work and what it forwarded to the next station. */
-function StateBoard({ stations }: { stations: Station[] }) {
+function StateBoard({ stations, channel }: { stations: Station[]; channel?: string | undefined }) {
   return (
     <section aria-label={t("pipeline.board.title")} data-testid="stations">
-      <h2 className="mb-2 text-sm font-semibold">{t("pipeline.board.title")}</h2>
+      <h2 className="mb-2 text-sm font-semibold">
+        {channel ? t("pipeline.board.titleFor", { name: channel }) : t("pipeline.board.title")}
+      </h2>
       <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {stations.map((s, i) => {
           const b = s.board && {
@@ -160,6 +164,69 @@ function StateBoard({ stations }: { stations: Station[] }) {
           );
         })}
       </ol>
+    </section>
+  );
+}
+
+/** Top row (owner request 2026-11-27): every channel's state and its work on the line; click to pick. */
+function ChannelCards({
+  cards,
+  selected,
+  onPick,
+}: {
+  cards: ChannelCard[];
+  selected: string | undefined;
+  onPick: (id: string) => void;
+}) {
+  const counts = (c: ChannelCard): [string, number, string][] => [
+    ["working", c.working ?? 0, "text-info-text"],
+    ["queued", c.queued ?? 0, "text-muted"],
+    ["yourTurn", c.your_turn ?? 0, "text-ok-text"],
+    ["attention", c.attention ?? 0, "text-warn-text"],
+    ["nextPhase", c.next_phase ?? 0, "text-muted"],
+    ["published", c.published ?? 0, "text-ok-text"],
+  ];
+  return (
+    <section aria-label={t("pipeline.channels.title")} data-testid="channel-cards">
+      <h2 className="mb-2 text-sm font-semibold">{t("pipeline.channels.title")}</h2>
+      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {cards.map((c) => (
+          <li key={c.id}>
+            <button
+              type="button"
+              aria-pressed={c.id === selected}
+              data-testid={`channel-card-${c.id}`}
+              onClick={() => onPick(c.id)}
+              className={`tf-card w-full rounded-xl border p-3 text-left text-xs transition-colors ${
+                c.id === selected
+                  ? "border-accent bg-accent-soft"
+                  : "border-line bg-surface hover:border-accent"
+              }`}
+            >
+              <span className="flex flex-wrap items-center justify-between gap-1">
+                <span className="truncate text-sm font-semibold" dir="auto">
+                  {c.name}
+                </span>
+                <StateBadge state={c.state as Parameters<typeof StateBadge>[0]["state"]} />
+              </span>
+              <span className="mt-1 block text-muted">
+                {t("pipeline.channels.videos", { n: c.videos ?? 0 })}
+                {c.private_only && ` · ${t("pipeline.channels.private")}`}
+              </span>
+              <span className="mt-2 grid grid-cols-3 gap-1">
+                {counts(c).map(([key, n, tone]) => (
+                  <span key={key} className="rounded-md bg-surface-2 px-1.5 py-1">
+                    <span className={`block text-base font-bold tabular-nums ${n > 0 ? tone : "text-muted"}`}>
+                      {n}
+                    </span>
+                    <span className="block truncate text-muted">{t(`pipeline.channels.${key}`)}</span>
+                  </span>
+                ))}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -250,13 +317,19 @@ function ProjectRow({ item, stations }: { item: Item; stations: Station[] }) {
 /** Page 33 — Pipeline (ADR-0031): the whole production line, live. */
 export function PipelinePage() {
   const navigate = useNavigate();
-  const { channelId } = useSelectedChannel();
+  const { channelId, setChannelId } = useSelectedChannel();
+  // The page follows the channel picked here or in the top bar (owner request 2026-11-27).
   const query = useQuery({
-    queryKey: ["pipeline"],
-    queryFn: () => call(() => api.GET("/api/v1/pipeline")),
+    queryKey: ["pipeline", channelId ?? "all"],
+    queryFn: () =>
+      call(() =>
+        api.GET("/api/v1/pipeline", { params: { query: channelId ? { channel_id: channelId } : {} } }),
+      ),
     refetchInterval: (q) => (q.state.data?.refresh_s ?? 20) * 1000,
   });
   const data = query.data;
+  const cards = data?.channels ?? [];
+  const picked = cards.find((c) => c.id === channelId);
   return (
     <div className="space-y-4" data-testid="page-pipeline">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -266,13 +339,39 @@ export function PipelinePage() {
       <p className="text-sm text-muted">
         {t("pipeline.hint")} {data && <span>{t("pipeline.live", { s: data.refresh_s })}</span>}
       </p>
+      {cards.length > 0 && (
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="w-full max-w-xs">
+            <label htmlFor="pipeline-channel" className="block text-sm font-medium">
+              {t("pipeline.channels.picker")}
+            </label>
+            <select
+              id="pipeline-channel"
+              data-testid="pipeline-channel"
+              className={inputCls}
+              value={channelId ?? ""}
+              onChange={(e) => setChannelId(e.target.value)}
+            >
+              {cards.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {picked && (
+            <p className="pb-2 text-sm text-muted">{t("pipeline.channels.showing", { name: picked.name })}</p>
+          )}
+        </div>
+      )}
       {query.isPending && <LoadingSkeleton />}
       {query.isError && (
         <ProblemDisplay problem={asProblem(query.error)} onRetry={() => void query.refetch()} />
       )}
       {data && (
         <div className="space-y-4" data-testid={data.projects.length > 0 ? "state-success" : undefined}>
-          <StateBoard stations={data.stations} />
+          {cards.length > 0 && <ChannelCards cards={cards} selected={channelId} onPick={setChannelId} />}
+          <StateBoard stations={data.stations} channel={picked?.name} />
           {data.projects.length === 0 ? (
             <StateCard
               message={t("pages.pipeline.empty")}
