@@ -3,6 +3,7 @@
 - ``storyboards.script_version_id`` (the locked script it was cut from) and ``author_type``.
 - ``scenes``: ``is_hook``, ``pattern_interrupt``, the A13 visual plan (``treatment``, ``template_id``,
   ``template_params``) and ``visual_asset_id`` (the scene's picture, always with a rights record).
+- ``job_progress.entity_type`` also allows ``scene`` (redrawing one scene's picture).
 
 Added only where missing: databases built after this change already get them from schema_v1.sql (0002).
 
@@ -31,8 +32,15 @@ ADD = [
     "ALTER TABLE scenes ADD COLUMN IF NOT EXISTS template_id text NULL",
     "ALTER TABLE scenes ADD COLUMN IF NOT EXISTS template_params jsonb NULL",
     "ALTER TABLE scenes ADD COLUMN IF NOT EXISTS visual_asset_id uuid NULL REFERENCES media_assets",
+    "ALTER TABLE job_progress DROP CONSTRAINT IF EXISTS job_progress_entity_type_check",
+    "ALTER TABLE job_progress ADD CONSTRAINT job_progress_entity_type_check CHECK (entity_type IN"
+    " ('video_project','channel','niche_report','niche_candidate','script_version','scene'))",
 ]
 DROP = [
+    "DELETE FROM job_progress WHERE entity_type = 'scene'",
+    "ALTER TABLE job_progress DROP CONSTRAINT IF EXISTS job_progress_entity_type_check",
+    "ALTER TABLE job_progress ADD CONSTRAINT job_progress_entity_type_check CHECK (entity_type IN"
+    " ('video_project','channel','niche_report','niche_candidate','script_version'))",
     "ALTER TABLE scenes DROP COLUMN IF EXISTS visual_asset_id",
     "ALTER TABLE scenes DROP COLUMN IF EXISTS template_params",
     "ALTER TABLE scenes DROP COLUMN IF EXISTS template_id",

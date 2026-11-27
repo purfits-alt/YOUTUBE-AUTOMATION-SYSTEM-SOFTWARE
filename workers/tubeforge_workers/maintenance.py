@@ -294,6 +294,8 @@ def _content_failed(db: Session, kind: str, subject_id: str, link: str, exc: Any
         "research": "The research brief could not be made",
         "script": "The script draft could not be made",
         "parts": "Suggestions for your part could not be made",
+        "storyboard": "The storyboard could not be made",
+        "visuals": "The scene visuals could not be made",
     }
     notify_owners(
         db,
@@ -305,6 +307,8 @@ def _content_failed(db: Session, kind: str, subject_id: str, link: str, exc: Any
             + {
                 "research": " — Open the project and press Research again.",
                 "script": " — Open the project and press Write again.",
+                "storyboard": " — Open the Storyboard Studio and press Make the storyboard again.",
+                "visuals": " — Open the Visual Studio and press Make the visuals again.",
             }.get(kind, "")
         )[:300],
         dedup_key=f"content:{kind}:{subject_id}:{exc.status}",
@@ -373,6 +377,53 @@ def content_script(project_id: str, instruction: str = "") -> str:
             return _content_failed(db, "script", project_id, f"/projects/{project_id}/script", exc)
     log.info("content.script", project_id=project_id, version=result.version.version)
     return f"script v{result.version.version} ({len(result.findings)} findings)"
+
+
+def content_storyboard(project_id: str) -> str:
+    """content.storyboard: A12 cuts the locked script into scenes → ASSET_GENERATION (+ content.visuals)."""
+    from tubeforge_agents.discovery import PipelineError
+    from tubeforge_agents.storyboard import run_storyboard
+
+    with _tracked("content.storyboard", project_id=project_id), _research() as (db, gateway, _fetcher):
+        try:
+            result = run_storyboard(db, gateway, uuid.UUID(project_id))
+        except PipelineError as exc:
+            return _content_failed(db, "storyboard", project_id, f"/projects/{project_id}/storyboard", exc)
+    log.info("content.storyboard", project_id=project_id, scenes=len(result.scenes), cut_by=result.cut_by)
+    return f"storyboard v{result.storyboard.version} ({len(result.scenes)} scenes)"
+
+
+def content_visuals(project_id: str) -> str:
+    """content.visuals: A13 template per scene, checked in code, keyframes drawn → VOICEOVER."""
+    from tubeforge_agents.discovery import PipelineError
+    from tubeforge_agents.storyboard import run_visuals
+
+    data_dir = get_settings().resolved_data_dir
+    with _tracked("content.visuals", project_id=project_id), _research() as (db, gateway, _fetcher):
+        try:
+            result = run_visuals(db, gateway, data_dir, uuid.UUID(project_id))
+        except PipelineError as exc:
+            db.rollback()
+            return _content_failed(db, "visuals", project_id, f"/projects/{project_id}/visuals", exc)
+    log.info("content.visuals", project_id=project_id, scenes=len(result.scenes), changed=result.changed)
+    return f"{len(result.scenes)} scene visuals ({result.changed} changed by checks)"
+
+
+def scene_visual(scene_id: str, template_id: str, params: dict[str, Any]) -> str:
+    """media.scene_visual: redraw one scene with the template and text the owner chose."""
+    from tubeforge_agents.storyboard import SceneEditError, redraw_scene
+
+    data_dir = get_settings().resolved_data_dir
+    with _tracked("media.scene_visual", scene_id=scene_id), _deps() as (db, *_):
+        try:
+            scene = redraw_scene(db, data_dir, uuid.UUID(scene_id), template_id, params)
+        except SceneEditError as exc:
+            db.rollback()
+            progress.finish("FAILED", str(exc))
+            return "refused"
+        db.commit()
+    log.info("media.scene_visual", scene_id=scene_id, template_id=template_id)
+    return f"scene {scene.position} redrawn"
 
 
 def content_fact_check(version_id: str) -> str:

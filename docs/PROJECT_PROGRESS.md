@@ -1043,6 +1043,32 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
   - *Owner part:* record voice samples and consent; optional free Pexels/Pixabay keys.
 - **Free-tier check:** introduces no paid dependency ✔. Kokoro is Apache-2.0, OpenVoice and Chatterbox are MIT, and Piper voices are checked per licence. Paid stock stays disabled, with budget 0.
 
+**Phase 8 step B done (2026-11-27): storyboard and scene visuals.**
+- **Flow:** approving the script now queues the storyboard. Storyboard → Visuals → Voice-over happens by itself, with live progress on the Pipeline page and in both studios. If a step fails, the owner gets a notification and a **Make … again** button.
+- **A12 Storyboard v1.1** (job `content.storyboard`):
+  - Code splits the locked script into numbered sentences; A12 only groups them into scenes. So the narration is your script word for word, and durations are measured from the words, never guessed.
+  - Scene 1 is always exactly the hook. Scenes with a re-hook line are pattern interrupts. On-screen text with a forbidden promise is dropped.
+  - A bad cut gets one repair call; if that fails too, code cuts the scenes itself, so the project never stalls here.
+- **A13 Visual Creative v1.0** (job `content.visuals`, heavy queue):
+  - A13 picks one of the 12 drawable templates per scene, with its fields.
+  - **Code checks:** registry, fields, forbidden text, the soft reminder only at the end, and chart numbers only from cited supported claims. Otherwise a text template, with the reason shown.
+  - **Variety:** ≤ 40 % per template, a pattern interrupt changes the picture, the hook is bold, and the opening differs from the channel's last 5 videos.
+  - Each scene's keyframe is drawn with the channel brand and stored with a rights record. Then `assets_ready` → Voice-over.
+- **Template registry v1:** 16 templates; 12 drawn now (`tubeforge_media.templates`); 4 need your media (step D).
+- **Data:** migration 0018 adds `storyboards.script_version_id` and `author_type`, the scene hook and interrupt flags, the visual plan and `visual_asset_id`, and `job_progress` for scenes.
+- **API:**
+  - `GET` and `PUT /projects/{id}/storyboard`: your changes save a new version; narration is not editable.
+  - `PUT /projects/{id}/scenes/{scene_id}/visual`: another template for one scene, queued as `media.scene_visual`.
+  - Commands `retry-storyboard` and `retry-visuals`.
+- **Web:**
+  - Storyboard Studio (page 12) and Visual Studio (page 14) on the real API.
+  - The Pipeline stations Storyboard and Visuals are live: stations are now marked built one by one, not by phase.
+- **Tests:**
+  - Python: 20 cutting and visual-rule tests; the template tests; the pipeline from locked script → scenes → pictures with rights → Voice-over (a bad first cut repaired, a contradicted chart and a media template replaced, the pattern-interrupt rule, a redraw); the storyboard API (view, owner version, stale 412, forbidden 422, scene redraw job, media template refused, old-version scene 404, retry commands).
+  - Vitest: 2 new; the shell, registry and pipeline tests updated.
+- Free-tier check: introduces no paid dependency ✔ (Pillow and Source Sans Pro were already in; the models used are the free chains).
+- **Owner part (now):** after updating, open a project at the Storyboard station (or approve a script), watch the Pipeline move to Visuals and Voice-over, then look through both studios and change anything you want.
+
 **Owner report and decisions (2026-11-27): script finalisation before step B (ADR-0032).**
 - **Report:** the approved PurfitsWellnessHub script ("How Late Meals Impact Deep Sleep and Recovery") reached the Storyboard inbox with two `[[OWNER: Share your experience …]]` prompts still in its text. Approval checked the "Your own value" fields, not the prompts in the script. The voice-over would have read them aloud.
 - **Owner decisions:** your own value is **optional** (TubeForge never needs it). It stays available, with **3 Gemini suggestions** per part to pick from, plus the free-text box.

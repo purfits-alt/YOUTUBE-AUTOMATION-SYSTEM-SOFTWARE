@@ -24,6 +24,7 @@ import { CalendarPage } from "../pages/content/CalendarPage";
 import { IdeasPage } from "../pages/content/IdeasPage";
 import { ProjectsIndexPage } from "../pages/content/ProjectsIndexPage";
 import { ScriptStudioPage } from "../pages/content/ScriptStudioPage";
+import { StoryboardPage, VisualsPage } from "../pages/content/StoryboardPages";
 import { AuthGate } from "./AuthGate";
 import { Layout } from "./Layout";
 
@@ -46,6 +47,8 @@ const REAL_PAGES: Record<string, () => React.JSX.Element> = {
   ideas: () => <IdeasPage />,
   calendar: () => <CalendarPage />,
   script: () => <ScriptStudioPage />,
+  storyboard: () => <StoryboardPage />,
+  visuals: () => <VisualsPage />,
   pipeline: () => <PipelinePage />,
   assets: () => <AssetsPage />,
 };

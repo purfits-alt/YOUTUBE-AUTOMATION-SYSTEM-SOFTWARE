@@ -67,6 +67,9 @@ def make_blueprint() -> procrastinate.Blueprint:
     bp.task(name="content.script", queue=QUEUE_AGENTS)(maintenance.content_script)
     bp.task(name="content.fact_check", queue=QUEUE_AGENTS)(maintenance.content_fact_check)
     bp.task(name="content.part_options", queue=QUEUE_AGENTS)(maintenance.content_part_options)
+    bp.task(name="content.storyboard", queue=QUEUE_AGENTS)(maintenance.content_storyboard)
+    bp.task(name="content.visuals", queue=QUEUE_HEAVY)(maintenance.content_visuals)
+    bp.task(name="media.scene_visual", queue=QUEUE_HEAVY)(maintenance.scene_visual)
     bp.task(name="media.channel_art", queue=QUEUE_HEAVY)(maintenance.channel_art)
     bp.task(name="media.watermark", queue=QUEUE_HEAVY)(maintenance.watermark)
     return bp

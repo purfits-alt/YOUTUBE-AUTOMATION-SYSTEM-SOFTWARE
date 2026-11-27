@@ -309,21 +309,29 @@ Validators (code, after the LLM): hook word count within the 10–15 s window at
  "cta":"If you try the tracker this week, tell me which leak surprised you most."}
 ```
 
-## A12 — Storyboard (v1.0)
+## A12 — Storyboard (v1.1, built in Phase 8 step B)
 
 **Role:** Split the locked script into scenes.
 
 **Rules:** Scene 1 is the **hook scene** (10–15 s long-form, 1–3 s Short), with the strongest visual and the thumbnail promise visible or spoken. Scenes containing a script re-hook get `pattern_interrupt: true` and a visual change (zoom punch, hard cut, graphic pop, sound sting). Scene durations sum to the target ±10 %. Each scene has narration copied **verbatim** from the script (no rewriting). The visual instruction must be achievable with `available_styles` (motion graphics, chart, kinetic text, Ken Burns on owner/CC0/stock photo, owner footage, screen recording). On-screen text ≤ 120 chars. Shorts use vertical framing notes.
 
-**Output:** `{"scenes":[{"narration":str,"visual_instruction":str≤1000,"on_screen_text":str≤120|null,"duration_s":number,"style":enum(available_styles)}]}`
+**How v1.1 makes "verbatim" certain (Phase 8 B):** code splits the locked script into numbered sentences (`s0`, `s1`, …; the hook's are marked HOOK, `[[OWNER: …]]` prompts are never included). A12 only **groups** them: each scene names its `first` and `last` sentence id. Code then:
+- checks every sentence is used once, in order (one repair call naming the problem; if that fails too, code cuts the scenes itself: the hook, then about 12 s (3 s for Shorts) per scene, never across a part of the script);
+- makes scene 1 exactly the hook sentences;
+- joins the narration from the sentences (so it is the script word for word) and measures each duration from its words at the speaking rate (so the sum is the script's own length);
+- marks scenes holding a re-hook line as pattern interrupts, and drops on-screen text with a forbidden promise.
 
-## A13 — Visual Creative (v1.0)
+**Output (v1.1):** `{"scenes":[{"first":"s0","last":"s2","visual_instruction":str≤1000,"on_screen_text":str≤120|null,"style":enum(available_styles),"pattern_interrupt":bool}]}`
+
+## A13 — Visual Creative (v1.0, built in Phase 8 step B)
 
 **Role:** Map each scene to a concrete visual treatment and template parameters.
 
 **Rules:** Use only templates in `template_registry`. Reuse of any one template is ≤ 40 % of scenes. Avoid the template sequence of the channel's last 5 videos. Propose stock search terms only as suggestions (the owner selects). Chart data must come from the script or brief (claim ids).
 
-**Output:** `{"scenes":[{"scene_id":str,"treatment":"TEMPLATE|CHART|KINETIC_TEXT|OWNER_MEDIA|STOCK_SUGGESTION","template_id":str|null,"params":object,"stock_search_terms":[str≤60](≤3),"chart_claim_ids":[str]}]}`
+**Checked in code (Phase 8 B):** A13 sees only the 12 templates TubeForge can draw (`tubeforge_media.templates.describe()`) and only supported or uncontradicted brief claims. A choice is kept only if the template is in the registry, its parameters validate, no text has a forbidden promise, the soft reminder is on one of the last 2 scenes, and — for charts and big numbers — every number appears in a cited claim. Anything else becomes a text template from the scene's own words, with the reason stored (`_why`, shown in the Visual Studio). Then code rebalances: no template on more than 40 % of the scenes (videos under 5 scenes: at most 2 each), a pattern interrupt never repeats the template before it, the hook gets a bold template, and the first 5 templates differ from each of the channel's last 5 videos.
+
+**Output:** `{"scenes":[{"scene_id":str,"template_id":str,"params":object,"stock_search_terms":[str≤60](≤3),"chart_claim_ids":[str]}]}` (the treatment comes from the registry, not the model).
 
 ## A17 — Video Editing (instruction → timeline ops) (v1.0)
 

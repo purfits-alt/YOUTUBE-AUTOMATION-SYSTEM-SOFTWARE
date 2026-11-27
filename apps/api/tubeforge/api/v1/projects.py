@@ -69,7 +69,7 @@ DEFAULT_DURATION_S = {"LONG": 480, "SHORT": 45}
 EDITABLE_STATES = {"IDEA", "RESEARCHING", "RESEARCH_REVIEW", "SCRIPTING", "SCRIPT_REVIEW"}
 SCRIPT_EDIT_STATES = {"SCRIPTING", "SCRIPT_REVIEW"}
 Command = Literal[
-    "start", "retry-research", "retry-script", "reopen-script", "approve-research", "request-research-changes", "approve-script", "request-script-changes",
+    "start", "retry-research", "retry-script", "retry-storyboard", "retry-visuals", "reopen-script", "approve-research", "request-research-changes", "approve-script", "request-script-changes",
     "approve-cut", "request-cut-changes", "retry", "pause", "resume", "cancel", "choose-fix-path",
 ]  # fmt: skip
 LATER = {"approve-cut", "request-cut-changes", "choose-fix-path"}
@@ -80,12 +80,31 @@ COMMANDS_BY_STATE: dict[str, list[str]] = {
     "RESEARCH_REVIEW": ["approve-research", "request-research-changes", "pause", "cancel"],
     "SCRIPTING": ["retry-script", "pause", "cancel"],
     "SCRIPT_REVIEW": ["approve-script", "request-script-changes", "pause", "cancel"],
-    "STORYBOARDING": ["reopen-script", "pause", "cancel"],
+    "STORYBOARDING": ["retry-storyboard", "reopen-script", "pause", "cancel"],
+    "ASSET_GENERATION": ["retry-visuals", "pause", "cancel"],
     "PAUSED": ["resume", "cancel"],
     "FAILED": ["retry", "cancel"],
 }
-# Work to queue when a project (re-)enters a state.
-JOB_FOR_STATE = {"RESEARCHING": "content.research", "SCRIPTING": "content.script"}
+#: The job that works on a project in each state, and its queue (Phase 8 B: storyboard, visuals).
+JOB_FOR_STATE = {
+    "RESEARCHING": ("content.research", "agents"),
+    "SCRIPTING": ("content.script", "agents"),
+    "STORYBOARDING": ("content.storyboard", "agents"),
+    "ASSET_GENERATION": ("content.visuals", "heavy"),
+}
+#: Run a station's job again without a state change: command → the state it is allowed in.
+RETRY = {
+    "retry-research": "RESEARCHING",
+    "retry-script": "SCRIPTING",
+    "retry-storyboard": "STORYBOARDING",
+    "retry-visuals": "ASSET_GENERATION",
+}
+RETRY_NOT_NOW = {
+    "retry-research": "Research can be run again while the project is researching.",
+    "retry-script": "The script can be written again while the project is in script writing.",
+    "retry-storyboard": "The storyboard can be made again while the project is at the storyboard.",
+    "retry-visuals": "The visuals can be made again while the project is at scene visuals.",
+}
 
 
 # ------------------------------------------------------------------------------------- models
@@ -404,13 +423,13 @@ def project_out(db: Session, row: VideoProject) -> ProjectOut:
 
 
 def _queue(db: Session, state: str, project: VideoProject, instruction: str = "") -> list[int]:
-    name = JOB_FOR_STATE.get(state)
-    if name is None:
+    if state not in JOB_FOR_STATE:
         return []
+    name, queue = JOB_FOR_STATE[state]
     args: dict[str, Any] = {"project_id": str(project.id)}
     if name == "content.script" and instruction:
         args["instruction"] = instruction
-    job = defer_in_transaction(db, name, queue="agents", args=args)
+    job = defer_in_transaction(db, name, queue=queue, args=args)
     return [job] if job is not None else []
 
 
@@ -604,34 +623,24 @@ def project_command(
     if (replayed := idem.replay()) is not None:
         return replayed
     project = _project(db, project_id, lock=True)
-    if cmd in ("retry-research", "retry-script"):
+    if cmd in RETRY:
         # The job found too little, was refused or stopped: run it again. No state change: the
-        # project stays in RESEARCHING (optionally with the owner's extra search words) or SCRIPTING
-        # (optionally with the owner's instruction for the draft).
-        state, name = (
-            ("RESEARCHING", "content.research")
-            if cmd == "retry-research"
-            else ("SCRIPTING", "content.script")
-        )
+        # project stays where it is (research optionally with the owner's extra search words, the
+        # script optionally with the owner's instruction; storyboard and visuals as they are).
+        state, (name, queue) = RETRY[cmd], JOB_FOR_STATE[RETRY[cmd]]
         if project.state != state:
-            raise ProblemError(
-                409,
-                "INVALID_TRANSITION",
-                "Not now",
-                "Research can be run again while the project is researching."
-                if cmd == "retry-research"
-                else "The script can be written again while the project is in script writing.",
-            )
+            raise ProblemError(409, "INVALID_TRANSITION", "Not now", RETRY_NOT_NOW[cmd])
         args: dict[str, Any] = {"project_id": str(project.id)}
+        details: dict[str, Any] = {}
         if cmd == "retry-research":
             extra = [w.strip() for w in (body.note or "").replace("\n", ",").split(",") if w.strip()][:5]
             args["extra_queries"] = extra
-            details: dict[str, Any] = {"extra_queries": extra}
-        else:
+            details = {"extra_queries": extra}
+        elif cmd == "retry-script":
             if body.note and body.note.strip():
                 args["instruction"] = body.note.strip()
             details = {"instruction": bool(body.note and body.note.strip())}
-        job = defer_in_transaction(db, name, queue="agents", args=args)
+        job = defer_in_transaction(db, name, queue=queue, args=args)
         _audit(request, db, p, f"project.{cmd}", project, **details)
         out = CommandOut(project=project_out(db, project), transition_id=None, job_ids=[job] if job else [])
         response.status_code = 202

@@ -25,8 +25,8 @@ from tubeforge.progress import TRACKED
 router = APIRouter(tags=["pipeline"])
 View = Annotated[Principal, Depends(require("content.view"))]
 
-#: The phase whose stations are built. Later stations are shown, marked "arrives in Phase N".
-BUILT_PHASE = 7
+#: The phase being built now. Stations not yet built are shown, marked "arrives in Phase N".
+BUILT_PHASE = 8
 QUEUED_HINT_AFTER = timedelta(minutes=2)
 STALLED_AFTER = timedelta(minutes=10)
 RECENT_JOBS = timedelta(hours=24)
@@ -52,15 +52,18 @@ class Station:
     states: tuple[str, ...]
     phase: int
     job: str | None = None
+    built: bool = False  # True once TubeForge can do this station's work (per station since Phase 8 B)
 
 
 STATIONS: tuple[Station, ...] = (
-    Station("research", "Research", "TUBEFORGE", ("IDEA", "RESEARCHING"), 7, "content.research"),
-    Station("research_review", "Check the research", "OWNER", ("RESEARCH_REVIEW",), 7),
-    Station("script", "Script writing", "TUBEFORGE", ("SCRIPTING",), 7, "content.script"),
-    Station("script_review", "Approve the script", "OWNER", ("SCRIPT_REVIEW",), 7, "content.fact_check"),
-    Station("storyboard", "Storyboard", "TUBEFORGE", ("STORYBOARDING",), 8),
-    Station("visuals", "Visuals", "TUBEFORGE", ("ASSET_GENERATION",), 8),
+    Station("research", "Research", "TUBEFORGE", ("IDEA", "RESEARCHING"), 7, "content.research", True),
+    Station("research_review", "Check the research", "OWNER", ("RESEARCH_REVIEW",), 7, built=True),
+    Station("script", "Script writing", "TUBEFORGE", ("SCRIPTING",), 7, "content.script", True),
+    Station(
+        "script_review", "Approve the script", "OWNER", ("SCRIPT_REVIEW",), 7, "content.fact_check", True
+    ),
+    Station("storyboard", "Storyboard", "TUBEFORGE", ("STORYBOARDING",), 8, "content.storyboard", True),
+    Station("visuals", "Visuals", "TUBEFORGE", ("ASSET_GENERATION",), 8, "content.visuals", True),
     Station("voice", "Voice-over", "TUBEFORGE", ("VOICEOVER",), 8),
     Station("edit", "Video edit", "TUBEFORGE", ("ASSEMBLY",), 9),
     Station("cut_review", "Check the rough cut", "OWNER", ("ROUGH_CUT_REVIEW", "EXTERNAL_EDITING"), 9),
@@ -285,9 +288,7 @@ def _effective_state(project: VideoProject) -> str:
 
 def _station_out(i: int, count: int = 0) -> StationOut:
     s = STATIONS[i]
-    return StationOut(
-        key=s.key, label=s.label, who=s.who, phase=s.phase, ready=s.phase <= BUILT_PHASE, count=count
-    )
+    return StationOut(key=s.key, label=s.label, who=s.who, phase=s.phase, ready=s.built, count=count)
 
 
 def _activity(project: VideoProject, index: int, progress: JobProgressOut | None) -> Activity:
@@ -300,7 +301,7 @@ def _activity(project: VideoProject, index: int, progress: JobProgressOut | None
         return "BLOCKED"
     if project.state in ("PUBLISHED", "ANALYZING", "ARCHIVED"):
         return "DONE"
-    if station.phase > BUILT_PHASE:
+    if not station.built:
         return "NOT_BUILT"
     if project.state == "IDEA":
         return "YOUR_TURN"  # the owner presses Start

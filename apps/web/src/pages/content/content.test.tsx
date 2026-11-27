@@ -158,7 +158,8 @@ describe("Pipeline (ADR-0031)", () => {
     expect(within(review).getByTestId("box-inbox")).toHaveTextContent(
       "Inbox1from Script writingWhy octopuses dream",
     );
-    expect(within(board).getByTestId("station-storyboard")).toHaveTextContent("Phase 8");
+    expect(within(board).getByTestId("station-storyboard")).toHaveTextContent("TubeForge"); // built in Phase 8 B
+    expect(within(board).getByTestId("station-voice")).toHaveTextContent("Phase 8");
 
     const working = screen.getByTestId("pipeline-p-102");
     expect(working).toHaveAttribute("data-activity", "WORKING");
@@ -171,7 +172,7 @@ describe("Pipeline (ADR-0031)", () => {
 
     const waiting = screen.getByTestId("pipeline-p-101");
     expect(waiting).toHaveAttribute("data-activity", "YOUR_TURN");
-    expect(within(waiting).getByTestId("next")).toHaveTextContent("Storyboard — arrives in Phase 8");
+    expect(within(waiting).getByTestId("next")).toHaveTextContent("Storyboard (starts by itself)");
     expect(screen.getByTestId("pipeline-jobs")).toHaveTextContent("New ideas");
   });
 
@@ -338,5 +339,56 @@ describe("Your parts (owner decision 2026-11-27: optional, never read aloud)", (
     expect(
       within(screen.getByTestId("project-header")).getByRole("button", { name: "Reopen the script" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("Storyboard and Visual Studio (Phase 8 step B)", () => {
+  it("shows the scenes with the hook first; the owner's changes save a new version", async () => {
+    renderAt("/projects/p-101/storyboard");
+    const hook = await screen.findByTestId("scene-1");
+    expect(hook).toHaveTextContent("Hook");
+    expect(hook).toHaveTextContent("Your heart slows down at night.");
+    expect(screen.getByTestId("scene-3")).toHaveTextContent("Pattern interrupt");
+    expect(screen.getByTestId("storyboard-summary")).toHaveTextContent("4 scenes");
+    const save = screen.getByRole("button", { name: "Save as a new version" });
+    expect(save).toBeDisabled();
+    const second = screen.getByTestId("scene-2");
+    fireEvent.change(within(second).getByLabelText(/Text on screen/), {
+      target: { value: "Guaranteed sleep" },
+    });
+    fireEvent.click(save);
+    expect(await screen.findByText(/makes a promise TubeForge cannot keep/)).toBeInTheDocument();
+    fireEvent.change(within(second).getByLabelText(/Text on screen/), { target: { value: "Repair time" } });
+    fireEvent.click(save);
+    expect(await screen.findByText("Saved as a new storyboard version.")).toBeInTheDocument();
+    await waitFor(() => expect(content.storyboard.version).toBe(2));
+    expect(content.storyboard.scenes[1]?.on_screen_text).toBe("Repair time");
+    expect(content.storyboard.scenes[1]?.narration).toBe(
+      "Deep sleep is when the body recovers. It mostly happens early in the night.",
+    );
+  });
+
+  it("shows each scene's picture with its rights and redraws one with another template", async () => {
+    renderAt("/projects/p-101/visuals");
+    const first = await screen.findByTestId("visual-1");
+    expect(within(first).getByRole("img", { name: "Picture for scene 1" })).toBeInTheDocument();
+    expect(first).toHaveTextContent("Rights record ✓");
+    expect(first).toHaveTextContent("Numbers from research claims c1");
+    expect(screen.getByText("4 of 4 scenes have a picture")).toBeInTheDocument();
+    expect(screen.getByTestId("visual-2")).toHaveTextContent("TubeForge changed the suggestion");
+    expect(screen.getByTestId("visual-3")).toHaveTextContent("dinner table at night");
+
+    const second = screen.getByTestId("visual-2");
+    fireEvent.click(within(second).getByRole("button", { name: "Change the picture" }));
+    const form = within(second).getByRole("form", { name: "Change the picture of scene 2" });
+    const photo = within(form).getByRole("option", { name: /Photo pan \(needs your own media/ });
+    expect(photo).toBeDisabled();
+    fireEvent.change(within(form).getByLabelText("Template"), { target: { value: "kinetic_title" } });
+    fireEvent.change(within(form).getByLabelText("Text"), { target: { value: "Repair time" } });
+    fireEvent.click(within(form).getByRole("button", { name: "Draw it" }));
+    expect(await screen.findByText("Scene 2 is being drawn again.")).toBeInTheDocument();
+    expect(content.sceneRequests).toEqual([
+      { scene: "sc-2", template_id: "kinetic_title", params: { text: "Repair time" } },
+    ]);
   });
 });

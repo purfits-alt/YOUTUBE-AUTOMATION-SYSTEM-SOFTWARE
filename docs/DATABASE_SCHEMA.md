@@ -706,7 +706,7 @@ CREATE TABLE job_meta (                               -- our extra job info, key
 CREATE TABLE job_progress (                           -- live pipeline progress (owner request 2026-11-18, ADR-0031)
   id uuid PRIMARY KEY,
   kind text NOT NULL,                                 -- task name, e.g. 'content.research'
-  entity_type text NOT NULL CHECK (entity_type IN ('video_project','channel','niche_report','niche_candidate','script_version')),
+  entity_type text NOT NULL CHECK (entity_type IN ('video_project','channel','niche_report','niche_candidate','script_version','scene')),
   entity_id uuid NOT NULL,
   project_id uuid NULL,                               -- the video project this job moves, when there is one
   status text NOT NULL CHECK (status IN ('QUEUED','RUNNING','DONE','FAILED','WAITING')),

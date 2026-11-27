@@ -4368,7 +4368,7 @@
       "PipelineOut": {
         "properties": {
           "built_phase": {
-            "default": 7,
+            "default": 8,
             "title": "Built Phase",
             "type": "integer"
           },
@@ -6040,6 +6040,228 @@
         "title": "ScanIn",
         "type": "object"
       },
+      "SceneEditIn": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "on_screen_text": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "On Screen Text"
+          },
+          "style": {
+            "default": "kinetic_text",
+            "enum": [
+              "kinetic_text",
+              "motion_graphics",
+              "chart",
+              "photo",
+              "owner_footage",
+              "screen_recording"
+            ],
+            "title": "Style",
+            "type": "string"
+          },
+          "visual_instruction": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Visual Instruction",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "visual_instruction"
+        ],
+        "title": "SceneEditIn",
+        "type": "object"
+      },
+      "SceneOut": {
+        "properties": {
+          "chart_claim_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Chart Claim Ids",
+            "type": "array"
+          },
+          "duration_s": {
+            "description": "Measured from the words at the speaking rate.",
+            "title": "Duration S",
+            "type": "number"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_hook": {
+            "title": "Is Hook",
+            "type": "boolean"
+          },
+          "narration": {
+            "description": "The locked script's words for this scene (not editable here).",
+            "title": "Narration",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why TubeForge changed the visual agent's choice, if it did.",
+            "title": "Note"
+          },
+          "on_screen_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "On Screen Text"
+          },
+          "pattern_interrupt": {
+            "title": "Pattern Interrupt",
+            "type": "boolean"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "stock_search_terms": {
+            "description": "Ideas for your own search later; nothing is bought.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Stock Search Terms",
+            "type": "array"
+          },
+          "style": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Style"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "template_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Label"
+          },
+          "template_params": {
+            "additionalProperties": true,
+            "description": "The template's fields (TubeForge's notes removed).",
+            "title": "Template Params",
+            "type": "object"
+          },
+          "treatment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Treatment"
+          },
+          "visual_instruction": {
+            "title": "Visual Instruction",
+            "type": "string"
+          },
+          "visual_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The scene's drawn picture (it has a rights record).",
+            "title": "Visual Url"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "narration",
+          "visual_instruction",
+          "on_screen_text",
+          "duration_s",
+          "style",
+          "is_hook",
+          "pattern_interrupt",
+          "treatment",
+          "template_id",
+          "template_label",
+          "template_params",
+          "note",
+          "chart_claim_ids",
+          "stock_search_terms",
+          "visual_url"
+        ],
+        "title": "SceneOut",
+        "type": "object"
+      },
+      "SceneVisualIn": {
+        "properties": {
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          },
+          "template_id": {
+            "maxLength": 40,
+            "title": "Template Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_id",
+          "params"
+        ],
+        "title": "SceneVisualIn",
+        "type": "object"
+      },
       "ScriptVersionIn": {
         "properties": {
           "based_on_version": {
@@ -6834,6 +7056,151 @@
         "title": "StepPatch",
         "type": "object"
       },
+      "StoryboardIn": {
+        "properties": {
+          "based_on_version": {
+            "title": "Based On Version",
+            "type": "integer"
+          },
+          "scenes": {
+            "items": {
+              "$ref": "#/components/schemas/SceneEditIn"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Scenes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "based_on_version",
+          "scenes"
+        ],
+        "title": "StoryboardIn",
+        "type": "object"
+      },
+      "StoryboardOut": {
+        "properties": {
+          "author_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Type"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "editable": {
+            "title": "Editable",
+            "type": "boolean"
+          },
+          "format": {
+            "title": "Format",
+            "type": "string"
+          },
+          "job": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobProgressOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "project_state": {
+            "title": "Project State",
+            "type": "string"
+          },
+          "scenes": {
+            "items": {
+              "$ref": "#/components/schemas/SceneOut"
+            },
+            "title": "Scenes",
+            "type": "array"
+          },
+          "script_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Script Version Id"
+          },
+          "target_duration_s": {
+            "title": "Target Duration S",
+            "type": "integer"
+          },
+          "templates": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateOut"
+            },
+            "title": "Templates",
+            "type": "array"
+          },
+          "total_duration_s": {
+            "title": "Total Duration S",
+            "type": "number"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "None until the first storyboard is made.",
+            "title": "Version"
+          },
+          "working_title": {
+            "title": "Working Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "project_state",
+          "working_title",
+          "format",
+          "target_duration_s",
+          "version",
+          "author_type",
+          "script_version_id",
+          "created_at",
+          "total_duration_s",
+          "editable",
+          "scenes",
+          "templates",
+          "job"
+        ],
+        "title": "StoryboardOut",
+        "type": "object"
+      },
       "StrategyIn": {
         "properties": {
           "niche_candidate_id": {
@@ -6979,6 +7346,45 @@
           "critical_unread"
         ],
         "title": "SummaryOut",
+        "type": "object"
+      },
+      "TemplateOut": {
+        "properties": {
+          "fields": {
+            "additionalProperties": true,
+            "title": "Fields",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "needs_media": {
+            "title": "Needs Media",
+            "type": "boolean"
+          },
+          "treatment": {
+            "title": "Treatment",
+            "type": "string"
+          },
+          "use_for": {
+            "title": "Use For",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "treatment",
+          "use_for",
+          "needs_media",
+          "fields"
+        ],
+        "title": "TemplateOut",
         "type": "object"
       },
       "TestFetchOut": {
@@ -21896,6 +22302,8 @@
                 "start",
                 "retry-research",
                 "retry-script",
+                "retry-storyboard",
+                "retry-visuals",
                 "reopen-script",
                 "approve-research",
                 "request-research-changes",
@@ -22345,6 +22753,180 @@
         "summary": "Get Brief",
         "tags": [
           "content"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/scenes/{scene_id}/visual": {
+      "put": {
+        "description": "The owner picks another template (or text) for one scene; a job draws the new picture.",
+        "operationId": "change_scene_visual_api_v1_projects__project_id__scenes__scene_id__visual_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "scene_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Scene Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SceneVisualIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/tubeforge__api__v1__projects__QueuedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR (field errors in errors[]) or a bad header"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_EDITABLE / NO_STORYBOARD"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "VERSION_CONFLICT: changed elsewhere"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "SCENE_INVALID / VALIDATION_ERROR / IDEMPOTENCY_MISMATCH"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_READY (master key or database missing)"
+          }
+        },
+        "summary": "Change Scene Visual",
+        "tags": [
+          "storyboards"
         ]
       }
     },
@@ -23274,6 +23856,301 @@
         "summary": "Part Options",
         "tags": [
           "content"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/storyboard": {
+      "get": {
+        "operationId": "get_storyboard_api_v1_projects__project_id__storyboard_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoryboardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR (field errors in errors[]) or a bad header"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "State conflict (e.g. IDEMPOTENCY_IN_PROGRESS)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_READY (master key or database missing)"
+          }
+        },
+        "summary": "Get Storyboard",
+        "tags": [
+          "storyboards"
+        ]
+      },
+      "put": {
+        "description": "The owner's scene changes become a new storyboard version; pictures stay with their scenes.",
+        "operationId": "save_storyboard_api_v1_projects__project_id__storyboard_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoryboardIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoryboardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR (field errors in errors[]) or a bad header"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED / MFA_REQUIRED / BAD_CREDENTIALS"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "FORBIDDEN / CSRF_FAILED / REAUTH_REQUIRED / ORIGIN_REJECTED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_EDITABLE / NO_STORYBOARD"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "VERSION_CONFLICT: changed elsewhere"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "SCENE_INVALID / VALIDATION_ERROR / IDEMPOTENCY_MISMATCH"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "NOT_READY (master key or database missing)"
+          }
+        },
+        "summary": "Save Storyboard",
+        "tags": [
+          "storyboards"
         ]
       }
     },

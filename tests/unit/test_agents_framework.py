@@ -107,6 +107,7 @@ def test_every_system_prompt_spells_out_the_output_schema(code: str) -> None:
         "wpm": 150,
         "target_words": 1200,
         "humour": False,
+        "hook_rule": "10–15 seconds",
     }
     system = render_system(code, "Agent", version, context)
     assert json.dumps(output_schema(code), ensure_ascii=False, separators=(",", ":")) in system

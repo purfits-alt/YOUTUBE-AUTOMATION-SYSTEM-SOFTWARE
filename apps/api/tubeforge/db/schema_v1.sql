@@ -998,7 +998,7 @@ CREATE TABLE job_meta (
 CREATE TABLE job_progress (
   id uuid PRIMARY KEY,
   kind text NOT NULL,
-  entity_type text NOT NULL CHECK (entity_type IN ('video_project','channel','niche_report','niche_candidate','script_version')),
+  entity_type text NOT NULL CHECK (entity_type IN ('video_project','channel','niche_report','niche_candidate','script_version','scene')),
   entity_id uuid NOT NULL,
   project_id uuid NULL,
   status text NOT NULL CHECK (status IN ('QUEUED','RUNNING','DONE','FAILED','WAITING')),

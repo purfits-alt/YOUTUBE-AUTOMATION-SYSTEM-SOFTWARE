@@ -334,6 +334,7 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 |---|---|
 | **Route** | `/projects/:id/storyboard` |
 | **Purpose** | Scene list with narration, visual instruction, on-screen text, durations. |
+| **Built (Phase 8 step B)** | Real API. Scene cards: Hook / Pattern interrupt badges, seconds, narration (read-only: the locked script word for word; to change words, reopen the script), editable visual idea, on-screen text and style; **Save as a new version**; total vs target; **Make the storyboard again** at the storyboard station; live job bar. Reorder, add and remove scenes are not offered (the narration must stay the script in order). |
 | **Layout — desktop** | Scene table/cards with drag reorder; scene detail panel; total duration vs target. |
 | **Layout — mobile** | Scene cards stacked. |
 | **Components** | SceneList (sortable), SceneEditor, DurationBar |
@@ -374,6 +375,7 @@ The router reads `/auth/me` permissions. Pages the user can't view show a 403 pa
 |---|---|
 | **Route** | `/projects/:id/visuals` |
 | **Purpose** | Create/assign visuals per scene: procedural graphics, charts, kinetic text, owner media, CC0, stock import. |
+| **Built (Phase 8 step B)** | Real API (`GET /projects/{id}/storyboard`). Per scene: the drawn picture, template and treatment, why TubeForge changed the suggestion, the research claims behind chart numbers, stock search ideas (nothing is bought), **Rights record ✓**; **Change the picture**: pick a template (media templates shown, disabled until uploads in step D) and fill its fields → `PUT scenes/{id}/visual`; **Make the visuals again**. Uploads and stock arrive in step D. |
 | **Layout — desktop** | Scene list left; per-scene visual options right (generated procedural variants, uploads, stock search tab). |
 | **Layout — mobile** | Scene by scene wizard. |
 | **Components** | SceneVisualPicker, ProceduralTemplateGallery, UploadDropzone, StockSearchPanel, RightsStatusBadge |

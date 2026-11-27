@@ -4,7 +4,7 @@
  * routes × states, axe and visual tests; the real flows are covered by the Python integration tests
  * and stateful.spec.ts. Shapes follow packages/shared/openapi.json.
  */
-import { content, pipelineOut, versionSummary } from "../../src/mocks/contentApi";
+import { content, pipelineOut, storyboardMock, versionSummary } from "../../src/mocks/contentApi";
 
 const NOW = "2026-11-10T06:00:00Z";
 const FOOTER = "Estimates based on cited sources. Not a prediction of views, subscribers or earnings.";
@@ -159,6 +159,9 @@ export const SUCCESS_FIXTURES: Record<string, Record<string, unknown>> = {
     "/api/v1/projects/p-101/claims": content.claims,
     "/api/v1/projects/p-101/value-add": content.valueAdd,
   },
+  // Scenes and their drawn pictures (Phase 8 step B): no worker cuts or draws them in e2e.
+  storyboard: { "/api/v1/projects/p-101/storyboard": storyboardMock("p-101") },
+  visuals: { "/api/v1/projects/p-101/storyboard": storyboardMock("p-101") },
   // One drawn logo with its rights record (Phase 8): the e2e database has no worker to draw it.
   assets: {
     "/api/v1/assets": {

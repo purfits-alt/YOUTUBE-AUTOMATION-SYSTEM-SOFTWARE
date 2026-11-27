@@ -33,12 +33,14 @@ def _system(agent: Any, data: Any) -> str:
     return render_system(agent.code, info.name, info.prompt_version, agent.context(data, None))
 
 
-def test_the_four_agents_use_the_catalogue_prompt_versions() -> None:
+def test_the_content_agents_use_the_catalogue_prompt_versions() -> None:
     assert set(ca.CONTENT_AGENTS) == {
         "A08_IDEA_GENERATION",
         "A09_RESEARCH",
         "A10_FACT_CHECKING",
         "A11_SCRIPTWRITING",
+        "A12_STORYBOARD",
+        "A13_VISUAL_CREATIVE",
     }
     for code in ca.CONTENT_AGENTS:
         assert (BY_CODE[code].prompt_version) in {"v1.0", "v1.1"}

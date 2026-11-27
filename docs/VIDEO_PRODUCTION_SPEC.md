@@ -110,6 +110,12 @@ Validation: every `asset_id` exists **and has a rights record allowed for the ch
 `kinetic_title`, `lower_third`, `bullet_reveal`, `quote_card`, `bar_chart`, `line_chart`, `pie_chart`, `number_counter`, `map_highlight` (public-domain base maps only), `timeline_steps`, `split_compare`, `ken_burns_photo`, `screen_recording_frame`, `owner_cam_frame`, `progress_bar`, `subscribe_reminder_soft` (no fake buttons).
 Rules: any one template ≤ 40 % of a video's scenes, and the template sequence must differ from the last 5 videos (A13 check). The goal is variety, to avoid the "template look" (F3).
 
+**Built in Phase 8 step B** (`workers/tubeforge_media/templates.py`):
+- Each template has a strict parameter model. The 12 drawn by TubeForge use Pillow, the channel's brand palette (from its blueprint; a default palette otherwise) and Source Sans Pro (OFL-1.1). The other 4 (`ken_burns_photo`, `screen_recording_frame`, `owner_cam_frame`, `map_highlight`) need the owner's own media or a public-domain map and arrive with uploads in step D.
+- One **keyframe** per scene: 1920×1080 (long-form) or 1080×1920 (Short), text always ≥ 4.5:1 contrast and inside the picture. Motion (zooms, reveals, counters) is added by the renderer in Phase 9 from the same template id and parameters.
+- Every keyframe is stored as a PROCEDURAL asset with a SYSTEM_GENERATED rights record, so `scenes_have_rights_cleared_visuals` passes and nothing without rights can enter a render.
+- Charts and big numbers show only numbers found in the cited, supported research claims (checked in code); otherwise the scene gets a text template.
+
 ## 6. Voice options (ADR-0019)
 
 | Option | When | Quality / speed on H-LITE |

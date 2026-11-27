@@ -97,9 +97,10 @@ def test_queued_running_done_and_next_station(
         "label": "Storyboard",
         "who": "TUBEFORGE",
         "phase": 8,
-        "ready": False,
+        "ready": True,  # built in Phase 8 step B
         "count": 0,
     }
+    assert next(s["key"] for s in stations if not s["ready"]) == "voice"
     research = stations[0]["board"]
     assert (research["received_from"], research["forwards_to"]) == ("Approved idea", "Check the research")
     assert [(x["id"], x["activity"]) for x in research["inbox"]] == [(pid, "QUEUED")]

@@ -23,7 +23,7 @@ Each phase lists its steps and **your part** for that module.
 
 | | |
 |---|---|
-| **Current module** | **Phase 8 step A done** (channel art, watermark, asset library). Next: step B (storyboard and visuals). Your part now: draw and pick your channel art; upload your SEMRS logo for the watermark. |
+| **Current module** | **Phase 8 step B done** (storyboard and scene visuals). Next: step C (voice). Your part now: look through a storyboard and its pictures; draw and pick your channel art; upload your SEMRS logo for the watermark. |
 | Your channel | **Open Node AI**, handle **@OpenNodeAIHQ**, https://www.youtube.com/@OpenNodeAIHQ (created 2026-11-15; name, description and handle set from the setup kit) |
 | Created in TubeForge | yes, from the approved blueprint, as a test channel (private uploads only) |
 | Connected | ✅ 2026-11-15: Google sign-in done; private test upload visible (private) in YouTube Studio |
@@ -128,7 +128,7 @@ Each phase lists its steps and **your part** for that module.
 ## Phase 8 — Storyboards, visuals, voice & stock 🟡 (started 2026-11-27)
 | Step | Status |
 |---|---|
-| Storyboard, visual plan, 16 procedural templates, renderer | ⬜ |
+| Storyboard, visual plan, 16 procedural templates, renderer | ✅ step B (2026-11-27): A12 storyboard, A13 visual plan checked in code, 12 drawn templates (4 need your media, step D), keyframes with rights, Storyboard and Visual Studio · your part: look through a storyboard and its pictures ⬜ |
 | Asset library, rights forms, manual licensed import | 🟡 library with rights records and downloads ✅ (step A); rights form and manual import in step D |
 | Pexels/Pixabay free adapters (off by default) | ⬜ |
 | Paid stock | ⛔ interface only, disabled (paid) |

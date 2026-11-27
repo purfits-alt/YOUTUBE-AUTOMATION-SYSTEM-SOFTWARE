@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, type Page } from "@playwright/test";
+import { storyboardMock } from "../../src/mocks/contentApi";
 import { SUCCESS_FIXTURES } from "./fixtures";
 import { SEED_FILE } from "./global-setup";
 import en from "../../src/i18n/en.json" with { type: "json" };
@@ -21,7 +22,21 @@ const ARRAY_PAGES = new Set(["agents", "usage", "discovery", "trends", "lookup",
 
 /** Real pages whose main endpoint returns an object of its own shape. */
 const EMPTY_BODIES: Record<string, unknown> = {
-  pipeline: { stations: [], projects: [], jobs: [], refresh_s: 20, built_phase: 7 },
+  pipeline: { stations: [], projects: [], jobs: [], refresh_s: 20, built_phase: 8 },
+  storyboard: {
+    ...storyboardMock("p-101"),
+    project_state: "SCRIPT_REVIEW",
+    version: null,
+    scenes: [],
+    total_duration_s: 0,
+  },
+  visuals: {
+    ...storyboardMock("p-101"),
+    project_state: "SCRIPT_REVIEW",
+    version: null,
+    scenes: [],
+    total_duration_s: 0,
+  },
 };
 
 /** Pages with no empty state (FRONTEND_SPECIFICATION: "Empty state: N/A" / steps always exist). */

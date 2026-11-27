@@ -39,8 +39,10 @@ def test_research_jobs_run_on_the_agents_queue_and_trends_daily() -> None:
         "content.script",
         "content.fact_check",
         "content.part_options",
+        "content.storyboard",
     ):
         assert app.tasks[task_name(name)].queue == "agents"
+    assert app.tasks[task_name("content.visuals")].queue == "heavy"  # draws every scene's keyframe
     crons = {p.task.name.split(":")[-1]: p.cron for p in app.periodic_registry.periodic_tasks.values()}
     assert crons["a03.trend_scan"] == "0 1 * * *"  # 06:00 PKT
     assert crons["mnt.retention.purge_research_docs"] == "50 * * * *"
