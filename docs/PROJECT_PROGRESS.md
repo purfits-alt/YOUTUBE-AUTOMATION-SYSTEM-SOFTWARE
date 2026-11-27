@@ -1004,6 +1004,16 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
   - **A09 prompt v1.1** (migration 0016; a prompt version the owner changed is kept): it writes the brief from what the sources say and lists the missing link as an open question ("The sources do not say whether …"). It refuses only when fewer than 2 documents are about any core part of the idea. Claims still need a verbatim quote, and A10 still checks them.
 - **Owner's part:** after updating, open the project and press **Research again**. To steer it, add these extra search words: "Heart rate variability, Slow-wave sleep, Sleep hygiene, Circadian rhythm".
 
+**Owner request (2026-11-27): Pipeline page per channel.** "This page works together for all channels; it needs a channel picker so the whole page responds to the active channel, with its state; and a top row showing every channel's state in a card."
+- **Done:**
+  - **Channel picker** on the page, the same choice as the top bar. The state board, the videos and the other work show the picked channel.
+  - **Channels** row: one card per channel with its state, "private uploads only" and its videos on the line (working, waiting, your turn, need attention, next phase, published). Click a card to pick it.
+  - API: `PipelineOut.channels` (all channels) and the `channel_id` filter.
+- **Tests:**
+  - Python: 1 new (two channels, the cards and the filter).
+  - Vitest: 1 new (cards, picker and card click switch the page).
+  - Playwright: Pipeline routes × states, axe, and the real-API test pass.
+
 **Phase 7 approved by the owner: "APPROVED" (2026-11-27).** The owner ran the demo and the script review on their PC. They replied with approval only and gave no separate rating for the 10 scripts.
 
 ## Phase 8 — Storyboards, visuals, voice (incl. own-voice clone) & stock (started 2026-11-27)

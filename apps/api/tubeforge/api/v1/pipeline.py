@@ -72,6 +72,8 @@ STATIONS: tuple[Station, ...] = (
     Station("analytics", "Analytics", "TUBEFORGE", ("PUBLISHED", "ANALYZING", "ARCHIVED"), 13),
 )
 STATION_OF = {state: i for i, s in enumerate(STATIONS) for state in s.states}
+STATION_INDEX = {s.key: i for i, s in enumerate(STATIONS)}
+MAX_PROJECTS = 300
 HIDDEN_STATES = ("CANCELLED",)
 
 
@@ -148,7 +150,28 @@ class PipelineProjectOut(BaseModel):
     updated_at: datetime
 
 
+class ChannelCardOut(BaseModel):
+    """One channel's state across the whole line (owner request 2026-11-27: a card per channel on top)."""
+
+    id: uuid.UUID
+    name: str
+    state: str = Field(description="The channel's own state (ACTIVE, ONBOARDING, PAUSED, …).")
+    private_only: bool
+    videos: int = Field(default=0, description="Videos on the line (not cancelled).")
+    working: int = Field(default=0, description="A job is running on them now.")
+    queued: int = Field(default=0, description="Waiting for a free worker.")
+    your_turn: int = Field(default=0, description="Waiting for the owner's review or approval.")
+    attention: int = Field(default=0, description="Stopped, stalled, waiting for a limit or blocked.")
+    next_phase: int = Field(default=0, description="Ready for a station that arrives in a later phase.")
+    published: int = 0
+    paused: int = 0
+
+
 class PipelineOut(BaseModel):
+    channels: list[ChannelCardOut] = Field(
+        default_factory=list, description="Every channel with its state and work in progress (all channels)."
+    )
+    channel_id: uuid.UUID | None = Field(default=None, description="The channel the rest of the page shows.")
     stations: list[StationOut]
     projects: list[PipelineProjectOut]
     jobs: list[JobProgressOut]
@@ -330,6 +353,31 @@ def _board(projects: list[PipelineProjectOut]) -> list[StationBoardOut]:
     return cards
 
 
+def _channel_cards(db: Session, projects: list[PipelineProjectOut]) -> list[ChannelCardOut]:
+    """A card per channel (also channels with no videos yet), counted from where each video is now."""
+    cards = {
+        c.id: ChannelCardOut(id=c.id, name=c.name, state=c.state, private_only=c.private_only_mode)
+        for c in db.scalars(select(Channel).where(Channel.deleted_at.is_(None)).order_by(Channel.name))
+    }
+    field = {
+        "WORKING": "working",
+        "QUEUED": "queued",
+        "YOUR_TURN": "your_turn",
+        "NOT_BUILT": "next_phase",
+        "DONE": "published",
+        "PAUSED": "paused",
+        **{a: "attention" for a in ATTENTION_ACTIVITIES},
+    }
+    for item in projects:
+        card = cards.get(item.channel_id)
+        if card is None:
+            continue
+        card.videos += 1
+        name = field[item.activity]
+        setattr(card, name, getattr(card, name) + 1)
+    return list(cards.values())
+
+
 # ------------------------------------------------------------------------------------- routes
 @router.get("/pipeline", response_model=PipelineOut)
 def pipeline(db: Db, p: View, channel_id: uuid.UUID | None = None) -> PipelineOut:
@@ -344,10 +392,8 @@ def pipeline(db: Db, p: View, channel_id: uuid.UUID | None = None) -> PipelineOu
             VideoProject.state.not_in(HIDDEN_STATES),
         )
         .order_by(VideoProject.updated_at.desc())
-        .limit(100)
+        .limit(MAX_PROJECTS)
     )
-    if channel_id:
-        stmt = stmt.where(VideoProject.channel_id == channel_id)
     averages: dict[str, float | None] = {}
     counts = [0] * len(STATIONS)
     projects: list[PipelineProjectOut] = []
@@ -386,6 +432,12 @@ def pipeline(db: Db, p: View, channel_id: uuid.UUID | None = None) -> PipelineOu
                 updated_at=project.updated_at,
             )
         )
+    cards = _channel_cards(db, projects)
+    if channel_id:
+        projects = [x for x in projects if x.channel_id == channel_id]
+        counts = [0] * len(STATIONS)
+        for x in projects:
+            counts[STATION_INDEX[x.station]] += 1
     board = _board(projects)
     jobs_stmt = (
         select(JobProgress)
@@ -402,6 +454,8 @@ def pipeline(db: Db, p: View, channel_id: uuid.UUID | None = None) -> PipelineOu
         j.status in ("QUEUED", "RUNNING") for j in jobs
     )
     return PipelineOut(
+        channels=cards,
+        channel_id=channel_id,
         stations=[
             _station_out(i, counts[i]).model_copy(update={"board": board[i]}) for i in range(len(STATIONS))
         ],

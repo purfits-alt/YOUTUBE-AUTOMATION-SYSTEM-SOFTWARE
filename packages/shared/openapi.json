@@ -1156,6 +1156,83 @@
         "title": "ChainOut",
         "type": "object"
       },
+      "ChannelCardOut": {
+        "description": "One channel's state across the whole line (owner request 2026-11-27: a card per channel on top).",
+        "properties": {
+          "attention": {
+            "default": 0,
+            "description": "Stopped, stalled, waiting for a limit or blocked.",
+            "title": "Attention",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "next_phase": {
+            "default": 0,
+            "description": "Ready for a station that arrives in a later phase.",
+            "title": "Next Phase",
+            "type": "integer"
+          },
+          "paused": {
+            "default": 0,
+            "title": "Paused",
+            "type": "integer"
+          },
+          "private_only": {
+            "title": "Private Only",
+            "type": "boolean"
+          },
+          "published": {
+            "default": 0,
+            "title": "Published",
+            "type": "integer"
+          },
+          "queued": {
+            "default": 0,
+            "description": "Waiting for a free worker.",
+            "title": "Queued",
+            "type": "integer"
+          },
+          "state": {
+            "description": "The channel's own state (ACTIVE, ONBOARDING, PAUSED, \u2026).",
+            "title": "State",
+            "type": "string"
+          },
+          "videos": {
+            "default": 0,
+            "description": "Videos on the line (not cancelled).",
+            "title": "Videos",
+            "type": "integer"
+          },
+          "working": {
+            "default": 0,
+            "description": "A job is running on them now.",
+            "title": "Working",
+            "type": "integer"
+          },
+          "your_turn": {
+            "default": 0,
+            "description": "Waiting for the owner's review or approval.",
+            "title": "Your Turn",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "state",
+          "private_only"
+        ],
+        "title": "ChannelCardOut",
+        "type": "object"
+      },
       "ChannelConnectionOut": {
         "properties": {
           "id": {
@@ -3808,6 +3885,27 @@
             "default": 7,
             "title": "Built Phase",
             "type": "integer"
+          },
+          "channel_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The channel the rest of the page shows.",
+            "title": "Channel Id"
+          },
+          "channels": {
+            "description": "Every channel with its state and work in progress (all channels).",
+            "items": {
+              "$ref": "#/components/schemas/ChannelCardOut"
+            },
+            "title": "Channels",
+            "type": "array"
           },
           "jobs": {
             "items": {

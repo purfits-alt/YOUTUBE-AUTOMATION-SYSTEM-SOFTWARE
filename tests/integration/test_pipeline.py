@@ -247,3 +247,37 @@ def test_finished_progress_is_purged_after_30_days(eng: Engine, env: Env) -> Non
         assert progress.purge_finished(s) == 1
         s.commit()
     assert env.sql("SELECT count(*) FROM job_progress")[0][0] == 2
+
+
+def test_channel_cards_and_the_page_for_one_channel(
+    api: tuple[TestClient, dict[str, str]], eng: Engine, env: Env
+) -> None:
+    """Owner request 2026-11-27: a card per channel on top; the rest of the page shows the picked channel."""
+    client, h = api
+    first = started_project(eng, client, h)  # channel "Open Node Test", research queued
+    second = started_project(eng, client, h)
+    with Session(eng) as s:
+        project = s.get_one(VideoProject, uuid.UUID(second))
+        project.state = "RESEARCH_REVIEW"
+        other = s.get_one(Channel, project.channel_id)
+        other.name = "Purfits Wellness Test"
+        empty = Channel(id=uuid7(), name="Brand New Channel", state="ONBOARDING", content_language="en")
+        s.add(empty)
+        s.commit()
+        a, b = str(s.get_one(VideoProject, uuid.UUID(first)).channel_id), str(other.id)
+
+    everything = client.get("/api/v1/pipeline").json()
+    cards = {c["name"]: c for c in everything["channels"]}
+    assert list(cards) == ["Brand New Channel", "Open Node Test", "Purfits Wellness Test"]
+    assert (cards["Open Node Test"]["videos"], cards["Open Node Test"]["queued"]) == (1, 1)
+    assert (cards["Purfits Wellness Test"]["videos"], cards["Purfits Wellness Test"]["your_turn"]) == (1, 1)
+    assert (cards["Brand New Channel"]["state"], cards["Brand New Channel"]["videos"]) == ("ONBOARDING", 0)
+    assert len(everything["projects"]) == 2
+
+    one = client.get(f"/api/v1/pipeline?channel_id={b}").json()
+    assert one["channel_id"] == b and [p["id"] for p in one["projects"]] == [second]
+    board = {st["key"]: st for st in one["stations"]}
+    assert board["research"]["count"] == 0 and board["research"]["board"]["inbox"] == []
+    assert [x["id"] for x in board["research_review"]["board"]["inbox"]] == [second]
+    assert len(one["channels"]) == 3  # the cards always cover every channel
+    assert [p["id"] for p in client.get(f"/api/v1/pipeline?channel_id={a}").json()["projects"]] == [first]

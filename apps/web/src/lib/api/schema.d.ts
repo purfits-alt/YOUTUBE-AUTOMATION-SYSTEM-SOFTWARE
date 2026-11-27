@@ -2391,6 +2391,72 @@ export interface components {
             /** Ok */
             ok: boolean;
         };
+        /**
+         * ChannelCardOut
+         * @description One channel's state across the whole line (owner request 2026-11-27: a card per channel on top).
+         */
+        ChannelCardOut: {
+            /**
+             * Attention
+             * @description Stopped, stalled, waiting for a limit or blocked.
+             * @default 0
+             */
+            attention: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Next Phase
+             * @description Ready for a station that arrives in a later phase.
+             * @default 0
+             */
+            next_phase: number;
+            /**
+             * Paused
+             * @default 0
+             */
+            paused: number;
+            /** Private Only */
+            private_only: boolean;
+            /**
+             * Published
+             * @default 0
+             */
+            published: number;
+            /**
+             * Queued
+             * @description Waiting for a free worker.
+             * @default 0
+             */
+            queued: number;
+            /**
+             * State
+             * @description The channel's own state (ACTIVE, ONBOARDING, PAUSED, …).
+             */
+            state: string;
+            /**
+             * Videos
+             * @description Videos on the line (not cancelled).
+             * @default 0
+             */
+            videos: number;
+            /**
+             * Working
+             * @description A job is running on them now.
+             * @default 0
+             */
+            working: number;
+            /**
+             * Your Turn
+             * @description Waiting for the owner's review or approval.
+             * @default 0
+             */
+            your_turn: number;
+        };
         /** ChannelConnectionOut */
         ChannelConnectionOut: {
             /**
@@ -3294,6 +3360,16 @@ export interface components {
              * @default 7
              */
             built_phase: number;
+            /**
+             * Channel Id
+             * @description The channel the rest of the page shows.
+             */
+            channel_id?: string | null;
+            /**
+             * Channels
+             * @description Every channel with its state and work in progress (all channels).
+             */
+            channels?: components["schemas"]["ChannelCardOut"][];
             /** Jobs */
             jobs: components["schemas"]["JobProgressOut"][];
             /** Projects */
