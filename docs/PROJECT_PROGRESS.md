@@ -995,6 +995,35 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
 - The owner approved a narrow exception ("allow this one", 2026-11-26). Before it was added, the audit was run again: it now reports no known vulnerabilities, with `picomatch` still at 4.0.7, so the advisory was withdrawn or corrected upstream. **No exception was added.** The audit stays strict.
 - Visual baselines were refreshed by CI for the Pipeline menu entry (`[update-snapshots]`).
 
+**Phase 7 approved by the owner: "APPROVED" (2026-11-27).** The owner ran the demo and the script review on their PC. They replied with approval only and gave no separate rating for the 10 scripts.
+
+## Phase 8 — Storyboards, visuals, voice (incl. own-voice clone) & stock (started 2026-11-27)
+
+**Plan.** Four steps, each committed and reported, with the owner's part raised only when that step comes:
+- **A — Assets, rights, procedural renderer, channel art.**
+  - Asset library and rights records; an asset without rights never enters a render.
+  - Manual licensed import with proof.
+  - Procedural renderer (Pillow) and the template registry v1 (16 templates).
+  - **Channel art:** logo 800×800 and banner 2560×1440 from the blueprint, 3 variants each, safe-area preview, rights records. They appear in the Branding Studio and in the onboarding setup kit, with Download and Copy.
+  - **SEMRS video watermark:** 150×150, from the owner's logo file.
+  - Pages 8 and 25, and onboarding step 2.
+  - *Owner part:* upload the SEMRS logo file.
+- **B — Storyboard and visual plan.**
+  - A12 storyboard (hook scene, pattern interrupts) and A13 visual plan; scenes get procedural visuals with rights.
+  - Pages 12 and 14; the Pipeline stations Storyboard and Visuals become live.
+- **C — Voice.**
+  - Browser recorder with noise reduction.
+  - Kokoro (EN/ES/FR) and Piper (DE thorsten; UR after the owner's listening check), with a per-voice licence registry; NC voices are blocked on monetised channels.
+  - Narration per scene; page 15; the Voice-over station becomes live.
+  - *Owner part:* listen to the Urdu voices.
+- **D — Own-voice clone, stock, image spike.**
+  - Voice profiles: live-recording tokens, consent with a one-time code, local speech-to-text check, speaker similarity, encrypted storage; OpenVoice V2 (licence re-checked before enabling).
+  - Pexels/Pixabay adapters (official terms checked first; off by default). Paid stock is an interface only, disabled.
+  - Image-provider spike (stays off unless free and commercial-OK).
+  - Phase report.
+  - *Owner part:* record voice samples and consent; optional free Pexels/Pixabay keys.
+- **Free-tier check:** introduces no paid dependency ✔. Kokoro is Apache-2.0, OpenVoice and Chatterbox are MIT, and Piper voices are checked per licence. Paid stock stays disabled, with budget 0.
+
 ## Resource consumption
 
 | Resource | Used |

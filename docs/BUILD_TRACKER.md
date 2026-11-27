@@ -23,7 +23,7 @@ Each phase lists its steps and **your part** for that module.
 
 | | |
 |---|---|
-| **Current module** | **Phase 7: your part** (demo and blind review of 10 scripts). My part of Phase 7 is done. |
+| **Current module** | **Phase 8: storyboards, visuals, voice, channel art and stock.** Phase 7 approved by you on 2026-11-27. |
 | Your channel | **Open Node AI**, handle **@OpenNodeAIHQ**, https://www.youtube.com/@OpenNodeAIHQ (created 2026-11-15; name, description and handle set from the setup kit) |
 | Created in TubeForge | yes, from the approved blueprint, as a test channel (private uploads only) |
 | Connected | ✅ 2026-11-15: Google sign-in done; private test upload visible (private) in YouTube Studio |
@@ -110,7 +110,7 @@ Each phase lists its steps and **your part** for that module.
 | **Added:** agent job descriptions (`agents/`), product site and demo on `tubeforge.semrs.com` | ✅ |
 | Your part: none (Wikimedia terms: see G2) | — |
 
-## Phase 7 — Ideas, research, fact-check & scripts 🟡 (waiting for your demo)
+## Phase 7 — Ideas, research, fact-check & scripts ✅ (approved 2026-11-27)
 | Step | Status |
 |---|---|
 | A — Content core: similarity (ADR-0029), script craft checks, value-add score, script versions | ✅ |
@@ -120,9 +120,9 @@ Each phase lists its steps and **your part** for that module.
 | Owner request (2026-11-16): **Build** tab beside Run discovery (your own channel name or TubeForge's names, or a channel you already have) | ✅ |
 | Owner request (2026-11-16): channels onboarded outside discovery go through the same ideas, calendar, Script Studio and Trending pages (blueprint can be attached to them) | ✅ |
 | Owner request (2026-11-18): **Pipeline** page: state board (per station: inbox from the previous station, in progress, complete, forwarded to the next), live % and stage of every job, what comes next, stopped or stalled jobs shown with the reason; live bar in Script Studio; **Write again** for the script (ADR-0031) | ✅ |
-| Your part, now: run the Phase 7 demo (`PROJECT_PROGRESS.md`, Phase 7 report, item 11) and rate 10 scripts for "sounds human" (≥ 4/5), then reply "approved" | ⬜ |
+| Your part, now: run the Phase 7 demo (`PROJECT_PROGRESS.md`, Phase 7 report, item 11) and rate 10 scripts for "sounds human" (≥ 4/5), then reply "approved" | ✅ "APPROVED", 2026-11-27 |
 
-## Phase 8 — Storyboards, visuals, voice & stock ⬜
+## Phase 8 — Storyboards, visuals, voice & stock 🟡 (started 2026-11-27)
 | Step | Status |
 |---|---|
 | Storyboard, visual plan, 16 procedural templates, renderer | ⬜ |
