@@ -73,7 +73,7 @@ RENDER_PROFILE = {"LONG": {"profile": "LONG_1080"}, "SHORT": {"profile": "SHORT_
 RECENT_TITLES = 80
 MAX_ARTICLES = 6
 MIN_DOCUMENTS = 2
-MAX_QUERIES = 8
+MAX_QUERIES = 12
 # Text that reads like an instruction to the model (prompt injection copied from a source).
 INSTRUCTION_LIKE = re.compile(
     r"(?i)(\bsystem\s*:|\bignore (?:all |the |any |previous |prior )*(?:rules|instructions)\b"
@@ -347,23 +347,61 @@ STOPWORDS = frozenset({
     "why", "what", "when", "which", "who", "your", "my", "our", "i", "you", "we", "is", "are", "was",
     "be", "it", "this", "that", "these", "those", "vs", "versus", "into", "using", "use", "guide",
     "tips", "best", "top", "new", "free", "explained", "step", "steps", "setup", "set", "up",
+    # verbs and filler of video titles and angles (owner report 2026-11-27: "How Late Meals Impact
+    # Deep Sleep and Recovery" searched Wikipedia for "Impact" and "Deep" on their own)
+    "impact", "impacts", "affect", "affects", "affecting", "alter", "alters", "change", "changes",
+    "really", "does", "do", "can", "could", "make", "makes", "ruin", "ruins", "boost", "boosts",
+    "examine", "explore", "explain", "show", "shows", "evidence", "breakdown", "in-depth",
+    "actually", "truth", "about", "behind", "inside", "everything", "need", "know", "should",
+    "setting", "getting", "building", "running", "making", "beats", "beat",
 })  # fmt: skip
+MAX_PHRASES = 6
+
+
+def _words(text: str) -> list[str]:
+    return [w.rstrip(".-") for w in re.findall(r"[\w][\w.+#-]*", text, flags=re.UNICODE)]
+
+
+def _brand_like(word: str) -> bool:
+    """A product or proper name even inside a Title Case title: CodeLlama, DeepSeek-Coder, GPT-4, HRV."""
+    inner_caps = any(c.isupper() for part in word.split("-") for c in part[1:]) and not word.isupper()
+    return inner_caps or any(c.isdigit() for c in word) or (word.isupper() and len(word) >= 2)
+
+
+def phrases(text: str) -> list[str]:
+    """Multi-word subjects in a sentence: runs of 2–3 content words between filler words ("deep
+    sleep", "heart rate variability", "meal timing"). Wikipedia finds articles for these where
+    single words ("Deep", "Late") find unrelated pages."""
+    out: list[str] = []
+    run: list[str] = []
+    for w in [*_words(text), "."]:
+        if w.lower() in STOPWORDS or len(w) < 3 or not w[0].isalpha():
+            if len(run) >= 2:
+                out.append(" ".join(run[:3]).lower())
+            run = []
+        else:
+            run.append(w)
+    return list(dict.fromkeys(out))
 
 
 def search_terms(title: str) -> list[str]:
     """Shorter Wikipedia searches from a long title: the names in it (CodeLlama, DeepSeek-Coder,
-    VS Code) and the remaining key words, so research finds articles a whole-title search misses."""
-    words = re.findall(r"[\w][\w.+#-]*", title, flags=re.UNICODE)
+    VS Code), its multi-word subjects and the remaining key words, so research finds articles a
+    whole-title search misses. In a Title Case title only real names count as names."""
+    words = _words(title)
+    content = [w for w in words if w.lower() not in STOPWORDS and len(w) >= 3]
+    title_case = len(content) >= 3 and sum(w[0].isupper() for w in content) >= 0.6 * len(content)
     names = [
         w
-        for w in words
-        if len(w) >= 3 and (w[0].isupper() or any(c.isdigit() for c in w)) and w.lower() not in STOPWORDS
+        for w in content
+        if (_brand_like(w) if title_case else (w[0].isupper() or any(c.isdigit() for c in w)))
     ]
-    keys = [w for w in words if w.lower() not in STOPWORDS and len(w) >= 3]
     out = list(dict.fromkeys(names))[:4]
-    if len(keys) >= 2:
-        out.append(" ".join(keys[:4]))
-    return out
+    if title_case:
+        out += [p for p in phrases(title) if p not in out]
+    if len(content) >= 2:
+        out.append(" ".join(content[:4]))
+    return list(dict.fromkeys(out))
 
 
 def _normal(text: str) -> str:
@@ -498,16 +536,25 @@ def run_research(
     language = channel.content_language if channel.content_language in LANGUAGES else "en"
     idea = db.get(VideoIdea, project.idea_id) if project.idea_id else None
     promise = project.packaging_promise or {}
+    # Most specific first: the owner's words, the title's subjects, the subjects of the angle and
+    # promise ("heart rate variability", "meal timing"), then the whole title, pillar and promise title.
+    about = " . ".join(
+        filter(None, [idea.angle if idea else "", str(promise.get("promise_statement") or "")])
+    )
     queries = [
         *(q.strip() for q in extra_queries if q.strip()),
-        project.working_title,
         *search_terms(project.working_title),
+        *phrases(about)[:MAX_PHRASES],
+        project.working_title,
     ]
     if idea is not None and idea.pillar:
         queries.append(idea.pillar)
     if promise.get("title_idea"):
         queries.append(str(promise["title_idea"]))
-    queries = list(dict.fromkeys(queries))[:MAX_QUERIES]
+    first: dict[str, str] = {}
+    for q in queries:
+        first.setdefault(q.lower(), q)  # the same search once, whatever its capitals
+    queries = list(first.values())[:MAX_QUERIES]
     progress.report(3, "Choosing search words")
     try:
         docs, skipped = collect_articles(

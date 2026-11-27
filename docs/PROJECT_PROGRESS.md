@@ -995,6 +995,15 @@ Both are done (see below). Decision: an existing channel takes a blueprint by **
 - The owner approved a narrow exception ("allow this one", 2026-11-26). Before it was added, the audit was run again: it now reports no known vulnerabilities, with `picomatch` still at 4.0.7, so the advisory was withdrawn or corrected upstream. **No exception was added.** The audit stays strict.
 - Visual baselines were refreshed by CI for the Pipeline menu entry (`[update-snapshots]`).
 
+**Fix (owner report, 2026-11-27): research for "How Late Meals Impact Deep Sleep and Recovery" (PurfitsWellnessHub) stopped at 50 % with "The provided source documents do not contain evidence … on how late meals, meal timing, or late digestion affect deep sleep, heart rate variability, or overnight recovery".**
+- **Causes:**
+  - In a Title Case title every word looked like a name, so Wikipedia was searched for "Late", "Meals", "Impact" and "Deep" on their own, never for "deep sleep" or "heart rate variability".
+  - A09 v1.0 refused when the articles covered the parts of the idea but not the exact link in the title.
+- **Fix:**
+  - Searches now use the 2–3-word subjects of the title, angle and promise ("late meals", "deep sleep", "late digestion", "heart rate variability", "deep sleep duration", "meal timing", "overnight recovery quality"). In a Title Case title only real names (CodeLlama, GPT-4, HRV) count as names. Up to 12 searches, each run once.
+  - **A09 prompt v1.1** (migration 0016; a prompt version the owner changed is kept): it writes the brief from what the sources say and lists the missing link as an open question ("The sources do not say whether …"). It refuses only when fewer than 2 documents are about any core part of the idea. Claims still need a verbatim quote, and A10 still checks them.
+- **Owner's part:** after updating, open the project and press **Research again**. To steer it, add these extra search words: "Heart rate variability, Slow-wave sleep, Sleep hygiene, Circadian rhythm".
+
 **Phase 7 approved by the owner: "APPROVED" (2026-11-27).** The owner ran the demo and the script review on their PC. They replied with approval only and gave no separate rating for the 10 scripts.
 
 ## Phase 8 — Storyboards, visuals, voice (incl. own-voice clone) & stock (started 2026-11-27)

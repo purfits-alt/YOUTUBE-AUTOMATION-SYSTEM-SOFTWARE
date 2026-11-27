@@ -50,8 +50,14 @@ def test_catalogue_has_the_32_agents_and_matches_the_seed_migration() -> None:
         after11 = swaps.get(json.dumps(chain), chain)
         return swaps14.get(json.dumps(after11), after11)
 
+    prompts16 = _migration("0016").PROMPTS
+
+    def prompt_now(code: str, prompt: str) -> str:
+        old, new = prompts16.get(code, (prompt, prompt))
+        return new if prompt == old else prompt
+
     seeded = [
-        (code, name, auditor, prompt, chain_now(chain), limits)
+        (code, name, auditor, prompt_now(code, prompt), chain_now(chain), limits)
         for code, name, auditor, prompt, chain, limits in _migration("0008").AGENTS
     ]
     assert seeded == [(a.code, a.name, a.auditor, a.prompt_version, a.chain, a.limits) for a in AGENTS]
