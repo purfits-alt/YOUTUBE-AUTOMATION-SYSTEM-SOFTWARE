@@ -64,7 +64,7 @@ AGENTS: list[AgentInfo] = [
     _llm("A06_CHANNEL_STRATEGY", "Channel Strategy", REASONING),
     _llm("A07_CHANNEL_BRANDING", "Channel Branding", REASONING),
     _llm("A08_IDEA_GENERATION", "Idea Generation", REASONING, prompt="v1.1"),
-    _llm("A09_RESEARCH", "Research", REASONING, calls=40),
+    _llm("A09_RESEARCH", "Research", REASONING, calls=40, prompt="v1.1"),
     _llm("A10_FACT_CHECKING", "Fact-Checking", REASONING),
     _llm("A11_SCRIPTWRITING", "Scriptwriting", REASONING, prompt="v1.1"),
     _llm("A12_STORYBOARD", "Storyboard", REASONING, prompt="v1.1"),

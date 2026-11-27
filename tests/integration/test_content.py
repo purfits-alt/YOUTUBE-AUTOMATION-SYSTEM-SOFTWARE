@@ -75,6 +75,9 @@ class ScriptedModel:
     def users(self, agent: str) -> list[str]:
         return [r.messages[-1].content for a, r in self.calls if a == agent]
 
+    def systems(self, agent: str) -> list[str]:
+        return [r.system or "" for a, r in self.calls if a == agent]
+
 
 @pytest.fixture
 def db(env: Env) -> Iterator[Session]:
@@ -397,6 +400,19 @@ def test_search_terms_and_build_tab_blueprint_guide_the_content_agents(db: Sessi
         "local code completion server",
     ]
     assert pipe.search_terms("5 morning stretches for back pain relief") == ["morning stretches back pain"]
+    # Owner report 2026-11-27: a Title Case title made every word a "name" ("Late", "Impact", "Deep").
+    assert pipe.search_terms("How Late Meals Impact Deep Sleep and Recovery") == [
+        "late meals",
+        "deep sleep",
+        "Late Meals Deep Sleep",
+    ]
+    assert pipe.search_terms("Setting Up an Open-Source Code Completion Server") == [
+        "open-source code completion",
+        "Open-Source Code Completion Server",
+    ]
+    assert pipe.phrases(
+        "In-depth breakdown of how late digestion alters heart rate variability and deep sleep duration."
+    ) == ["late digestion", "heart rate variability", "deep sleep duration"]
     ch = channel(db)
     report = NicheReport(id=uuid7(), params={"manual": True}, status="DONE")
     db.add(report)
@@ -469,3 +485,55 @@ def test_research_keeps_only_articles_about_the_topic(db: Session) -> None:
             pinned_queries=["Phonograph record"],
         )
         assert [d.title for d in pinned] == ["Phonograph record — Wikipedia (en)"]
+
+
+def test_research_searches_the_subjects_of_the_idea_and_a09_v11_does_not_refuse_a_missing_link(
+    db: Session, env: Env, gw: Gateway, model: ScriptedModel
+) -> None:
+    """Owner report 2026-11-27: research for "How Late Meals Impact Deep Sleep and Recovery" stopped at
+    50 %: Wikipedia was searched for "Late", "Impact" and "Deep", and A09 refused because the
+    articles covered the parts but not the exact link."""
+    ch = channel(db)
+    idea = VideoIdea(
+        id=uuid7(), channel_id=ch.id, state="SHORTLISTED", title="How Late Meals Impact Deep Sleep and Recovery",
+        angle="In-depth breakdown of how late digestion alters heart rate variability and deep sleep duration.",
+        format="LONG", source="AGENT", pillar="Sleep Science & Recovery",
+        packaging_promise={
+            "title_idea": "Late dinner & sleep",
+            "thumbnail_text_idea": "LATE DINNER & SLEEP",
+            "promise_statement": "Examine evidence on how meal timing affects heart rate variability and overnight "
+            "recovery quality.",
+        },
+    )  # fmt: skip
+    db.add(idea)
+    db.commit()
+    engine.transition(db, MACHINES["video_idea"], idea.id, "approve", actor=owner(env))
+    db.commit()
+    project = pipe.start_project(db, idea.id, now=NOW)
+    model.replies["A09_RESEARCH"] = a09_reply
+    model.replies["A10_FACT_CHECKING"] = a10_reply({})
+    searched: list[str] = []
+    inner = wiki(["Heart rate variability", "Slow-wave sleep"])
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.path == "/w/rest.php/v1/search/page":
+            searched.append(req.url.params["q"])
+        return inner(req)
+
+    dns = resolver({"en.wikipedia.org": ["185.15.59.224"]})
+    with ResearchFetcher(transport=httpx.MockTransport(handler), resolver=dns, contact="") as f:
+        pipe.run_research(db, gw, f, project.id, now=NOW)
+    assert searched[:6] == [
+        "late meals",
+        "deep sleep",
+        "Late Meals Deep Sleep",
+        "late digestion",
+        "heart rate variability",
+        "deep sleep duration",
+    ]
+    assert "meal timing" in searched and len(searched) <= pipe.MAX_QUERIES
+    assert not {"Late", "Impact", "Deep", "Meals"} & set(searched)
+    system = model.systems("A09_RESEARCH")[0]
+    assert (
+        "(A09_RESEARCH v1.1)" in system and "A missing link between parts is not a reason to refuse" in system
+    )
